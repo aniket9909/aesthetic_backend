@@ -1,0 +1,112 @@
+  .container {
+            margin: 3px;
+            padding: 3px;
+            border: 1px solid gray;
+        }
+
+        .patientContainer {
+            display: flex;
+            border: 1px solid rgb(136, 131, 131);
+            margin: 10px;
+
+        }
+        .patientContainer td {
+
+    padding: 5px;
+
+}
+        .patientContainer label{
+    display: block;
+
+
+}
+
+        .patientDetails {
+            display: inline-block;
+            margin: 10px;
+            margin-bottom: 0px;
+        }
+
+        .patientDetails label {
+            font-weight: bold;
+        }
+
+        .prescriptionDetails {
+            margin: 20px;
+            /* border: 1px solid rgb(80, 74, 74); */
+            /* display: flex;
+            justify-content: space-around; */
+            height: 80%;
+        }
+
+        .prescription-body {
+            display: inline-block;
+            margin: 20px;
+        }
+
+        .prescriptionDataBox {
+            margin: 1px;
+            padding: 1px;
+        }
+
+
+        .prescriptionDataBox label {
+            font-weight: bold;
+            font-family: Arial, Helvetica, sans-serif;
+            margin-bottom: 1px;
+            text-decoration: underline;
+        }
+
+        .prescriptionDataBox p {
+            padding: 1px;
+            margin: 1px;
+            display: block;
+        }
+
+        .vl {
+            border-left: 1px solid rgb(0, 0, 0);
+            height: 50%;
+            position: absolute;
+            margin-left: -3%;
+        }
+
+        .hl {
+            border: 0.5px solid black;
+        }
+
+
+
+        .footersingle {
+            margin-right: 10%;
+            padding: 0%;
+        }
+
+        .footerdouble {
+            margin-top: 90%;
+            margin-right: 10%;
+            padding: 0%;
+        }
+
+        .footerdouble span {
+            white-space: break-spaces;
+        }
+
+        .footersingle span {
+            white-space: break-spaces;
+        }
+
+        .double {
+            width: 50%;
+            float: left;
+        }
+
+        .single {
+            width: 100%;
+        }
+
+        table tr,
+        td,
+        th {
+            border: 1px solid black;
+            text-align: center;
+        }
