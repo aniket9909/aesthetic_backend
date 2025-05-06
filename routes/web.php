@@ -3,8 +3,12 @@
 use Illuminate\Http\Request;
 
 $router->get('/', function () use ($router) {
-    return $router->app->version();
+    return "hii there";
 });
+$router->get('/test', function () use ($router) {
+    return "hii there";
+});
+
 $router->get('admin/log', [
     'middleware' => 'log'
 ]);
