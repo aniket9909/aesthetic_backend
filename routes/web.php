@@ -1,11 +1,11 @@
 <?php
 
+use App\Http\Controllers\ApiController;
+use App\Http\Controllers\SkinAnalysisController;
+use App\Patientmaster;
 use Illuminate\Http\Request;
 
 $router->get('/', function () use ($router) {
-    return "hii there";
-});
-$router->get('/test', function () use ($router) {
     return "hii there";
 });
 
@@ -776,3 +776,17 @@ $router->group(['prefix' => 'api/v3/analytics'], function () use ($router): void
 
 
 });
+
+$router->post('/webhook', 'ApiController@handleJsonInput');
+$router->get('/webhook', 'ApiController@getAllWebhookInputs');
+$router->get('/webhook/{id}', 'ApiController@getWebhookInputById');
+$router->put('/webhook/{id}', 'ApiController@updateWebhookInput');
+$router->delete('/webhook/{id}', 'ApiController@deleteWebhookInput');
+$router->post('/getSlots', 'ApiController@getAvailableSlots');
+$router->post('/bookAppointment', 'ApiController@bookAppointment');
+$router->post('/getAnalysis', 'ApiController@getAnalysis');
+
+
+$router->post('/image', 'SkinAnalysisController@analyzeSkin');
+// $router->post('/image', [SkinAnalysisController::class, 'analyzeSkin']);
+$router->post('/chatbot', [SkinAnalysisController::class, 'chatbot']);
