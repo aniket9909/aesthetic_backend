@@ -8,6 +8,27 @@ use Illuminate\Http\Request;
 $router->get('/', function () use ($router) {
     return "hii there";
 });
+$router->get('/images/{filename}', function ($filename) {
+    $path = base_path('skin_images/' . $filename); // Make sure the path is correct
+
+    if (!file_exists($path)) {
+        abort(404, 'Image not found');
+    }
+
+    // Get the file contents
+    $file = file_get_contents($path);
+
+    // Get the MIME type of the file
+    $mimeType = mime_content_type($path);
+
+    // Return a file response with proper headers
+    return response()->make($file, 200, [
+        'Content-Type' => $mimeType,
+        'Content-Disposition' => 'inline; filename="' . $filename . '"',
+    ]);
+});
+
+
 
 $router->get('admin/log', [
     'middleware' => 'log'

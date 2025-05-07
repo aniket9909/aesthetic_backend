@@ -64,9 +64,7 @@ class DoctorsApi extends Controller
     /**
      * Constructor
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
 
     public function isPharmaClientExist($isPharmaClientId)
@@ -78,7 +76,6 @@ class DoctorsApi extends Controller
                 return response()->json(["status" => true, "message" => "Pharma ClientId Exist"], 200);
             }
             return response()->json(["status" => false, "message" => "Pharma ClientId Not found"], 404);
-
         } catch (\Throwable $th) {
             return response()->json(["status" => false], 500);
         }
@@ -265,12 +262,12 @@ class DoctorsApi extends Controller
         if ($request->hasfile('image')) {
             $file = $request->file('image');
             $FileName = $file->getClientOriginalName();
-         
+
             $extension = pathinfo($FileName, PATHINFO_EXTENSION);
-      
+
             $customFileName = 'ClinicName' . Carbon::now()->timestamp . '.' . $extension;
-            $filePath = 'records/' . $customFileName;                        
-            Log::info(['filePath' , $filePath]);
+            $filePath = 'records/' . $customFileName;
+            Log::info(['filePath', $filePath]);
 
             $connectionString = $_ENV['AZURE_STORAGE_CONNECTION_STRING'];
             $containerName = '';
@@ -286,7 +283,7 @@ class DoctorsApi extends Controller
             // $name = time() . $file->getClientOriginalName();
             // $filePath = 'docexa/images/' . $name;
             // Storage::disk('s3')->put($filePath, file_get_contents($file));
-            return response()->json(['status' => 'success', 'path' =>(string) $uploadedFileUrl, 'msg' => 'Image Uploaded successfully'], 200);
+            return response()->json(['status' => 'success', 'path' => (string) $uploadedFileUrl, 'msg' => 'Image Uploaded successfully'], 200);
         }
     }
     /**
@@ -1037,7 +1034,7 @@ class DoctorsApi extends Controller
      *     ),
      * )
      */
-    public function slotdetails($esteblishmentUserMapID)
+    public function slotdetails($esteblishmentUserMapID, $date = null, $clinicId = null)
     {
 
         if (!isset($esteblishmentUserMapID)) {
@@ -1045,7 +1042,7 @@ class DoctorsApi extends Controller
         }
         $res = new Slotmaster();
         // $data = $res->getslotdetails($esteblishmentUserMapID);
-        $data = $res->getslotdetailsV3($esteblishmentUserMapID);
+        $data = $res->getslotdetailsV3($esteblishmentUserMapID, $date, $clinicId);
 
         return $data;
     }
@@ -2742,8 +2739,6 @@ from
             } else {
                 return response()->json(['status' => false, 'message' => "Doctor is not exist"], 200);
             }
-
-
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error"], 500);
@@ -3038,11 +3033,9 @@ from
                 } else {
                     return response()->json(['status' => false, 'messsage' => 'Prescription data not found'], 400);
                 }
-
             } else {
                 return response()->json(['status' => false, 'messsage' => 'Patient not found'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error"], 500);
@@ -3105,7 +3098,6 @@ from
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
-
         }
     }
 
@@ -3168,11 +3160,9 @@ from
                 } else {
                     return response()->json(['status' => false, 'message' => 'Patient with this id not found'], 400);
                 }
-
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor with this id not found'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
@@ -3195,7 +3185,6 @@ from
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor with this id not found'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
@@ -3217,40 +3206,38 @@ from
                     if ($file) {
                         $file = $request->file('upload_file');
                         $FileName = $file->getClientOriginalName();
-                     
+
                         $extension = pathinfo($FileName, PATHINFO_EXTENSION);
-                  
+
                         $customFileName = $patientId . '-rx-' . Carbon::now()->timestamp . '.' . $extension;
-                        $filePath = 'records/' . $customFileName;                        
-                        Log::info(['filePath' , $filePath]);
-    
+                        $filePath = 'records/' . $customFileName;
+                        Log::info(['filePath', $filePath]);
+
                         $connectionString = $_ENV['AZURE_STORAGE_CONNECTION_STRING'];
                         $containerName = '';
-    
+
                         $blobClient = BlobRestProxy::createBlobService($connectionString);
-    
+
                         $content = fopen($file->getRealPath(), 'r');
                         $blobClient->createBlockBlob($containerName, $filePath, $content);
-    
+
                         $uploadedFileUrl = "https://docexa.blob.core.windows.net/{$filePath}";
 
                         if ($uploadedFileUrl) {
-                                $filepathSaved = $uploadedFileUrl;
-                                return response()->json(['status' => true, 'message' => "records records uploaded successfully", 'file' =>$uploadedFileUrl], 200);
+                            $filepathSaved = $uploadedFileUrl;
+                            return response()->json(['status' => true, 'message' => "records records uploaded successfully", 'file' => $uploadedFileUrl], 200);
                         }
                         return response()->json(["status" => false, 'code' => 500, 'message' => "Somthing went wrong try again"], 500);
                     }
                 } else {
                     return response()->json(['status' => false, 'message' => 'Patient with this id not found'], 400);
                 }
-
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor with this id not found'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
-            return response()->json(['status' => false, 'message' => 'Internal server error' , 'error' => $th->getMessage()], 500);
+            return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
         }
     }
 
@@ -3271,7 +3258,6 @@ from
                 }
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor not found with this Id'], 401);
-
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
@@ -3295,7 +3281,6 @@ from
                 }
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor not found with this Id'], 401);
-
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
@@ -3406,7 +3391,6 @@ from
                             'name' => $diagnosisData['name'] ? $diagnosisData['name'] : '',
                             'diagnosis_days' => isset($diagnosisData['name']) ? $diagnosisData['data']['Diagnosis_days'] . " " . (isset($diagnosisData['data']['Diagnosis_duration']) ? $diagnosisData['data']['Diagnosis_duration'] : '') : ''
                         ];
-
                     }
                     $symptoms = [];
                     $symptomsRow = json_decode($data->complaints_row, true);
@@ -3521,15 +3505,12 @@ from
 
                     $dompdf->render();
                     $dompdf->stream('Prescription.pdf', array('Attachment' => true));
-
                 } else {
                     return response()->json(['status' => false, 'messsage' => 'Prescription data not found'], 400);
                 }
-
             } else {
                 return response()->json(['status' => false, 'messsage' => 'Patient not found'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error"], 500);
@@ -3655,7 +3636,6 @@ from
                             'name' => $diagnosisData['name'] ? $diagnosisData['name'] : '',
                             'diagnosis_days' => isset($diagnosisData['name']) ? $diagnosisData['data']['Diagnosis_days'] . " " . (isset($diagnosisData['data']['Diagnosis_duration']) ? $diagnosisData['data']['Diagnosis_duration'] : '') : ''
                         ];
-
                     }
                     $symptoms = [];
                     $symptomsRow = json_decode($data->complaints_row, true);
@@ -3771,21 +3751,18 @@ from
 
                     $dompdf->render();
                     $dompdf->stream('Prescription.pdf', array('Attachment' => true));
-
                 } else {
                     return response()->json(['status' => false, 'messsage' => 'Prescription data not found'], 400);
                 }
-
             } else {
                 return response()->json(['status' => false, 'messsage' => 'Patient not found'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error"], 500);
         }
     }
-  
+
     public function PrescriptionViewv3($id, $patientId, $booking_id)
     {
         try {
@@ -3894,7 +3871,6 @@ from
                             'name' => $diagnosisData['name'] ? $diagnosisData['name'] : '',
                             'diagnosis_days' => isset($diagnosisData['name']) ? $diagnosisData['data']['Diagnosis_days'] . " " . (isset($diagnosisData['data']['Diagnosis_duration']) ? $diagnosisData['data']['Diagnosis_duration'] : '') : ''
                         ];
-
                     }
                     $symptoms = [];
                     $symptomsRow = json_decode($data->complaints_row, true);
@@ -4010,15 +3986,12 @@ from
 
                     $dompdf->render();
                     $dompdf->stream('Prescription.pdf', array('Attachment' => true));
-
                 } else {
                     return response()->json(['status' => false, 'messsage' => 'Prescription data not found'], 400);
                 }
-
             } else {
                 return response()->json(['status' => false, 'messsage' => 'Patient not found'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error"], 500);
@@ -4033,7 +4006,6 @@ from
             if ($agree) {
                 $agree->is_aggrement = $input['is_aggrement'];
                 $save = $agree->save();
-
             } else {
                 $agree = new Clinic();
                 $agree->is_aggrement = $input['is_aggrement'];
@@ -4131,24 +4103,21 @@ from
                 $customFileName = 'receipe' . Carbon::now()->timestamp . '.' . $extension;
                 $filePath = 'Receipe/' . $customFileName;
 
-                    $connectionString = $_ENV['AZURE_STORAGE_CONNECTION_STRING'];
-                    $containerName = '';
+                $connectionString = $_ENV['AZURE_STORAGE_CONNECTION_STRING'];
+                $containerName = '';
 
-                    $blobClient = BlobRestProxy::createBlobService($connectionString);
+                $blobClient = BlobRestProxy::createBlobService($connectionString);
 
-                    $content = fopen($file->getRealPath(), 'r');
-                    $blobClient->createBlockBlob($containerName, $filePath, $content);
+                $content = fopen($file->getRealPath(), 'r');
+                $blobClient->createBlockBlob($containerName, $filePath, $content);
 
-                    $uploadedFileUrl = "https://docexa.blob.core.windows.net/{$filePath}";
+                $uploadedFileUrl = "https://docexa.blob.core.windows.net/{$filePath}";
 
                 if ($uploadedFileUrl) {
                     return response()->json(['status' => true, 'message' => "receipe records uploaded successfully", 'file' => $uploadedFileUrl], 200);
-
                 }
-
             }
             return response()->json(["status" => false, 'code' => 500, 'message' => "Somthing went wrong try again"], 500);
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
@@ -4166,7 +4135,6 @@ from
             } else {
                 return response()->json(['status' => false, 'message' => "data not found", 'data' => []], 200);
             }
-
         } catch (\Throwable $th) {
             Log::info(['error' => $th]);
             return response()->json(["status" => false, "message" => "Internal server error"], 500);
@@ -4205,7 +4173,6 @@ from
                 }
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor not found with this Id'], 401);
-
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
@@ -4231,7 +4198,6 @@ from
                 }
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor not found with this Id'], 401);
-
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
@@ -4259,12 +4225,10 @@ from
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor not found with this id', 'code' => 400], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage(), 'code' => 500], 500);
         }
-
     }
 
     public function getDashboardAnalysis($esteblishmentUserMapID)
@@ -4276,8 +4240,8 @@ from
                 ->whereRaw('created_date >= CURDATE() - INTERVAL 7 DAY')
                 ->count();
 
-                $last7daysRecordsOfTotalSeenPrescriptionWhethereOrNot = DB :: table('prescription')
-                ->where('user_map_id' , $esteblishmentUserMapID)
+            $last7daysRecordsOfTotalSeenPrescriptionWhethereOrNot = DB::table('prescription')
+                ->where('user_map_id', $esteblishmentUserMapID)
                 ->whereRaw('created_at >= CURDATE() - INTERVAL 7 DAY')
                 ->count();
 
@@ -4307,7 +4271,6 @@ from
                     "last7daysRecordsOfTotalSeenPrescriptionWhethereOrNot" => $last7daysRecordsOfTotalSeenPrescriptionWhethereOrNot
                 ]
             ], 200);
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage(), 'code' => 500], 500);
@@ -4335,15 +4298,15 @@ from
             // ->offset($offset)
             // ->limit($limit);
 
-    //         $lastAppointments = DB::table('docexa_patient_booking_details')
-    // ->select('patient_id', DB::raw('MAX(date) as last_appointment_date'))
-    // ->groupBy('patient_id');
+            //         $lastAppointments = DB::table('docexa_patient_booking_details')
+            // ->select('patient_id', DB::raw('MAX(date) as last_appointment_date'))
+            // ->groupBy('patient_id');
 
 
-    // $lastAppointments = DB::table('docexa_patient_booking_details as sub')
-    // ->select('sub.*')
-    // ->whereRaw('sub.date = (SELECT MAX(inner_sub.date) 
-    //                          FROM docexa_patient_booking_details as inner_sub 
+            // $lastAppointments = DB::table('docexa_patient_booking_details as sub')
+            // ->select('sub.*')
+            // ->whereRaw('sub.date = (SELECT MAX(inner_sub.date) 
+            //                          FROM docexa_patient_booking_details as inner_sub 
             //                  WHERE inner_sub.patient_id = sub.patient_id)');    
 
             // $query = DB::table('prescription as p')
@@ -4367,35 +4330,35 @@ from
 
 
             // Precompute the latest appointments for each patient
-$latestAppointments = DB::table('docexa_patient_booking_details')
-->select('patient_id', DB::raw('MAX(date) as last_appointment_date'))
-// ->whereIn('status', [1, 2, 5])  // Filter by valid status early
-->groupBy('patient_id');
+            $latestAppointments = DB::table('docexa_patient_booking_details')
+                ->select('patient_id', DB::raw('MAX(date) as last_appointment_date'))
+                // ->whereIn('status', [1, 2, 5])  // Filter by valid status early
+                ->groupBy('patient_id');
 
-// Main query
-$query = DB::table('prescription as p')
-->leftJoin('docexa_patient_booking_details as d', function ($join) {
-    $join->on('p.patient_id', '=', 'd.patient_id')
-        ->whereColumn('d.date', '=', 'p.follow_up');
-        // ->whereIn('d.status', [1, 2, 5]);
-})
-->leftJoin('docexa_patient_details as patientdata', 'p.patient_id', '=', 'patientdata.patient_id')
-->leftJoinSub($latestAppointments, 'last_appointment', function ($join) {
-    $join->on('p.patient_id', '=', 'last_appointment.patient_id');
-})
-->leftJoin('docexa_patient_booking_details as last_booking', function ($join) {
-    $join->on('last_booking.patient_id', '=', 'last_appointment.patient_id')
-         ->whereColumn('last_booking.date', '=', 'last_appointment.last_appointment_date');
-})
-->whereBetween('p.follow_up', [$input['start_date'], $input['end_date']])
-->where('p.user_map_id', $input['usermapid'])
-->whereNull('d.patient_id')
-->select(
-    'patientdata.*',
-    'p.follow_up',
-    'last_booking.*' 
-)
-->orderBy('p.follow_up', 'asc'); ;
+            // Main query
+            $query = DB::table('prescription as p')
+                ->leftJoin('docexa_patient_booking_details as d', function ($join) {
+                    $join->on('p.patient_id', '=', 'd.patient_id')
+                        ->whereColumn('d.date', '=', 'p.follow_up');
+                    // ->whereIn('d.status', [1, 2, 5]);
+                })
+                ->leftJoin('docexa_patient_details as patientdata', 'p.patient_id', '=', 'patientdata.patient_id')
+                ->leftJoinSub($latestAppointments, 'last_appointment', function ($join) {
+                    $join->on('p.patient_id', '=', 'last_appointment.patient_id');
+                })
+                ->leftJoin('docexa_patient_booking_details as last_booking', function ($join) {
+                    $join->on('last_booking.patient_id', '=', 'last_appointment.patient_id')
+                        ->whereColumn('last_booking.date', '=', 'last_appointment.last_appointment_date');
+                })
+                ->whereBetween('p.follow_up', [$input['start_date'], $input['end_date']])
+                ->where('p.user_map_id', $input['usermapid'])
+                ->whereNull('d.patient_id')
+                ->select(
+                    'patientdata.*',
+                    'p.follow_up',
+                    'last_booking.*'
+                )
+                ->orderBy('p.follow_up', 'asc');;
 
 
             if (!empty($input['key'] == 'mobile')) {
@@ -4414,27 +4377,26 @@ $query = DB::table('prescription as p')
             } else {
                 return response()->json(['status' => false, 'message' => 'Data not found', 'data' => []], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage(), 'code' => 500], 500);
         }
     }
-    public function addLanguage(Request $request){
+    public function addLanguage(Request $request)
+    {
         try {
             $input = $request->all();
-            $patient = Patientmaster :: find($input['patient_id']);
+            $patient = Patientmaster::find($input['patient_id']);
             $patient->language = $input['language'];
             $save = $patient->save();
 
-            if($save){
-                return response()->json(['status' => true , 'message' => 'data added successfully' ,  'code' => 200],200);
-              }else{
-                return response()->json(['status' => false , 'message' => 'data not found' , 'code' => 200 ],200);
-              }
-    
+            if ($save) {
+                return response()->json(['status' => true, 'message' => 'data added successfully',  'code' => 200], 200);
+            } else {
+                return response()->json(['status' => false, 'message' => 'data not found', 'code' => 200], 200);
+            }
         } catch (\Throwable $th) {
-            return response()->json(['status' => false, 'message' => "Internal server error" , 'error' => $th->getMessage()], 500);
+            return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
         }
     }
 
@@ -4479,11 +4441,9 @@ $query = DB::table('prescription as p')
                 } else {
                     return response()->json(['status' => false, 'message' => 'Patient with this id not found'], 400);
                 }
-
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor with this id not found'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
@@ -4491,69 +4451,69 @@ $query = DB::table('prescription as p')
     }
 
     public function UploadRecordMicroSoftAzure($id, $patientId, Request $request)
-{
-    try {
-        Log::info(["Upload record" , $request->all() , $request->hasFile('upload_file')]);
+    {
+        try {
+            Log::info(["Upload record", $request->all(), $request->hasFile('upload_file')]);
 
-        $req = $request->all();
-        $doctorUserMap = DB::table('docexa_medical_establishments_medical_user_map')->where('id', $id)->first()->medical_user_id;
-        $doctorData = Doctor::where('pharmaclient_id', $doctorUserMap)->first();
+            $req = $request->all();
+            $doctorUserMap = DB::table('docexa_medical_establishments_medical_user_map')->where('id', $id)->first()->medical_user_id;
+            $doctorData = Doctor::where('pharmaclient_id', $doctorUserMap)->first();
 
-        if ($doctorData) {
-            $patientExist = Patientmaster::where('patient_id', $patientId)->first();
-            
-            if ($patientExist) {
-                $file = $request->hasFile('upload_file');
-                if ($file) {
-                    $file = $request->file('upload_file');
-                    $FileName = $file->getClientOriginalName();
-                    Log::info(['FileName' , $FileName]);
-                    $extension = pathinfo($FileName, PATHINFO_EXTENSION);
-                    Log::info(['extension' , $extension]);
-                    $customFileName = $patientId . '-rx-' . Carbon::now()->timestamp . '.' . $extension;
-                    $filePath = 'records/' . $customFileName;
-                    
-                    Log::info(['filePath' , $filePath]);
+            if ($doctorData) {
+                $patientExist = Patientmaster::where('patient_id', $patientId)->first();
 
-                    $connectionString = $_ENV['AZURE_STORAGE_CONNECTION_STRING'];
-                    $containerName = '';
+                if ($patientExist) {
+                    $file = $request->hasFile('upload_file');
+                    if ($file) {
+                        $file = $request->file('upload_file');
+                        $FileName = $file->getClientOriginalName();
+                        Log::info(['FileName', $FileName]);
+                        $extension = pathinfo($FileName, PATHINFO_EXTENSION);
+                        Log::info(['extension', $extension]);
+                        $customFileName = $patientId . '-rx-' . Carbon::now()->timestamp . '.' . $extension;
+                        $filePath = 'records/' . $customFileName;
 
-                    $blobClient = BlobRestProxy::createBlobService($connectionString);
+                        Log::info(['filePath', $filePath]);
 
-                    $content = fopen($file->getRealPath(), 'r');
-                    $blobClient->createBlockBlob($containerName, $filePath, $content);
+                        $connectionString = $_ENV['AZURE_STORAGE_CONNECTION_STRING'];
+                        $containerName = '';
 
-                    // Prepare the URL for the uploaded file in Azure
-                    $uploadedFileUrl = "https://docexa.blob.core.windows.net/{$filePath}";
+                        $blobClient = BlobRestProxy::createBlobService($connectionString);
 
-                    $rx = new RecordPrescriptionEmr();
-                    $rx->patient_id = $patientId;
-                    $rx->user_map_id = $id;
-                    $rx->notes = $req['notes'];
-                    $rx->upload_file_name = $customFileName;
-                    $rx->upload_file = $uploadedFileUrl;
+                        $content = fopen($file->getRealPath(), 'r');
+                        $blobClient->createBlockBlob($containerName, $filePath, $content);
 
-                    $save = $rx->save();
+                        // Prepare the URL for the uploaded file in Azure
+                        $uploadedFileUrl = "https://docexa.blob.core.windows.net/{$filePath}";
 
-                    if ($save) {
-                        $res = $rx->getRecordPrescriptionList($id, $patientId);
-                        return response()->json(['status' => true, 'message' => "Record uploaded successfully", "data" => $res, 'file' => $uploadedFileUrl], 200);
+                        $rx = new RecordPrescriptionEmr();
+                        $rx->patient_id = $patientId;
+                        $rx->user_map_id = $id;
+                        $rx->notes = $req['notes'];
+                        $rx->upload_file_name = $customFileName;
+                        $rx->upload_file = $uploadedFileUrl;
+
+                        $save = $rx->save();
+
+                        if ($save) {
+                            $res = $rx->getRecordPrescriptionList($id, $patientId);
+                            return response()->json(['status' => true, 'message' => "Record uploaded successfully", "data" => $res, 'file' => $uploadedFileUrl], 200);
+                        }
                     }
+                    return response()->json(["status" => false, 'code' => 500, 'message' => "Something went wrong, try again"], 500);
+                } else {
+                    return response()->json(['status' => false, 'message' => 'Patient with this ID not found'], 400);
                 }
-                return response()->json(["status" => false, 'code' => 500, 'message' => "Something went wrong, try again"], 500);
             } else {
-                return response()->json(['status' => false, 'message' => 'Patient with this ID not found'], 400);
+                return response()->json(['status' => false, 'message' => 'Doctor with this ID not found'], 400);
             }
-        } else {
-            return response()->json(['status' => false, 'message' => 'Doctor with this ID not found'], 400);
+        } catch (\Throwable $th) {
+            Log::error(['error' => $th]);
+            return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
         }
-    } catch (\Throwable $th) {
-        Log::error(['error' => $th]);
-        return response()->json(['status' => false, 'message' => 'Internal server error' , 'error' => $th -> getMessage()], 500);
     }
-}
-   
-public function signUploadMicrosoftAzure(Request $request, $id)
+
+    public function signUploadMicrosoftAzure(Request $request, $id)
     {
 
         try {
@@ -4567,7 +4527,7 @@ public function signUploadMicrosoftAzure(Request $request, $id)
                 $file = $request->hasFile('upload_file');
                 if ($file) {
 
-   
+
 
                     $file = $request->file('upload_file');
                     $FileName = $file->getClientOriginalName();
@@ -4578,9 +4538,9 @@ public function signUploadMicrosoftAzure(Request $request, $id)
 
                     $connectionString = $_ENV['AZURE_STORAGE_CONNECTION_STRING'];
                     $containerName = '';
-                    $blobClient = BlobRestProxy :: createBlobService($connectionString);
-                    $content = fopen($file->getRealPath(),'r');
-                Log::info(['blobClient' ,$blobClient->createBlockBlob($containerName, $filePath, $content) ])  ;
+                    $blobClient = BlobRestProxy::createBlobService($connectionString);
+                    $content = fopen($file->getRealPath(), 'r');
+                    Log::info(['blobClient', $blobClient->createBlockBlob($containerName, $filePath, $content)]);
                     $uploadedFileUrl = "https://docexa.blob.core.windows.net/{$filePath}";
 
                     if ($uploadedFileUrl) {
@@ -4604,7 +4564,7 @@ public function signUploadMicrosoftAzure(Request $request, $id)
                             // $sign->footer = $input['footer'];
                             $save = $sign->save();
                             Log::info(['signuture saved' => $save]);
-                            return response()->json(['status' => true, 'message' => 'Data uploaded successfully', "url" =>$uploadedFileUrl], 200);
+                            return response()->json(['status' => true, 'message' => 'Data uploaded successfully', "url" => $uploadedFileUrl], 200);
                         }
                     } else {
                         return response()->json(['status' => false, 'message' => 'Failed to upload Signature Image.'], 400);
@@ -4616,7 +4576,6 @@ public function signUploadMicrosoftAzure(Request $request, $id)
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
-
         }
     }
 
@@ -4647,7 +4606,6 @@ public function signUploadMicrosoftAzure(Request $request, $id)
                 }
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor not found with this Id'], 401);
-
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
@@ -4662,5 +4620,4 @@ public function signUploadMicrosoftAzure(Request $request, $id)
         $data = $res->listappointmentupdatedForParticularPatient($request);
         return response()->json(['status' => 'success', 'data' => $data], 200);
     }
-
 }

@@ -15,6 +15,7 @@ use App\Models\WorkingHour;
 use App\Patientmaster;
 use Carbon\Carbon;
 use DateTime;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -78,7 +79,7 @@ class ApiController extends Controller
     'Content-Type' => 'application/json',
   ];
 
-  private const DOCTOR_NUMBER = '8605254835';
+  private const DOCTOR_NUMBER = '9321962947';
 
   /**
    * Handle incoming JSON payload from webhook.
@@ -155,11 +156,16 @@ class ApiController extends Controller
     }
 
     $message = $jsonData['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'] ?? '';
+    if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
+      $patientNo = substr($patientNo, 2);
+    }
     $this->storeChat([
       'sender_id' => $patientNo,
       'receiver_id' => self::DOCTOR_NUMBER,
       'message_type' => 'text',
       'message_text' => $message,
+      'analysis' => null,
+      'output' => null,
       'media_url' => null,
       'media_mime_type' => null,
       'media_sha256' => null,
@@ -187,19 +193,32 @@ class ApiController extends Controller
     $chabotResponse = new SkinAnalysisController();
     $response = $chabotResponse->analyzeSkin(new Request(['mediaId' => $imageId]));
     $imageUrl = null;
+    $analysis = null;
     $responseData = json_decode($response->getContent(), true);
+    Log::info(json_encode($responseData));
     if (isset($responseData['result'])) {
       $imageUrl = $responseData['media_url'] ?? null;
-      $matchedResponses[] =  $responseData['result'];
+      $analysis = $responseData['analysis'] ?? null;
+      Log::info("Image URL: $imageUrl");
+      // $matchedResponses[] =  $responseData['result'];
+      $analysis = is_array($analysis) ? $analysis : [$analysis];
+      $matchedResponses[] = implode(', ', $analysis);
+      $output[] = $responseData['result'];
     } else {
       $matchedResponses[] = "Let me forward this to our assistant. Please wait...";
+      $output[] = "Output not generated";
     }
-
+    // $matchedResponses = array_map('strval', $matchedResponses); // Ensure all elements are strings
+    if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
+      $patientNo = substr($patientNo, 2);
+    }
     $this->storeChat([
       'sender_id' => $patientNo,
       'receiver_id' => self::DOCTOR_NUMBER,
       'message_type' => 'image',
       'message_text' => "Image received",
+      'analysis' => implode(', ', $analysis),
+      'output' => implode(', ', $output),
       'media_url' => $imageUrl,
       'media_mime_type' => null,
       'media_sha256' => null,
@@ -208,11 +227,12 @@ class ApiController extends Controller
     ]);
 
     Log::info("Image ID: $imageId");
+    Log::info(json_encode($matchedResponses));
 
     // Simulate saving image or processing it
     // In a real scenario, you would use the image ID to fetch and process the image
-    $matchedResponses = array_map('strval', $matchedResponses); // Ensure all elements are strings
-    return ['message' => implode("\n\n", $matchedResponses), 'isBooking' => false];
+
+    return ['message' => (implode("\n\n", $matchedResponses)), 'isBooking' => false];
   }
   /**
    * Handle interactive messages (e.g., list replies).
@@ -234,17 +254,34 @@ class ApiController extends Controller
         'patient_name' => $patientName,
         'selected_slot' => $selectedSlot,
       ]);
+      if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
+        $patientNo = substr($patientNo, 2);
+      }
       $this->storeChat([
         'sender_id' => $patientNo,
         'receiver_id' => self::DOCTOR_NUMBER,
         'message_type' => 'text',
         'message_text' => $selectedSlot,
+        'analysis' => null,
+        'output' => null,
         'media_url' => null,
         'media_mime_type' => null,
         'media_sha256' => null,
         'media_id' => null,
         'whatsapp_message_id' => $messageId,
       ]);
+      $doctor = Doctor::where('mobile_no', self::DOCTOR_NUMBER)->first();
+      if (!$doctor) {
+        return ['message' => 'Doctor not found.', 'isBooking' => false];
+      }
+      $doctor_id = $doctor->pharmaclient_id;
+      $establishId = DB::table('docexa_medical_establishments_medical_user_map')->where('medical_user_id', $doctor_id)->first();
+      if (!$establishId) {
+        return ['message' => 'Establishment ID not found.', 'isBooking' => false];
+      }
+
+      $doctorApi = new DoctorsApi();
+      $bookingResponse = $doctorApi->slotdetails($establishId->id);
 
       $bookingResponse = $this->bookAppointment($bookingRequest);
       $isBookingSuccessful = $bookingResponse->getData(true)['success'] ?? false;
@@ -337,11 +374,16 @@ class ApiController extends Controller
       'recipient_type' => 'individual',
       'text' => ['body' => $sendMessage['message']],
     ];
+    if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
+      $patientNo = substr($patientNo, 2);
+    }
     $this->storeChat([
       'sender_id' => self::DOCTOR_NUMBER,
       'receiver_id' => $patientNo,
       'message_type' => 'text',
       'message_text' => $sendMessage['message'],
+      'analysis' => null,
+      'output' => null,
       'media_url' => null,
       'media_mime_type' => null,
       'media_sha256' => null,
@@ -363,12 +405,12 @@ class ApiController extends Controller
   private function getSlotInteractiveBody(string $patientNo): array
   {
     $response = $this->getAvailableSlots(new Request(['doctor_number' => self::DOCTOR_NUMBER]));
-    $slots = $response->getData(true)['data']['slots'] ?? [];
+    $slots = is_array($response) ? ($response['data']['slots'] ?? []) : ($response->getData(true)['data']['slots'] ?? []);
 
     $rows = array_map(fn($slot, $index) => [
       'id' => 'slot_' . $index,
-      'title' => $slot['display'],
-    ], $slots, array_keys($slots));
+      'title' => $slot['slot'],
+    ], array_slice($slots, 0, 10), array_keys(array_slice($slots, 0, 10)));
 
     return [
       "messaging_product" => "whatsapp",
@@ -471,186 +513,120 @@ class ApiController extends Controller
   {
     // Set timezone to India
     date_default_timezone_set('Asia/Kolkata');
+    Log::info("----------------------------------------------------------------------------------------------");
+
     Log::info($request->all());
-    try {
-      $valdate = $request->validate([
-        'doctor_number' => "required|string"
-      ]);
-      // Get appointment date or default to today's date
-      $filterDate = $request->input('appointment_date')
-        ? Carbon::parse($request->input('appointment_date'))->startOfDay()
-        : Carbon::now();
-      $user = User::where('phone', $request->doctor_number)->first();
-      if (!$user) {
-        return response()->json([
-          'status' => 'error',
-          'success' => false,
-          'error' => true,
-          'message' => 'Doctor not found.',
-          'data' => [
-            'filterDate' => $filterDate->toDateString(),
-            'slots' => [],
-          ]
-        ], 404);
-      }
-      $user_id = $user->id;
-      // Get working hours for the selected day
-      $dayName = $filterDate->format('l'); // Monday, Tuesday, etc.
-      $workingHours = WorkingHour::where('doctor_id', $user_id)
-        ->where('day_of_week', $dayName)
-        ->first();
+    // try {
+    // Validate the incoming request
+    $doctorNumber = $request->input('doctor_number');
+    if (!$doctorNumber) {
+      return response()->json([
+        'status' => 'error',
+        'success' => false,
+        'error' => true,
+        'message' => 'Doctor number is required.',
+        'data' => [
+          'filterDate' => null,
+          'slots' => [],
+        ]
+      ], 400);
+    }
+    $doctor = Doctor::where('mobile_no', $doctorNumber)->first();
+    if (!$doctor) {
+      return ['message' => 'Doctor not found.', 'isBooking' => false];
+    }
+    $doctor_id = $doctor->pharmaclient_id;
+    $establishId = DB::table('docexa_medical_establishments_medical_user_map')->where('medical_user_id', $doctor_id)->first();
+    if (!$establishId) {
+      return ['message' => 'Establishment ID not found.', 'isBooking' => false];
+    }
 
-      if (!$workingHours) {
-        return response()->json([
-          'status' => 'error',
-          'success' => false,
-          'error' => true,
-          'message' => 'No working hours set for the selected day.',
-          'data' => [
-            'filterDate' => $filterDate->toDateString(),
-            'slots' => [],
-          ]
-        ], 404);
-      }
+    $clinicId = DB::table('docexa_clinic_user_map')->where('user_map_id', $establishId->id)->first();
+    if (!$clinicId) {
+      return ['message' => 'Clinic ID not found.', 'isBooking' => false];
+    }
 
-      // Setup working start & end time
-      $startTime = Carbon::parse($filterDate->format('Y-m-d') . ' ' . $workingHours->start_time);
-      $endTime = Carbon::parse($filterDate->format('Y-m-d') . ' ' . $workingHours->end_time);
-      $now = Carbon::now(); // Use the same timezone as set earlier
 
-      // Fetch booked slots for that day
-      $bookedSlots = AppointmentSlot::where('doctor_id', $user_id)
-        ->whereDate('slot_date', $filterDate->format('Y-m-d'))
-        ->get(['start_time', 'end_time']);
+    $doctorApi = new DoctorsApi();
+    $bookingResponse = $doctorApi->slotdetails($establishId->id, Carbon::now()->format('Y-m-d'), $clinicId->id)->getData(true);
 
-      $bookedRanges = [];
-      foreach ($bookedSlots as $b) {
-        $bookedRanges[] = [
-          'start' => Carbon::parse($filterDate->format('Y-m-d') . ' ' . $b->start_time),
-          'end' => Carbon::parse($filterDate->format('Y-m-d') . ' ' . $b->end_time),
-        ];
-      }
-
-      $slots = [];
-      $current = $startTime->copy();
-
-      while ($current->copy()->addMinutes(45)->lte($endTime)) {
-        $slotStart = $current->copy();
-        $slotEnd = $current->copy()->addMinutes(45);
-
-        // Check if the slot is in the past
-        $isPast = $slotStart->lt($now);
-
-        // Check overlap with booked slots
-        $isBooked = false;
-        foreach ($bookedRanges as $range) {
-          if (
-            $slotStart->lt($range['end']) &&
-            $slotEnd->gt($range['start'])
-          ) {
-            $isBooked = true;
-            break;
-          }
-        }
-
-        if (!$isBooked) {
-          $slots[] = [
-            'start' => $slotStart->format('H:i'),
-            'end' => $slotEnd->format('H:i'),
-            'display' => $slotStart->format('h:i A') . ' - ' . $slotEnd->format('h:i A'),
-          ];
-        }
-
-        $current->addMinutes(45);
-      }
-
+    if ($bookingResponse['status'] === 'success') {
       return response()->json([
         'status' => 'success',
         'success' => true,
         'error' => false,
         'message' => 'Available slots fetched successfully.',
         'data' => [
-          'filterDate' => $filterDate->toDateString(),
-          'slots' => $slots,
+          'filterDate' => Carbon::now()->toDateString(),
+          'slots' => $bookingResponse['slot'] ?? collect([]),
         ]
       ]);
-    } catch (\Exception $e) {
+    } else {
       return response()->json([
         'status' => 'error',
         'success' => false,
         'error' => true,
-        'message' => 'An error occurred while fetching available slots.',
-        'error' => $e->getMessage()
+        'message' => 'Failed to fetch available slots.',
+        'data' => [
+          'filterDate' => Carbon::now()->toDateString(),
+          'slots' => collect([]),
+        ]
       ], 500);
     }
+
+
+
+    // } catch (\Exception $e) {
+    //   return response()->json([
+    //     'status' => 'error',
+    //     'success' => false,
+    //     'error' => true,
+    //     'message' => 'An error occurred while fetching available slots.',
+    //     'error' => $e->getMessage()
+    //   ], 500);
+    // }
   }
   public function bookAppointment(Request $request)
   {
     try {
-      //code...
-
-      // Validate the incoming request
-      $validatedData = $request->validate([
-        'patient_number' => 'required|string|max:255',
-        'patient_name' => 'nullable|string|max:255',
-        'doctor_number' => 'required|string|max:255',
-        'selected_slot' => 'required|string|max:255',
-
-      ]);
-      $user = User::where('phone', $request->doctor_number)->first();
-      if (!$user) {
+      $doctorNumber = $request->input('doctor_number');
+      if (!$doctorNumber) {
         return response()->json([
-          'success' => true,
-          'message' => 'User not found.',
-          'appointment' => [],
-        ], 404);
+          'status' => 'error',
+          'success' => false,
+          'error' => true,
+          'message' => 'Doctor number is required.',
+          'data' => [
+            'filterDate' => null,
+            'slots' => [],
+          ]
+        ], 400);
       }
-      $user_id = $user->id; // Use authenticated user
-
-      $patient = Patient::where('p_phone', $request->patient_number)->first();
-      if (!$patient) {
-        $patient = new Patient();
-        $patient->doctor_id = $user_id;
-        $patient->pname = $request->patient_name;
-        $patient->p_phone = $request->patient_number;
-
-        if (!$patient->save()) {
-          return response()->json([
-            'success' => true,
-            'error' => true,
-            'message' => 'Patient not store.',
-            'appointment' => [],
-          ], 404);
-        }
+      $doctor = Doctor::where('mobile_no', $doctorNumber)->first();
+      if (!$doctor) {
+        return ['message' => 'Doctor not found.', 'isBooking' => false];
+      }
+      $doctor_id = $doctor->pharmaclient_id;
+      $establishId = DB::table('docexa_medical_establishments_medical_user_map')->where('medical_user_id', $doctor_id)->first();
+      if (!$establishId) {
+        return ['message' => 'Establishment ID not found.', 'isBooking' => false];
       }
 
-      // Assign start and end times
-      $selectedSlot = $request->selected_slot;
-
-      // Remove "AM" and "PM" from the string
-      $timeParts = explode(" - ", $selectedSlot);
-
-      $startTime = DateTime::createFromFormat('h:i A', trim($timeParts[0]))->format('H:i:s');
-      $endTime = DateTime::createFromFormat('h:i A', trim($timeParts[1]))->format('H:i:s');
-
-      // Create a slot
-      $slot = AppointmentSlot::create([
-        'doctor_id' => $user_id,
-        'slot_date' => Carbon::parse($request->appointment_date)->format('Y-m-d'),
-        'start_time' => $startTime,
-        'end_time' => $endTime,
-        'is_booked' => true
-      ]);
-
-      // Create the appointment
-      $appointment = Appointments::create([
-        'doctor_id' => $user_id,
-        'patient_id' => $patient->pid,
-        'patient_name' => $request->patient_name,
-        'patient_email' => null,
-        'appointment_date' => Carbon::parse($request->appointment_date)->format('Y-m-d'),
-        'slot_id' => $slot->id,
-        'status' => "booked",
+      $clinicId = DB::table('docexa_clinic_user_map')->where('user_map_id', $establishId->id)->first();
+      if (!$clinicId) {
+        return ['message' => 'Clinic ID not found.', 'isBooking' => false];
+      }
+      $request->merge([
+        'appointment_date' => $request->schedule_date,
+        'schedule_time' => $request->schedule_time,
+        'clinic_id' => $request->clinic_id,
+        'user_map_id' => $request->user_map_id,
+        'sku_id' => $request->sku_id,
+        'payment_mode' => $request->payment_mode,
+        'schedule_remark' => $request->schedule_remark,
+        'gender' => $request->gender,
+        'age' => $request->age,
+        'email' => $request->email,
       ]);
 
       // Return a JSON response
@@ -658,12 +634,12 @@ class ApiController extends Controller
         'success' => true,
         'error' => false,
         'message' => 'Appointment created successfully.',
-        'appointment' => $appointment,
+        'appointment' => [],
       ], 201);
     } catch (\Throwable $th) {
       //throw $th;
       return response()->json([
-        'success' => true,
+        'success' => false,
         'error' => true,
         'message' => $th->getMessage(),
         'appointment' => [],
@@ -675,7 +651,7 @@ class ApiController extends Controller
   {
     try {
       //code...
-      
+
 
       if (!$request->has('doctor_id') || !$request->has('patient_number')) {
         return response()->json([
@@ -689,12 +665,12 @@ class ApiController extends Controller
       if (!$doctor) {
         return response()->json([
           'success' => true,
-        'error' => true,
+          'error' => true,
           'message' => 'Doctor not found.',
           'analysis' => [],
         ], 404);
       }
-      $patient = Patientmaster::where('phone', $request->patient_number)->first();
+      $patient = Patientmaster::where('mobile_no', $request->patient_number)->first();
       if (!$patient) {
         return response()->json([
           'success' => true,
@@ -703,14 +679,12 @@ class ApiController extends Controller
           'analysis' => [],
         ], 404);
       }
-
-
-      $messages = Chats::where(function ($query) use ($patient) {
+      $messages = Chats::where(function ($query) use ($patient, $doctor) {
         $query->where('sender_id', $doctor->mobile_no ?? null)
-          ->where('receiver_id', $patient->phone ?? null);
+          ->where('receiver_id', $patient->mobile_no ?? null);
       })
-        ->orWhere(function ($query) use ($patient) {
-          $query->where('sender_id', $patient->p_phone ?? null)
+        ->orWhere(function ($query) use ($patient, $doctor) {
+          $query->where('sender_id', $patient->mobile_no ?? null)
             ->where('receiver_id', $doctor->mobile_no ?? null);
         })
         ->orderBy('created_at', 'asc')
@@ -725,21 +699,32 @@ class ApiController extends Controller
         } else {
           $chat->from = 'User';
         }
-        if($chat->message_type == 'image'){
+        $baseUrl = url('/skin_images/');
+
+
+        if ($chat->message_type == 'image') {
+          if ($chat->media_id) {
+            $imageName = $chat->media_id . '.png'; // or .jpg if needed
+
+            // Build full image URL using Lumen's `url()` helper
+            $imageUrl = url('images/' . $imageName);
+
+            $chat->media_url = url('images/' . $chat->media_id . '.png');
+          }
+
           $imageAnalysis[] = [
             'analysis' => $chat->analysis,
             'output' => $chat->output,
-            'image_url' => $chat->media_url,
+            'image_url' => $chat->media_url ?? null,
             'media_id' => $chat->media_id,
           ];
-
         }
       }
       return response()->json([
         'success' => true,
         'error' => false,
         'message' => 'Analysis fetched successfully.',
-        'analysis' => $messages,
+        'chats' => $messages,
         'imageAnalysis' => $imageAnalysis,
       ], 200);
     } catch (\Throwable $th) {

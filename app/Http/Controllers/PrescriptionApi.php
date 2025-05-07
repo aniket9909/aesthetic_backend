@@ -61,8 +61,6 @@ use App\Doctor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
-
-
 class PrescriptionApi extends Controller
 {
 
@@ -688,7 +686,7 @@ class PrescriptionApi extends Controller
             $prescription->patient_id = $data['patient_id'];
             $prescription->booking_id = $data['booking_id'];
 
-            $prescription->date = $data['date'];
+            $prescription->date = Carbon::parse($data['date'])->toDateTimeString();
             $prescription->note = isset($data['note']) ? ($data['note'] ? $data['note'] : json_encode($data['note'])) : null;
             $prescription->complaints = isset($data['complaints']) ? ($data['complaints'] ? $data['complaints'] : null) : null;
             $prescription->diagnosis = isset($data['diagnosis']) ? ($data['diagnosis'] ? $data['diagnosis'] : null) : null;

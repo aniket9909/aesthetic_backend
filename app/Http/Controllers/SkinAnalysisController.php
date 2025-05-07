@@ -22,10 +22,16 @@ class SkinAnalysisController extends Controller
 
     public function analyzeSkin(Request $request)
     {
-        $request->validate([
-            'mediaId' => 'required|string',
-        ]);
+        
         $mediaId = $request->input('mediaId');
+        if (empty($mediaId)) {
+            return response()->json([
+                'error' => true,
+                'status' => 400,
+                'message' => 'Media ID is required.',
+                'result' => 'No media ID provided'
+            ], 400);
+        }
         
         $url = "https://api.dovesoft.io/REST/directApi/downloadAttachmentFile";
 
@@ -54,11 +60,10 @@ class SkinAnalysisController extends Controller
         file_put_contents(base_path('skin_images/' . $mediaId . '.png'), $binary);
         $imagePath = base_path('skin_images/' . $mediaId . '.png');
 
-        $command = "/usr/bin/python3 /var/www/html/aesthetic_clinic/image_analysis.py " . escapeshellarg($imagePath) . " 2>&1";
+        $command = "/usr/bin/python3 /var/www/html/aesthetic_backend/image_analysis.py " . escapeshellarg($imagePath) . " 2>&1";
         Log::info("Command executed: $command");
 
         $output = shell_exec($command);
-
         // Step 2: Clean the output
         // Remove the 'Loaded as API' line and any unwanted text
         $output = preg_replace('/^Loaded as API: .*/', '', $output); // Remove the first line
@@ -66,7 +71,6 @@ class SkinAnalysisController extends Controller
 
         // Step 3: Decode the JSON output from the Python script
         $result = json_decode($output, true);
-
         if ($result['success'] === true) {
             // Step 4: Extract and store the result in a clean format
             $message = $result['message'];
@@ -94,6 +98,7 @@ class SkinAnalysisController extends Controller
                 'status' => 200,
                 'message' => 'Skin analysis completed successfully.',
                 'media_url' => $imagePath,
+                'analysis' => $message,
                 'result' => $chatbotResponse['chatbot_response'] ?? 'No response'
             ]);
         } else {
@@ -119,7 +124,7 @@ class SkinAnalysisController extends Controller
             $pythonPath = 'python3'; // Adjust if your system uses another path
 
             // $output = shell_exec("$pythonPath $scriptPath $question");
-            $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_clinic/chatbot.py $escapedQuestion 2>&1");
+            $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/chatbot.py $escapedQuestion 2>&1");
             Log::info("Chatbot output: $output");
 
             if (!$output) {
@@ -173,7 +178,7 @@ class SkinAnalysisController extends Controller
             $pythonPath = 'python3'; // Adjust if your system uses another path
 
             // $output = shell_exec("$pythonPath $scriptPath $question");
-            $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_clinic/greeting_chatbot.py $escapedQuestion 2>&1");
+            $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/greeting_chatbot.py $escapedQuestion 2>&1");
             Log::info("Chatbot output: $output");
 
             if (!$output) {
