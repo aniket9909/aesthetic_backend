@@ -36,7 +36,7 @@ class AppointmentDetails extends Model
                 ->Join('docexa_esteblishment_user_map_sku_details', 'docexa_esteblishment_user_map_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
                 ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
                 ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
-                ->select('docexa_patient_booking_details.payment_mode', 'docexa_esteblishment_user_map_sku_details.id as sku_id', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_sku_details.title', 'docexa_esteblishment_user_map_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', )
+                ->select('docexa_patient_booking_details.payment_mode', 'docexa_esteblishment_user_map_sku_details.id as sku_id', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_sku_details.title', 'docexa_esteblishment_user_map_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost',)
                 ->selectRaw('+91 as country_code')
                 ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
                 ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle,'/appointment/','" . $bookingID . "') as appointment_url")
@@ -333,7 +333,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $unscheduletabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
             if (count($todaystabdata) > 0) {
                 foreach ($todaystabdata as $key => $value) {
@@ -347,7 +346,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $pasttabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
 
             if (count($upcomingtabdata) > 0) {
@@ -355,7 +353,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $upcomingtabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
 
 
@@ -1484,10 +1481,8 @@ class AppointmentDetails extends Model
                     ];
                     if ($data) {
                         $transcationhistory[] = $data;
-
                     }
                 }
-
             }
 
             //  last 90 days earnings
@@ -1641,7 +1636,6 @@ class AppointmentDetails extends Model
                 }
             }
             return $todaystabdata;
-
         }
     }
 
@@ -2196,7 +2190,6 @@ class AppointmentDetails extends Model
                 }
             }
             return $todaystabdata;
-
         }
     }
 
@@ -2309,7 +2302,6 @@ class AppointmentDetails extends Model
                 }
             }
             return $todaystabdata;
-
         }
     }
 
@@ -2422,7 +2414,6 @@ class AppointmentDetails extends Model
                 }
             }
             return $todaystabdata;
-
         }
     }
 
@@ -2684,7 +2675,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $unscheduletabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
             if (count($todaystabdata) > 0) {
                 foreach ($todaystabdata as $key => $value) {
@@ -2698,7 +2688,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $pasttabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
 
             if (count($upcomingtabdata) > 0) {
@@ -2706,7 +2695,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $upcomingtabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
             $updatedPastTabData = $pasttabdata->map(function ($pastapt) use ($data) {
                 // Check if a billing record exists for the specific appointment
@@ -2893,7 +2881,6 @@ class AppointmentDetails extends Model
             }
 
             return $todaystabdata;
-
         }
     }
 
@@ -3167,7 +3154,6 @@ class AppointmentDetails extends Model
                 $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                 $pasttabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
             }
-
         }
         $updatedPastTabData = $pasttabdata->map(function ($pastapt) use ($data) {
             $exist = DB::table('billing')
@@ -3258,7 +3244,6 @@ class AppointmentDetails extends Model
                 $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                 $upcomingtabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
             }
-
         }
 
 
@@ -3355,8 +3340,7 @@ class AppointmentDetails extends Model
         $vitals = AssistantVital::where("appointment_id", $id)->orderBy('created_at', 'desc')->get();
         // return response()->json(['status' => true, "data" => $vitals, 'code' => 200], 200);
 
-        return [ "vitals" => $vitals,"appointment_id" => $id];
-
+        return ["vitals" => $vitals, "appointment_id" => $id];
     }
 
 
@@ -3471,7 +3455,6 @@ class AppointmentDetails extends Model
                 }
             }
             return $todaystabdata;
-
         }
     }
 
@@ -3664,7 +3647,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $unscheduletabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
             if (count($todaystabdata) > 0) {
                 foreach ($todaystabdata as $key => $value) {
@@ -3678,7 +3660,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $pasttabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
 
             if (count($upcomingtabdata) > 0) {
@@ -3686,7 +3667,6 @@ class AppointmentDetails extends Model
                     $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $data['user_map_id'])->where('id', $value->clinic_id)->first();
                     $upcomingtabdata[$key]->clinic_name = $clinicName ? $clinicName->clinic_name : null;
                 }
-
             }
             $updatedPastTabData = $pasttabdata->map(function ($pastapt) use ($data) {
                 // Check if a billing record exists for the specific appointment
@@ -3710,6 +3690,5 @@ class AppointmentDetails extends Model
             return $response;
         }
     }
-
 }
 //                 // 1 status added in getapt of line 397

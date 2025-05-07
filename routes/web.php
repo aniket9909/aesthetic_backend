@@ -240,7 +240,9 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
     $router->post('appointment/updatee', 'DoctorsApi@scheduleappointmentv9');
 
     $router->post('appointment/createnew', 'DoctorsApi@createAppointmentV4');
+    
     $router->post('appointment/v1', 'DoctorsApi@listappointmentupdated');
+
     $router->post('appointment/createForWalkIn', 'DoctorsApi@createAppointmentwalkinV5');
 
 

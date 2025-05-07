@@ -15,6 +15,7 @@ use App\Models\WorkingHour;
 use App\Patientmaster;
 use Carbon\Carbon;
 use DateTime;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -245,8 +246,19 @@ class ApiController extends Controller
         'media_id' => null,
         'whatsapp_message_id' => $messageId,
       ]);
+      $doctor = Doctor::where('mobile_no', self::DOCTOR_NUMBER)->first();
+      if (!$doctor) {
+        return ['message' => 'Doctor not found.', 'isBooking' => false];
+      }
+      $doctor_id = $doctor->pharmaclient_id;
+      $establishId = DB::raw('docexa_medical_establishments_medical_user_map')->where('medical_user_id', $doctor_id)->first();  
+      if (!$establishId) {
+        return ['message' => 'Establishment ID not found.', 'isBooking' => false];
+      }
 
-      $bookingResponse = $this->bookAppointment($bookingRequest);
+      $doctorApi = new DoctorsApi();
+      $bookingResponse = $doctorApi->slotdetails($establishId->id);
+
       $isBookingSuccessful = $bookingResponse->getData(true)['success'] ?? false;
 
       return [
@@ -473,6 +485,28 @@ class ApiController extends Controller
     date_default_timezone_set('Asia/Kolkata');
     Log::info($request->all());
     try {
+      $doctorNumber = $request->input('doctor_number');
+      if (!$doctorNumber) {
+        return response()->json([
+          'status' => 'error',
+          'success' => false,
+          'error' => true,
+          'message' => 'Doctor number is required.',
+          'data' => [
+            'filterDate' => null,
+            'slots' => [],
+          ]
+        ], 400);
+      }
+      $doctor = Doctor::where('mobile_no', $doctorNumber)->first();
+      dd($request->all());
+      Log::info("----------------------------------------------------------------------------------------------");
+      Log::info($doctor);
+      Log::info("----------------------------------------------------------------------------------------------");
+      if (!$doctor) {
+        return ['message' => 'Doctor not found.', 'isBooking' => false];
+      }
+      dd("coplete");
       $valdate = $request->validate([
         'doctor_number' => "required|string"
       ]);
