@@ -7,7 +7,7 @@ input_folder = os.path.join(os.getcwd(), "skin_images")
 client = Client("https://xintao-gfpgan.hf.space/")
 
 # Receive the ID (can be passed dynamically)
-image_id = "9850612045032553"  # Example ID: assumes there's a file named `one.png`
+image_id = "665333989624336"  # Example ID: assumes there's a file named `one.png`
 
 # Input image path
 print(f"Input folder: {input_folder}")
@@ -26,7 +26,8 @@ result = client.predict(
     "v1.4",            # version
     2,                 # rescaling factor
     api_name="/predict"
-)
+).result(timeout=120)
+
 # Check if the result is valid
 print(f"Result: {result}")
 

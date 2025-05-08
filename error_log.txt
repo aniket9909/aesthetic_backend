@@ -1,0 +1,36 @@
+Loaded as API: https://xintao-gfpgan.hf.space/ ✔
+Input folder: /var/www/html/aesthetic_backend/skin_images
+Input image path: /var/www/html/aesthetic_backend/skin_images/665333989624336.png
+Image '665333989624336.png' found in 'skin_images' folder.
+Traceback (most recent call last):
+  File "/var/www/html/aesthetic_backend/afterImage.py", line 23, in <module>
+    result = client.predict(
+  File "/home/azureuser/.local/lib/python3.10/site-packages/gradio_client/client.py", line 484, in predict
+    ).result()
+  File "/home/azureuser/.local/lib/python3.10/site-packages/gradio_client/client.py", line 1545, in result
+    return super().result(timeout=timeout)
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 458, in result
+    return self.__get_result()
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.10/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/home/azureuser/.local/lib/python3.10/site-packages/gradio_client/compatibility.py", line 64, in _inner
+    predictions = _predict(*data)
+  File "/home/azureuser/.local/lib/python3.10/site-packages/gradio_client/compatibility.py", line 95, in _predict
+    result = utils.synchronize_async(self._ws_fn, data, hash_data, helper)
+  File "/home/azureuser/.local/lib/python3.10/site-packages/gradio_client/utils.py", line 890, in synchronize_async
+    return fsspec.asyn.sync(fsspec.asyn.get_loop(), func, *args, **kwargs)  # type: ignore
+  File "/home/azureuser/.local/lib/python3.10/site-packages/fsspec/asyn.py", line 103, in sync
+    raise return_result
+  File "/home/azureuser/.local/lib/python3.10/site-packages/fsspec/asyn.py", line 56, in _runner
+    result[0] = await coro
+  File "/home/azureuser/.local/lib/python3.10/site-packages/gradio_client/compatibility.py", line 335, in _ws_fn
+    async with websockets.connect(  # type: ignore
+  File "/home/azureuser/.local/lib/python3.10/site-packages/websockets/asyncio/client.py", line 587, in __aenter__
+    return await self
+  File "/home/azureuser/.local/lib/python3.10/site-packages/websockets/asyncio/client.py", line 541, in __await_impl__
+    self.connection = await self.create_connection()
+  File "/home/azureuser/.local/lib/python3.10/site-packages/websockets/asyncio/client.py", line 467, in create_connection
+    _, connection = await loop.create_connection(factory, **kwargs)
+TypeError: BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'
