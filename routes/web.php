@@ -806,6 +806,7 @@ $router->delete('/webhook/{id}', 'ApiController@deleteWebhookInput');
 $router->post('/getSlots', 'ApiController@getAvailableSlots');
 $router->post('/bookAppointment', 'ApiController@bookAppointment');
 $router->post('/getAnalysis', 'ApiController@getAnalysis');
+$router->post('/getAfterImages', 'ApiController@getAfterImages');
 
 
 $router->post('/image', 'SkinAnalysisController@analyzeSkin');

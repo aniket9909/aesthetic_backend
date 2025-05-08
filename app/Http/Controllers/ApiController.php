@@ -645,7 +645,7 @@ class ApiController extends Controller
         'schedule_time' => $request->selected_slot,
         'schedule_date' => Carbon::now()->format('Y-m-d'),
         'clinic_id' => $clinicId->id,
-        'user_map_id' => $establishId->id,    
+        'user_map_id' => $establishId->id,
         'sku_id' => $sku->id,
         'payment_mode' => "direct",
         'schedule_remark' => "",
@@ -769,6 +769,69 @@ class ApiController extends Controller
         'analysis' => [],
       ], 500);
       //throw $th;
+    }
+  }
+
+  public function getAfterImages(Request $request)
+  {
+    try {
+      if (!$request->has('doctor_id') || !$request->has('patient_number')) {
+        return response()->json([
+          'success' => true,
+          'error' => true,
+          'message' => 'Missing required parameters: doctor_id or patient_number.',
+          'analysis' => [],
+        ], 400);
+      }
+      $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
+      if (!$doctor) {
+        return response()->json([
+          'success' => true,
+          'error' => true,
+          'message' => 'Doctor not found.',
+          'analysis' => [],
+        ], 404);
+      }
+      $patient = Patientmaster::where('mobile_no', $request->patient_number)->first();
+      if (!$patient) {
+        return response()->json([
+          'success' => true,
+          'error' => true,
+          'message' => 'Patient not found.',
+          'analysis' => [],
+        ], 404);
+      }
+
+
+      $messages = Chats::where(function ($query) use ($patient, $doctor) {
+        $query->where('sender_id', $doctor->mobile_no ?? null)
+          ->where('receiver_id', $patient->mobile_no ?? null);
+      })
+        ->orWhere(function ($query) use ($patient, $doctor) {
+          $query->where('sender_id', $patient->mobile_no ?? null)
+            ->where('receiver_id', $doctor->mobile_no ?? null);
+        })
+        ->where('message_type', 'image')
+        ->where('media_id', '!=', null)
+        ->orderBy('created_at', 'desc')
+        ->first();
+      $afterImages = [];
+
+
+      return response()->json([
+        'success' => true,
+        'error' => false,
+        'message' => 'After images fetched successfully.',
+        'afterImages' => $afterImages,
+      ], 200);
+    } catch (\Throwable $th) {
+      //throw $th;
+      return response()->json([
+        'success' => true,
+        'error' => true,
+        'message' => $th->getMessage(),
+        'analysis' => [],
+      ], 500);
     }
   }
 }
