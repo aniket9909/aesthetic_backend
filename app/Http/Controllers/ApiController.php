@@ -780,7 +780,7 @@ class ApiController extends Controller
           'success' => true,
           'error' => true,
           'message' => 'Missing required parameters: doctor_id or patient_number.',
-          'analysis' => [],
+          'images' => [],
         ], 400);
       }
       $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
@@ -789,7 +789,7 @@ class ApiController extends Controller
           'success' => true,
           'error' => true,
           'message' => 'Doctor not found.',
-          'analysis' => [],
+          'images' => [],
         ], 404);
       }
       $patient = Patientmaster::where('mobile_no', $request->patient_number)->first();
@@ -798,31 +798,55 @@ class ApiController extends Controller
           'success' => true,
           'error' => true,
           'message' => 'Patient not found.',
-          'analysis' => [],
+          'images' => [],
         ], 404);
       }
 
 
-      $messages = Chats::where(function ($query) use ($patient, $doctor) {
-        $query->where('sender_id', $doctor->mobile_no ?? null)
-          ->where('receiver_id', $patient->mobile_no ?? null);
-      })
-        ->orWhere(function ($query) use ($patient, $doctor) {
-          $query->where('sender_id', $patient->mobile_no ?? null)
+
+      $images = Chats::where(function ($query) use ($patient, $doctor) {
+        $query->where(function ($q) use ($patient, $doctor) {
+          $q->where('sender_id', $doctor->mobile_no ?? null)
+            ->where('receiver_id', $patient->mobile_no ?? null);
+        })->orWhere(function ($q) use ($patient, $doctor) {
+          $q->where('sender_id', $patient->mobile_no ?? null)
             ->where('receiver_id', $doctor->mobile_no ?? null);
-        })
+        });
+      })
         ->where('message_type', 'image')
-        ->where('media_id', '!=', null)
+        ->whereNotNull('media_id')
         ->orderBy('created_at', 'desc')
         ->first();
       $afterImages = [];
+      if ($images->after_image != null) {
+        $afterImages = [
+          "before_image" => url('images/' . $images->media_id . '.png'),
+          "after_image" => url('images/after_' . $images->media_id . '.png'),
+        ];
+      } else {
+        $chabotResponse = new SkinAnalysisController();
+        $response = $chabotResponse->afterImageAnalysis(new Request(['mediaId' => $images->media_id]));
+        $responseData = json_decode($response->getContent(), true);
+      
+        Log::info(json_encode($responseData));
+
+        if (isset($responseData['images'])) {
+          $matchedResponses[] = $responseData['images'];
+          $images->after_image = $responseData['images'];
+          $images->save();
+        } 
+        $afterImages = [
+          "before_image" => url('images/' . $images->media_id . '.png'),
+          "after_image" => url('images/after_' . $images->media_id . '.png'),
+        ];
+      }
 
 
       return response()->json([
         'success' => true,
         'error' => false,
         'message' => 'After images fetched successfully.',
-        'afterImages' => $afterImages,
+        'images' => $afterImages,
       ], 200);
     } catch (\Throwable $th) {
       //throw $th;
@@ -830,7 +854,7 @@ class ApiController extends Controller
         'success' => true,
         'error' => true,
         'message' => $th->getMessage(),
-        'analysis' => [],
+        'images' => [],
       ], 500);
     }
   }

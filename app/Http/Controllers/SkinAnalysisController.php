@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log ;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class SkinAnalysisController extends Controller
@@ -22,7 +22,7 @@ class SkinAnalysisController extends Controller
 
     public function analyzeSkin(Request $request)
     {
-        
+
         $mediaId = $request->input('mediaId');
         if (empty($mediaId)) {
             return response()->json([
@@ -32,7 +32,7 @@ class SkinAnalysisController extends Controller
                 'result' => 'No media ID provided'
             ], 400);
         }
-        
+
         $url = "https://api.dovesoft.io/REST/directApi/downloadAttachmentFile";
 
         // Optional: replace with actual authentication headers
@@ -76,7 +76,7 @@ class SkinAnalysisController extends Controller
             $message = $result['message'];
             Log::info(json_encode($message));
 
-            
+
             $skinType = $message[0];
             $mainCondition = $message[1];
             $otherIssues = str_replace('\n', "\n", $message[2]);
@@ -216,6 +216,61 @@ class SkinAnalysisController extends Controller
                 'error' => true,
                 'status' => 500,
                 'chatbot_response' => 'Failed to get response from Greeeting chatbot',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function afterImageAnalysis(Request $request)
+    {
+        if (!$request->has('mediaId')) {
+            return response()->json(['error' => 'No question provided'], 400);
+        }
+
+        $mediaId = $request->input('mediaId');
+        $escapedQuestion = escapeshellarg($mediaId); // Escape to prevent shell injection
+        try {
+            $pythonPath = 'python3'; // Adjust if your system uses another path
+
+            // $output = shell_exec("$pythonPath $scriptPath $question");
+            $output = shell_exec("python3 /var/www/html/aesthetic_backend/afterImage.py $escapedQuestion 2>&1");
+            Log::info("image analysis output: $output");
+
+            if (!$output) {
+                return response()->json([
+                    'error' => 'No response from Greeeting chatbot',
+                    'status' => 500,
+                    'message' => 'No response from Greeeting chatbot',
+                    'chatbot_response' => 'No response.Please try again.',
+                ], 500);
+            }
+
+            $lines = explode("\n", trim($output));
+            $lastLine = end($lines);
+            Log::info("last line: $lastLine");
+            $responseData = json_decode($lastLine, true);
+
+            if ($responseData === null) {
+                return response()->json([
+                    'error' => 'Failed to decode JSON',
+                    'status' => 500,
+                    'message' => 'Failed to decode JSON response from Greeeting chatbot',
+                    'chatbot_response' => 'No response',
+                    'images' => $output
+                ], 500);
+            }
+            return response()->json([
+                'error' => false,
+                'message' => 'Image response received successfully',
+                'status' => 200,
+                'mediaId' => $request->input('mediaId'),
+                'images' => $responseData['response'] ?? 'No response'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => true,
+                'status' => 500,
+                'chatbot_response' => 'Failed to get response from Greeeting chatbot',
+                'images' => null,
                 'message' => $e->getMessage()
             ], 500);
         }

@@ -10,7 +10,9 @@ $router->get('/', function () use ($router) {
 });
 $router->get('/images/{filename}', function ($filename) {
     $path = base_path('skin_images/' . $filename); // Make sure the path is correct
-
+    if (!file_exists($path)) {
+        $path = base_path('skin_images/after_' . $filename); // Check in the after_images directory
+    }
     if (!file_exists($path)) {
         abort(404, 'Image not found');
     }
@@ -92,8 +94,6 @@ $router->group(['prefix' => 'api/v4'], function () use ($router) {
     $router->post('establishments/users/{esteblishmentusermapID}/prescription', 'PrescriptionApi@savePrescriptionV4');
     $router->get('vaccination/{patientId}', 'PrescriptionApi@getvaccinationDetails');
     $router->post('establishments/users/prescritpion/save/{usermapId}', 'DocexaGenieApis@saveDocexaGeniePrescriptionImage');
-
-
 });
 
 $router->group(['prefix' => 'api/v3'], function () use ($router): void {
@@ -138,7 +138,7 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
     $router->get('medicalCertificate/data', 'DoctorsApi@getMedicalCertificateData');
 
     $router->post('medicalCertificatenew/{doctorId}/{clinicId}/{patientId}', 'PrescriptionApi@addMedicalCertificate');
-    $router->get('medicalCertificatenew/{doctorId}/{clinicId}/{page}/{limit}', 'PrescriptionApi@getmedicalcertificate'); 
+    $router->get('medicalCertificatenew/{doctorId}/{clinicId}/{page}/{limit}', 'PrescriptionApi@getmedicalcertificate');
     $router->get('medicalCertificatenew/{doctorId}/{patientId}', 'PrescriptionApi@getmedicalcertificatebypatientId');
     $router->get('certificate/{id}', 'PrescriptionApi@getmedicalcertificatebyId');
 
@@ -373,7 +373,7 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
     $router->delete('establishments/users/drugdelete/{id}', 'DrugApi@deletedrugusermap');
 
 
-    
+
 
     $router->get('establishments/users/{esteblishmentusermapID}/drug/search/recent', 'DrugApi@recentsearch');
     $router->put('establishments/users/{esteblishmentusermapID}/drug/search/recent/{drugID}', 'DrugApi@recentsearchupdate');
@@ -663,7 +663,7 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
     $router->get('dashboard/analysis/{esteblishmentUserMapID}', 'DoctorsApi@getDashboardAnalysis');
     $router->get('retrive/prescription/{usermapId}/{patientId}', 'PrescriptionApi@getPrescriptionSaved');
 
-// getPricedetails
+    // getPricedetails
     $router->post('retrive/pricedetails/{user_map_id}', 'BillingApi@getPricedetailsv3');
     $router->post('summary/transcation/{user_map_id}/{page}/{limit}', 'BillingApi@getSummaryOfTranscation');
 
@@ -671,7 +671,7 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
 
     $router->post('add/certificateTemplate/{user_map_id}', 'BillingApi@addCertificateTemplate');
     $router->get('retrive/certificateTemplate/{user_map_id}/{clinic_id}', 'BillingApi@getCertificateTemplate');
-    
+
     $router->put('establishments/users/{esteblishmentusermapID}/prescriptionv1/{prescriptionID}', 'PrescriptionApi@updatePrescriptionv3');
     $router->get('precription/retrive/{usermapId}/{prescriptionId}', 'PrescriptionApi@getPrescriptionByPrescritpionId');
     $router->post('retrive/pricedetailsv3/{user_map_id}', 'BillingApi@getPricedetailsv3');
@@ -700,8 +700,6 @@ $router->group(['prefix' => 'twilio'], function () use ($router) {
     $router->post('Room/create', 'TwilioVideoCallApi@createRoom');
     $router->post('Room', 'TwilioVideoCallApi@completeRoom');
     $router->post('Rooms/{RoomNameOrSid}/Participants/{ParticipantIdentityOrSid}/', 'TwilioVideoCallApi@retrieveParticipant');
-
-
 });
 $router->group(['prefix' => 'api/agora'], function () use ($router) {
 
@@ -710,8 +708,6 @@ $router->group(['prefix' => 'api/agora'], function () use ($router) {
     $router->get('generate_room_token/{uuid}', 'GenerateAccessTokenController@generate_room_token_agora');
     $router->get('generate_task_token/{uuid}', 'GenerateAccessTokenController@generate_task_token_agora');
     $router->get('token', 'GenerateAccessTokenController@token');
-
-
 });
 
 $router->group(['prefix' => 'v2'], function () use ($router) {
@@ -754,7 +750,6 @@ $router->group(['prefix' => 'v2'], function () use ($router) {
     $router->get('videocall/{appointment_encrypted_id}/signal', 'VideoCallApi@videocallsingal');
     $router->get('videocall/{appointment_encrypted_id}/test', 'VideoCallApi@videocalltest');
     $router->post('videocall/callbackUrl', 'VideoCallApi@callbackUrl');
-
 });
 
 $router->get('/fire', function (Request $request) {
@@ -785,17 +780,15 @@ $router->group(['prefix' => 'api/v4'], function () use ($router): void {
 });
 
 $router->group(['prefix' => 'api/v3/analytics'], function () use ($router): void {
- $router->post('patients/count','AnalyticsApi@getPatientAnalyticsCount');
- $router->post('revenue/bymodeofbilling','AnalyticsApi@getRevenueByModeOfBilling');
- $router->post('revenue/bytypeOfBilling','AnalyticsApi@getRevenueByTypeOfBilling');
- $router->post('symptoms','AnalyticsApi@getTopSymptoms');
- $router->post('diagnosis','AnalyticsApi@getTopdiagnosis');
- $router->post('medicines','AnalyticsApi@getTopMedicines');
- $router->post('investigation' ,'AnalyticsApi@getTopInvestigation');
- $router->post('vaccinationbybrand' ,'AnalyticsApi@getTopVaccinationbyBrand');
- $router->post('vaccinationByGroup' ,'AnalyticsApi@getTopVaccinationbyGroup');
-
-
+    $router->post('patients/count', 'AnalyticsApi@getPatientAnalyticsCount');
+    $router->post('revenue/bymodeofbilling', 'AnalyticsApi@getRevenueByModeOfBilling');
+    $router->post('revenue/bytypeOfBilling', 'AnalyticsApi@getRevenueByTypeOfBilling');
+    $router->post('symptoms', 'AnalyticsApi@getTopSymptoms');
+    $router->post('diagnosis', 'AnalyticsApi@getTopdiagnosis');
+    $router->post('medicines', 'AnalyticsApi@getTopMedicines');
+    $router->post('investigation', 'AnalyticsApi@getTopInvestigation');
+    $router->post('vaccinationbybrand', 'AnalyticsApi@getTopVaccinationbyBrand');
+    $router->post('vaccinationByGroup', 'AnalyticsApi@getTopVaccinationbyGroup');
 });
 
 $router->post('/webhook', 'ApiController@handleJsonInput');
