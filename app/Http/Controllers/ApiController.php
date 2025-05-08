@@ -71,6 +71,7 @@ class ApiController extends Controller
       'make appointment'
     ],
   ];
+
   private const WHATSAPP_API_URL = 'https://api.dovesoft.io/REST/directApi/message';
   private const WHATSAPP_HEADERS = [
     'key' => "a2608dfcbeXX",
@@ -91,13 +92,13 @@ class ApiController extends Controller
     }
 
     $jsonData = $request->all();
-
+    // Log::info('Incoming JSON:', $jsonData);
     // Handle message status updates
     if ($this->isStatusUpdate($jsonData)) {
-      Log::info('Message status update received. Skipping processing.');
+      // Log::info('Message status update received. Skipping processing.');
       return response()->json(['message' => 'Status update ignored.'], 200);
     } else {
-      Log::info('Incoming JSON:', $jsonData);
+      // Log::info('Incoming JSON:', $jsonData);
     }
 
     // Extract patient details
@@ -246,7 +247,7 @@ class ApiController extends Controller
     if (isset($interactive['type']) && $interactive['type'] === 'list_reply') {
       $selectedSlot = $interactive['list_reply']['title'] ?? '';
 
-      Log::info("Selected Slot: $selectedSlot");
+      // Log::info("Selected Slot: $selectedSlot");
 
       $bookingRequest = new Request([
         'doctor_number' => self::DOCTOR_NUMBER,
@@ -254,6 +255,7 @@ class ApiController extends Controller
         'patient_name' => $patientName,
         'selected_slot' => $selectedSlot,
       ]);
+
       if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
         $patientNo = substr($patientNo, 2);
       }
@@ -270,18 +272,7 @@ class ApiController extends Controller
         'media_id' => null,
         'whatsapp_message_id' => $messageId,
       ]);
-      $doctor = Doctor::where('mobile_no', self::DOCTOR_NUMBER)->first();
-      if (!$doctor) {
-        return ['message' => 'Doctor not found.', 'isBooking' => false];
-      }
-      $doctor_id = $doctor->pharmaclient_id;
-      $establishId = DB::table('docexa_medical_establishments_medical_user_map')->where('medical_user_id', $doctor_id)->first();
-      if (!$establishId) {
-        return ['message' => 'Establishment ID not found.', 'isBooking' => false];
-      }
-
-      $doctorApi = new DoctorsApi();
-      $bookingResponse = $doctorApi->slotdetails($establishId->id);
+      Log::info("Selected Slot: $selectedSlot");
 
       $bookingResponse = $this->bookAppointment($bookingRequest);
       $isBookingSuccessful = $bookingResponse->getData(true)['success'] ?? false;
@@ -339,7 +330,6 @@ class ApiController extends Controller
       // if ($response->successful()) {
       //   Log::info('API call successful.', ['response' => $response->json()]);
       //   $responseData = $response->json();
-      //   Log::info("----------------------------------------------------");
       //   Log::info(json_encode($responseData));
       //   $matchedResponses[] = $responseData['choices'][0]['message']['content'] ?? "Let me forward this to our assistant. Please wait...";
       // } else {
@@ -513,9 +503,8 @@ class ApiController extends Controller
   {
     // Set timezone to India
     date_default_timezone_set('Asia/Kolkata');
-    Log::info("----------------------------------------------------------------------------------------------");
 
-    Log::info($request->all());
+    // Log::info($request->all());
     // try {
     // Validate the incoming request
     $doctorNumber = $request->input('doctor_number');
@@ -589,6 +578,7 @@ class ApiController extends Controller
   public function bookAppointment(Request $request)
   {
     try {
+      Log::info($request->all());
       $doctorNumber = $request->input('doctor_number');
       if (!$doctorNumber) {
         return response()->json([
@@ -596,6 +586,36 @@ class ApiController extends Controller
           'success' => false,
           'error' => true,
           'message' => 'Doctor number is required.',
+          'data' => [
+            'filterDate' => null,
+            'slots' => [],
+          ]
+        ], 400);
+      }
+      $pastientNumber = $request->input('patient_number');
+      if (substr($pastientNumber, 0, 2) === '91' && strlen($pastientNumber) > 10) {
+        $pastientNumber = substr($pastientNumber, 2);
+      }
+      if (!$pastientNumber) {
+        Log::info("Patient number is required.");
+        return response()->json([
+          'status' => 'error',
+          'success' => false,
+          'error' => true,
+          'message' => 'Patient number is required.',
+          'data' => [
+            'filterDate' => null,
+            'slots' => [],
+          ]
+        ], 400);
+      }
+      $patient = Patientmaster::where('mobile_no', $pastientNumber)->first();
+      if (!$patient) {
+        return response()->json([
+          'status' => 'error',
+          'success' => false,
+          'error' => true,
+          'message' => 'Patient not found.',
           'data' => [
             'filterDate' => null,
             'slots' => [],
@@ -616,28 +636,38 @@ class ApiController extends Controller
       if (!$clinicId) {
         return ['message' => 'Clinic ID not found.', 'isBooking' => false];
       }
+      $sku = DB::table('docexa_esteblishment_user_map_sku_details')->where('user_map_id', $clinicId->id)->first();
+      if (!$establishId) {
+        return ['message' => 'sku ID not found.', 'isBooking' => false];
+      }
       $request->merge([
-        'appointment_date' => $request->schedule_date,
-        'schedule_time' => $request->schedule_time,
-        'clinic_id' => $request->clinic_id,
-        'user_map_id' => $request->user_map_id,
-        'sku_id' => $request->sku_id,
-        'payment_mode' => $request->payment_mode,
-        'schedule_remark' => $request->schedule_remark,
+        'appointment_date' => Carbon::now()->format('Y-m-d'),
+        'schedule_time' => $request->selected_slot,
+        'schedule_date' => Carbon::now()->format('Y-m-d'),
+        'clinic_id' => $clinicId->id,
+        'user_map_id' => $establishId->id,    
+        'sku_id' => $sku->id,
+        'payment_mode' => "direct",
+        'schedule_remark' => "",
         'gender' => $request->gender,
+        'patient_id' => $patient->patient_id,
+        'patient_name' => $patient->patient_name,
+        'patient_mobile_no' => $patient->mobile_no,
         'age' => $request->age,
         'email' => $request->email,
       ]);
+      $bookAppointment = new DoctorsApi();
+      $result = $bookAppointment->createAppointmentV4($request);
 
       // Return a JSON response
       return response()->json([
         'success' => true,
         'error' => false,
         'message' => 'Appointment created successfully.',
-        'appointment' => [],
+        'appointment' => $result,
       ], 201);
     } catch (\Throwable $th) {
-      //throw $th;
+      throw $th;
       return response()->json([
         'success' => false,
         'error' => true,
