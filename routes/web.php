@@ -6,7 +6,7 @@ use App\Patientmaster;
 use Illuminate\Http\Request;
 
 $router->get('/', function () use ($router) {
-    dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '1234567890']));
+    dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '999779702272690']));
 
     return "hii there";
 });

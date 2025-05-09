@@ -2035,7 +2035,8 @@ class AppointmentDetails extends Model
         $tabdata = $this->getappointment(null, $bookinggIdmd5);
 
         $res = new payment();
-        $paymentdata = $res->createpayment($bookinggIdmd5);
+        // $paymentdata = $res->createpayment($bookinggIdmd5);
+        $paymentdata = [];
 
         Log::info(['payyyy', $paymentdata]);
 

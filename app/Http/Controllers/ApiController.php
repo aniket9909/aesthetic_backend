@@ -815,7 +815,7 @@ class ApiController extends Controller
       })
         ->where('message_type', 'image')
         ->whereNotNull('media_id')
-        ->orderBy('created_at', 'desc')
+        ->orderBy('created_at', 'asc')
         ->first();
       $afterImages = [];
       if ($images->after_image != null) {
@@ -830,6 +830,7 @@ class ApiController extends Controller
       
         Log::info(json_encode($responseData));
 
+        
         if (isset($responseData['images'])) {
           $matchedResponses[] = $responseData['images'];
           $images->after_image = $responseData['images'];

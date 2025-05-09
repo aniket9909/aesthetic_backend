@@ -89,7 +89,7 @@ class SkinAnalysisController extends Controller
 
             $chatbotResponse = $this->chatbot(new Request(['question' => $formatMessage]))->getData(true);
 
-            dispatch(new \App\Jobs\AfterImageStore(['mediaId' => $mediaId]));
+            // dispatch(new \App\Jobs\AfterImageStore(['mediaId' => $mediaId]));
 
             // Log the chatbot response
             Log::info('Chatbot response: ' . json_encode($chatbotResponse));
