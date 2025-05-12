@@ -924,7 +924,7 @@ class ApiController extends Controller
         'occupation' => $request->input('occupation', null),
         'health_id' => $request->input('health_id', null),
         'flag' => $request->input('flag', null),
-        'visit_type' => $request->input('visit_type', 2),
+        'visit_type' => $request->input('visit_type', null),
       ]);
       
       $patient = new PatientApi();
