@@ -548,7 +548,17 @@ class ApiController extends Controller
 
     $doctorApi = new DoctorsApi();
     $bookingResponse = $doctorApi->slotdetails($establishId->id, Carbon::now()->format('Y-m-d'), $clinicId->id)->getData(true);
+    $currentTime = Carbon::now()->format('H:i');
 
+    // Filter slots to only include those after the current time
+    $filteredSlots = array_filter($bookingResponse['slot'] ?? [], function ($slot) use ($currentTime) {
+      return isset($slot['slot']) && $slot['slot'] > $currentTime;
+    });
+
+    // Re-index array to have sequential keys
+    $filteredSlots = array_values($filteredSlots);
+
+    $bookingResponse['slot'] = $filteredSlots;
     if ($bookingResponse['status'] === 'success') {
       return response()->json([
         'status' => 'success',
@@ -928,7 +938,9 @@ class ApiController extends Controller
       ]);
       
       $patient = new PatientApi();
+
       $patient = $patient->createPatientv2($establishId->id, $patientRequest);
+
       return response()->json([
         'success' => true,
         'error' => false,
