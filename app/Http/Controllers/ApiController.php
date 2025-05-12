@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Doctor;
+use App\Jobs\CheckPatient;
 use App\Jobs\StoreChatMessage;
 use App\Jobs\StoreWebhookJson;
 use App\Models\Appointments;
@@ -110,6 +111,11 @@ class ApiController extends Controller
     if (!$patientName || !$patientNo) {
       return response()->json(['error' => 'Missing patient information'], 400);
     }
+    dispatch(new CheckPatient([
+      'patient_number' => $patientNo,
+      'doctor_number' => self::DOCTOR_NUMBER,
+      'patient_name' => $patientName,
+    ]));
 
     Log::info("Patient Name: $patientName, Patient Number: $patientNo");
 
@@ -831,15 +837,15 @@ class ApiController extends Controller
         $chabotResponse = new SkinAnalysisController();
         $response = $chabotResponse->afterImageAnalysis(new Request(['mediaId' => $images->media_id]));
         $responseData = json_decode($response->getContent(), true);
-      
+
         Log::info(json_encode($responseData));
 
-        
+
         if (isset($responseData['images'])) {
           $matchedResponses[] = $responseData['images'];
           $images->after_image = $responseData['images'];
           $images->save();
-        } 
+        }
         $afterImages = [
           "before_image" => url('images/' . $images->media_id . '.png'),
           "after_image" => url('images/after_' . $images->media_id . '.png'),
@@ -863,5 +869,78 @@ class ApiController extends Controller
       ], 500);
     }
   }
-  
+
+  public function checkPatient($patientNo, $doctorNumber, Request $request)
+  {
+    if ($patientNo == null) {
+      return response()->json([
+        'success' => true,
+        'error' => true,
+        'message' => 'Patient number is required.',
+        'patient' => [],
+      ], 400);
+    }
+    if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
+      $patientNo = substr($patientNo, 2);
+    }
+    if (substr($doctorNumber, 0, 2) === '91' && strlen($doctorNumber) > 10) {
+      $doctorNumber = substr($doctorNumber, 2);
+    }
+
+    $patient = Patientmaster::where('mobile_no', $patientNo)->first();
+    if (!$patient) {
+      // Create a new Request object with patient details from the incoming request
+      $doctor = Doctor::where('mobile_no', $doctorNumber)->first();
+      if (!$doctor) {
+        return response()->json([
+          'success' => true,
+          'error' => true,
+          'message' => 'Doctor not found.',
+          'patient' => [],
+        ], 404);
+      }
+      $doctor_id = $doctor->pharmaclient_id;
+      $establishId = DB::table('docexa_medical_establishments_medical_user_map')->where('medical_user_id', $doctor_id)->first();
+      if (!$establishId) {
+        return response()->json([
+          'success' => true,
+          'error' => true,
+          'message' => 'Establishment ID not found.',
+          'patient' => [],
+        ], 404);
+      }
+      $patientRequest = new Request([
+        'patient_name' => $request->input('patient_name', " NO_NAME"),
+        'mobile_no' => $patientNo,
+        'email_id' => $request->input('email_id', null),
+        'age' => $request->input('age', null),
+        'dob' => $request->input('dob', null),
+        'gender' => $request->input('gender', null),
+        'address' => $request->input('address', null),
+        'city' => $request->input('city', null),
+        'state' => $request->input('state', null),
+        'pincode' => $request->input('pincode', null),
+        'occupation' => $request->input('occupation', null),
+        'health_id' => $request->input('health_id', null),
+        'flag' => $request->input('flag', null),
+        'visit_type' => $request->input('visit_type', 2),
+      ]);
+      
+      $patient = new PatientApi();
+      $patient = $patient->create($establishId->id, $patientRequest);
+      return response()->json([
+        'success' => true,
+        'error' => false,
+        'message' => 'Patient create success.',
+        'patient' => $patient,
+      ], 201);
+    } else {
+      return response()->json([
+        'success' => true,
+        'error' => false,
+        'message' => 'Patient found.',
+        'patient' => $patient,
+      ], 200);
+    }
+  }
 }

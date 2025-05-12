@@ -5,11 +5,7 @@ use App\Http\Controllers\SkinAnalysisController;
 use App\Patientmaster;
 use Illuminate\Http\Request;
 
-$router->get('/', function () use ($router) {
-    dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '9850612045032553']));
 
-    return "hii there";
-});
 $router->get('/images/{filename}', function ($filename) {
     $path = base_path('skin_images/' . $filename); // Make sure the path is correct
     if (!file_exists($path)) {
@@ -802,7 +798,12 @@ $router->post('/getSlots', 'ApiController@getAvailableSlots');
 $router->post('/bookAppointment', 'ApiController@bookAppointment');
 $router->post('/getAnalysis', 'ApiController@getAnalysis');
 $router->post('/getAfterImages', 'ApiController@getAfterImages');
+$router->get('/checkPatient/{patientNo}/{doctorNumber}', 'ApiController@checkPatient');
+$router->get('/', function () use ($router) {
+    dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '9850612045032553']));
 
+    return "hii there";
+});
 
 $router->post('/image', 'SkinAnalysisController@analyzeSkin');
 // $router->post('/image', [SkinAnalysisController::class, 'analyzeSkin']);

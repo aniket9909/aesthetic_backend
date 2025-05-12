@@ -169,6 +169,7 @@ class PatientApi extends Controller
             }
             return response()->json(['status' => 'fail', 'message' => "Patient has already been added to your list", 'data' => $this->search('patient_id', $patient->patient_id)], 200);
         } else {
+            // dd($esteblishmentusermapID);
             $pm = new Patientmaster();
             $pm->patient_name = $data['patient_name'];
             $pm->mobile_no = $data['mobile_no'];
