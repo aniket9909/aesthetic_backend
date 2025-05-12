@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Doctor;
 use App\Jobs\StoreChatMessage;
+use App\Jobs\StoreWebhookJson;
 use App\Models\Appointments;
 use App\Models\AppointmentSlot;
 use App\Models\Chats;
@@ -427,12 +428,13 @@ class ApiController extends Controller
    */
   private function saveWebhookData(array $jsonData)
   {
-    WebhookInputJson::create([
-      'whatsapp_business_account' => null,
-      'json_identification_id' => null,
-      'images_url' => null,
-      'long_json' => $jsonData,
-    ]);
+    // WebhookInputJson::create([
+    //   'whatsapp_business_account' => null,
+    //   'json_identification_id' => null,
+    //   'images_url' => null,
+    //   'long_json' => $jsonData,
+    // ]);
+    dispatch(new StoreWebhookJson($jsonData));
   }
 
 
@@ -861,4 +863,5 @@ class ApiController extends Controller
       ], 500);
     }
   }
+  
 }
