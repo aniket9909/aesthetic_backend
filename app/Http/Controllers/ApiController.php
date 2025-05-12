@@ -404,6 +404,17 @@ class ApiController extends Controller
   private function getSlotInteractiveBody(string $patientNo): array
   {
     $response = $this->getAvailableSlots(new Request(['doctor_number' => self::DOCTOR_NUMBER]));
+    if ((is_array($response) && ($response['error'] ?? false) === true) ||
+      (is_object($response) && method_exists($response, 'getData') && ($response->getData(true)['error'] ?? false) === true)
+    ) {
+      return [
+        "messaging_product" => "whatsapp",
+        "to" => $patientNo,
+        "type" => "text",
+        "recipient_type" => "individual",
+        "text" => ["body" => $response['message']],
+      ];
+    }
     $slots = is_array($response) ? ($response['data']['slots'] ?? []) : ($response->getData(true)['data']['slots'] ?? []);
 
     $rows = array_map(fn($slot, $index) => [
@@ -936,7 +947,7 @@ class ApiController extends Controller
         'flag' => $request->input('flag', null),
         'visit_type' => $request->input('visit_type', null),
       ]);
-      
+
       $patient = new PatientApi();
 
       $patient = $patient->createPatientv2($establishId->id, $patientRequest);
