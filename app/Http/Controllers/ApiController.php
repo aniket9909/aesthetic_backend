@@ -912,6 +912,7 @@ class ApiController extends Controller
       $patientRequest = new Request([
         'patient_name' => $request->input('patient_name', " NO_NAME"),
         'mobile_no' => $patientNo,
+        'mobile' => $patientNo,
         'email_id' => $request->input('email_id', null),
         'age' => $request->input('age', null),
         'dob' => $request->input('dob', null),
@@ -927,7 +928,7 @@ class ApiController extends Controller
       ]);
       
       $patient = new PatientApi();
-      $patient = $patient->create($establishId->id, $patientRequest);
+      $patient = $patient->createPatientv2($establishId->id, $patientRequest);
       return response()->json([
         'success' => true,
         'error' => false,

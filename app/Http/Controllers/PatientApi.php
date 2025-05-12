@@ -16,6 +16,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use App\Patientmaster;
+use App\SuperPatients;
 use DB;
 use Log;
 use Cache;
@@ -29,9 +30,7 @@ class PatientApi extends Controller
     /**
      * Constructor
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
     /**
      * Operation Search patient
      *
@@ -182,8 +181,155 @@ class PatientApi extends Controller
             DB::insert('insert into docexa_patient_doctor_relation (user_map_id,patient_id) values(?,?)', [$esteblishmentusermapID, $pm->patient_id]);
             return response()->json(['status' => 'success', 'data' => $this->search('patient_id', $pm->patient_id)], 200);
         }
+    }
+    public function createPatientv2($esteblishmentusermapID, Request $request)
+    {
+        try {
+            $input = $request->all();
+            $existingPatientByMobile = Patientmaster::where('mobile_no', $input['mobile'])->where('created_by_doctor', $esteblishmentusermapID)->get();
+            $existingPatientByName = Patientmaster::where('patient_name', $input['patient_name'])->where('mobile_no', $input['mobile'])->where('created_by_doctor', $esteblishmentusermapID)->get();
+            Log::info($existingPatientByMobile->count());
+            Log::info($existingPatientByName->count());
+            Log::info(['$existingPatientByName->count()==0 && $existingPatientByMobile->count()==0', $existingPatientByName->count() == 0 && $existingPatientByMobile->count() == 0]);
+
+            if ($existingPatientByMobile->count() > 0 && $existingPatientByName->count() == 0) {
+                // Save in patientmaster table
+                $patientmaster = new Patientmaster();
+                $patientmaster->health_id = $input['health_id'];
+                $patientmaster->patient_name = $input['patient_name'];
+                $patientmaster->gender = $input['gender'];
+                $patientmaster->dob = $input['dob'];
+                $patientmaster->mobile_no = $input['mobile'];
+                $patientmaster->state = $input['state'];
+                $patientmaster->city = $input['city'];
+                $patientmaster->pincode = $input['pincode'];
+                $patientmaster->occupation = $input['occupation'];
+                $patientmaster->visit_type = $input['visit_type'];
+                $patientmaster->username = $input['mobile'];
+                $patientmaster->created_by_doctor = $esteblishmentusermapID;
+                $patientmaster->flag = array_key_exists('flag', $input) ? ($input['flag'] ?  $input['flag'] : null) : null;
+                $save =   $patientmaster->save();
+                if ($save) {
+                    Log::info(['pattientid added through the case 1' =>  $patientmaster->patient_id]);
+                    $currentTimestamp = $this->generateTimestamp();
+                    DB::insert('insert into docexa_patient_doctor_relation (doctor_id,user_map_id, patient_id, visit_type, created_date) values(?,?,?,?,?)', [0, $esteblishmentusermapID, $patientmaster->patient_id, $input['visit_type'], $currentTimestamp]);
+                }
+
+                $d1 = Patientmaster::where('mobile_no', $input['mobile'])->where('created_by_doctor', $esteblishmentusermapID)->get();
+                $patientdata = Patientmaster::where('mobile_no', $input['mobile'])->where('patient_name', $input['patient_name'])->get();
 
 
+
+                return response()->json(['status' => true, 'message' => 'Patient saved in patientmaster table case 1', "data" => $d1, 'patientData' => $patientdata], 200);
+            } else if ($existingPatientByName->count() == 0 && $existingPatientByMobile->count() == 0) {
+                // dd('qq');
+                Log::info(['$existingPatientByName->count()==0 && $existingPatientByMobile->count()==0', $existingPatientByName->count() == 0 && $existingPatientByMobile->count() == 0]);
+                $patientmaster = new Patientmaster();
+                $patientmaster->health_id = $input['health_id'];
+                $patientmaster->patient_name = $input['patient_name'];
+                $patientmaster->gender = $input['gender'];
+                $patientmaster->dob = $input['dob'];
+                $patientmaster->mobile_no = $input['mobile'];
+                $patientmaster->state = $input['state'];
+                $patientmaster->city = $input['city'];
+                $patientmaster->pincode = $input['pincode'];
+                $patientmaster->occupation = $input['occupation'];
+                $patientmaster->visit_type = $input['visit_type'];
+                $patientmaster->username = $input['mobile'];
+                $patientmaster->created_by_doctor = $esteblishmentusermapID;
+                $patientmaster->flag = array_key_exists('flag', $input) ? ($input['flag'] ?  $input['flag'] : null) : null;
+
+                $save1 = $patientmaster->save();
+
+                if ($save1) {
+                    Log::info(['pattientid added through the case 2' =>  $patientmaster->patient_id]);
+                    $currentTimestamp = $this->generateTimestamp();
+                    DB::insert('insert into docexa_patient_doctor_relation (doctor_id,user_map_id, patient_id, visit_type, created_date) values(?,?,?,?,?)', [0, $esteblishmentusermapID, $patientmaster->patient_id, $input['visit_type'], $currentTimestamp]);
+                }
+
+                $d1 = Patientmaster::where('mobile_no', $input['mobile'])->where('created_by_doctor', $esteblishmentusermapID)->get();
+                $patientdata = Patientmaster::where('mobile_no', $input['mobile'])->where('patient_name', $input['patient_name'])->get();
+
+
+                $superpatientmaster = new SuperPatients();
+                $superpatientmaster->health_id = $input['health_id'];
+                $superpatientmaster->patient_name = $input['patient_name'];
+                $superpatientmaster->gender = $input['gender'];
+                $superpatientmaster->dob = $input['dob'];
+                $superpatientmaster->mobile_no = $input['mobile'];
+                $superpatientmaster->state = $input['state'];
+                $superpatientmaster->city = $input['city'];
+                $superpatientmaster->pincode = $input['pincode'];
+                $superpatientmaster->occupation = $input['occupation'];
+                $superpatientmaster->visit_type = $input['visit_type'];
+                $superpatientmaster->username = $input['mobile'];
+                $superpatientmaster->created_by_doctor = $esteblishmentusermapID;
+                $save2 = $superpatientmaster->save();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Patient saved in both tables',
+                    "data" => $d1,
+                    'patientData' => $patientdata
+                ], 200);
+            } else if ($existingPatientByName->count() > 0 && $existingPatientByMobile->count() > 0) {
+                $d1 = Patientmaster::where('mobile_no', $input['mobile'])->where('created_by_doctor', $esteblishmentusermapID)->get();
+                $patientdata = Patientmaster::where('mobile_no', $input['mobile'])->where('patient_name', $input['patient_name'])->get();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'patient already exist',
+                    "data" => $d1,
+                    'patientData' => $patientdata,
+                    "code" => 200
+                ], 200);
+            } else {
+                // Save in both patientmaster and superpatientmaster tables
+                $patientmaster = new Patientmaster();
+                $patientmaster->health_id = $input['health_id'];
+                $patientmaster->patient_name = $input['patient_name'];
+                $patientmaster->gender = $input['gender'];
+                $patientmaster->dob = $input['dob'];
+                $patientmaster->mobile_no = $input['mobile'];
+                $patientmaster->state = $input['state'];
+                $patientmaster->city = $input['city'];
+                $patientmaster->pincode = $input['pincode'];
+                $patientmaster->occupation = $input['occupation'];
+                $patientmaster->visit_type = $input['visit_type'];
+                $patientmaster->username = $input['mobile'];
+                $patientmaster->created_by_doctor = $esteblishmentusermapID;
+                $patientmaster->flag = array_key_exists('flag', $input) ? ($input['flag'] ?  $input['flag'] : null) : null;
+
+                $save1 =  $patientmaster->save();
+                if ($save1) {
+                    Log::info(['pattientid added through the case 2' =>  $patientmaster->patient_id]);
+                    $currentTimestamp = $this->generateTimestamp();
+                    DB::insert('insert into docexa_patient_doctor_relation (doctor_id,user_map_id, patient_id, visit_type, created_date) values(?,?,?,?,?)', [0, $esteblishmentusermapID, $patientmaster->patient_id, $input['visit_type'], $currentTimestamp]);
+                }
+
+                $superpatientmaster = new SuperPatients();
+                $superpatientmaster->health_id = $input['health_id'];
+                $superpatientmaster->patient_name = $input['patient_name'];
+                $superpatientmaster->gender = $input['gender'];
+                $superpatientmaster->dob = $input['dob'];
+                $superpatientmaster->mobile_no = $input['mobile'];
+                $superpatientmaster->state = $input['state'];
+                $superpatientmaster->city = $input['city'];
+                $superpatientmaster->pincode = $input['pincode'];
+                $superpatientmaster->occupation = $input['occupation'];
+                $superpatientmaster->visit_type = $input['visit_type'];
+                $superpatientmaster->username = $input['mobile'];
+                $superpatientmaster->created_by_doctor = $esteblishmentusermapID;
+                $save2 =  $superpatientmaster->save();
+
+                $d1 = Patientmaster::where('mobile_no', $input['mobile'])->where('created_by_doctor', $esteblishmentusermapID)->get();
+                $patientdata = Patientmaster::where('mobile_no', $input['mobile'])->where('patient_name', $input['patient_name'])->get();
+
+
+                return response()->json(['status' => true, 'message' => 'Patient saved in both tables', "data" => $d1, 'patientData' => $patientdata], 200);
+            }
+        } catch (\Throwable $th) {
+            return response()->json(['status' => false, 'code' => 500, 'message' => 'Internal Server Error', 'error' => $th->getMessage()], 500);
+        }
     }
     /**
      * @OA\Get(
@@ -307,7 +453,6 @@ class PatientApi extends Controller
                         return response()->json(['status' => "fail", 'message' => "user not found"], 200);
                     }
                 }
-
             } else {
                 return response()->json(['status' => "fail", 'message' => "incorrect otp"], 400);
             }
@@ -351,7 +496,6 @@ class PatientApi extends Controller
 
         $pm = new Patientmaster();
         return response()->json(['status' => 'success', 'data' => $pm->searchv2($esteblishmentusermapID, $key, $value, $page, $limit)], 200);
-
     }
 
     public function updatepatientDetails(Request $request, $esteblishmentusermapID, $patientId)
@@ -364,21 +508,21 @@ class PatientApi extends Controller
             }
             $patient = Patientmaster::where('patient_id', $patientId)->first();
             if ($patient) {
-                $patient->patient_name =array_key_exists('patient_name', $input) ? $input['patient_name'] :$patient->patient_name;;
-                $patient->gender =array_key_exists('gender', $input) ? $input['gender'] :$patient->gender;;
-                $patient->mobile_no = array_key_exists('mobile_no', $input) ? $input['mobile_no'] :$patient->mobile_no;;
-                $patient->email_id = array_key_exists('email_id', $input) ? $input['email_id'] :$patient->email_id;;
-                $patient->dob =array_key_exists('dob', $input) ? $input['dob'] :$patient->dob;;
-                $patient->city = array_key_exists('city', $input) ? $input['city'] :$patient->city;;
-                $patient->city_id = array_key_exists('city_id', $input) ? $input['city_id'] :$patient->city_id;
-                $patient->state = array_key_exists('state', $input) ? $input['state'] :$patient->state;;
-                $patient->state_id =array_key_exists('state_id', $input) ? $input['state_id'] :$patient->state_id;;
-                $patient->age = array_key_exists('age', $input) ? $input['age'] :$patient->age;;
-                $patient->address =array_key_exists('address', $input) ? $input['address'] :$patient->address;;
+                $patient->patient_name = array_key_exists('patient_name', $input) ? $input['patient_name'] : $patient->patient_name;;
+                $patient->gender = array_key_exists('gender', $input) ? $input['gender'] : $patient->gender;;
+                $patient->mobile_no = array_key_exists('mobile_no', $input) ? $input['mobile_no'] : $patient->mobile_no;;
+                $patient->email_id = array_key_exists('email_id', $input) ? $input['email_id'] : $patient->email_id;;
+                $patient->dob = array_key_exists('dob', $input) ? $input['dob'] : $patient->dob;;
+                $patient->city = array_key_exists('city', $input) ? $input['city'] : $patient->city;;
+                $patient->city_id = array_key_exists('city_id', $input) ? $input['city_id'] : $patient->city_id;
+                $patient->state = array_key_exists('state', $input) ? $input['state'] : $patient->state;;
+                $patient->state_id = array_key_exists('state_id', $input) ? $input['state_id'] : $patient->state_id;;
+                $patient->age = array_key_exists('age', $input) ? $input['age'] : $patient->age;;
+                $patient->address = array_key_exists('address', $input) ? $input['address'] : $patient->address;;
                 $patient->created_by_doctor = $esteblishmentusermapID;
-                $patient->flag =array_key_exists('flag', $input) ?( $input['flag'] ?  $input['flag'] :null) :$patient->flag;
+                $patient->flag = array_key_exists('flag', $input) ? ($input['flag'] ?  $input['flag'] : null) : $patient->flag;
 
-                
+
                 // $patient->pincode = $input['pincode'];
                 // $patient->occupation = $input['occupation'];
                 // $patient->visit_type = $input['visit_type'];
@@ -408,7 +552,7 @@ class PatientApi extends Controller
                 // $patient->doctor_flag = $input['doctor_flag;
                 // $patient->mode_of_payment = $input['mode_of_payment;
                 // $patient->care_context = $input['care_context;
-        
+
                 // $patient->created_by_doctor = $input['created_by_doctor;
 
                 if ($patient->update()) {
@@ -416,14 +560,11 @@ class PatientApi extends Controller
                 } else {
                     return response()->json(['status' => "false", 'message' => "failed to update patient"], 400);
                 }
-            }else{
+            } else {
                 return response()->json(['status' => "false", 'message' => "patient not found"], 200);
-
             }
-
         } catch (\Throwable $th) {
-            return response()->json(["status" => false, "message" => "Internal Server Error" ,"error" => $th->getMessage() ], 500);
-
+            return response()->json(["status" => false, "message" => "Internal Server Error", "error" => $th->getMessage()], 500);
         }
     }
 
@@ -462,39 +603,36 @@ class PatientApi extends Controller
 
         $pm = new Patientmaster();
         return response()->json(['status' => 'success', 'data' => $pm->searchv3($esteblishmentusermapID, $key, $value)], 200);
-
     }
 
 
     public function getTotalCountOfPatient($esteblishmentusermapID)
     {
         try {
-            $patientCount= DB::table('docexa_patient_doctor_relation')->where('user_map_id', $esteblishmentusermapID)->count();
-                if ($patientCount) {
-                    return response()->json(['status' => true, 'message' => "data retrived successfully", 'data' => $patientCount], 200);
-                } else {
-                    return response()->json(['status' => false, 'message' => "data not found", 'data' => []], 200);
-                }
-            
+            $patientCount = DB::table('docexa_patient_doctor_relation')->where('user_map_id', $esteblishmentusermapID)->count();
+            if ($patientCount) {
+                return response()->json(['status' => true, 'message' => "data retrived successfully", 'data' => $patientCount], 200);
+            } else {
+                return response()->json(['status' => false, 'message' => "data not found", 'data' => []], 200);
+            }
         } catch (\Throwable $th) {
             Log::info(['error' => $th]);
-            return response()->json(["status" => false, "message" => "Internal server error", "error" => $th->getMessage() ], 500);
+            return response()->json(["status" => false, "message" => "Internal server error", "error" => $th->getMessage()], 500);
         }
     }
 
     public function getPatientById($patientid)
     {
         try {
-            $PatientDetails= DB::table('docexa_patient_details')->where('patient_id',$patientid)->first();
-                if ($PatientDetails) {
-                    return response()->json(['status' => true, 'message' => "data retrived successfully", 'data' => $PatientDetails], 200);
-                } else {
-                    return response()->json(['status' => false, 'message' => "data not found", 'data' => []], 200);
-                }
-            
+            $PatientDetails = DB::table('docexa_patient_details')->where('patient_id', $patientid)->first();
+            if ($PatientDetails) {
+                return response()->json(['status' => true, 'message' => "data retrived successfully", 'data' => $PatientDetails], 200);
+            } else {
+                return response()->json(['status' => false, 'message' => "data not found", 'data' => []], 200);
+            }
         } catch (\Throwable $th) {
             Log::info(['error' => $th]);
-            return response()->json(["status" => false, "message" => "Internal server error", "error" => $th->getMessage() ], 500);
+            return response()->json(["status" => false, "message" => "Internal server error", "error" => $th->getMessage()], 500);
         }
     }
 
@@ -508,51 +646,48 @@ class PatientApi extends Controller
             }
             $patient = Patientmaster::where('patient_id', $patientId)->first();
             if ($patient) {
-                $patient->patient_name =array_key_exists('patient_name', $input) ? ( $input['patient_name'] ? $input['patient_name'] :$patient->patient_name) :$patient->patient_name;;
-                $patient->gender =array_key_exists('gender', $input) ? ($input['gender'] ? $input['gender'] : $patient->gender) :$patient->gender;;
-                $patient->mobile_no = array_key_exists('mobile_no', $input) ?( $input['mobile_no'] ?  $input['mobile_no'] : $patient->mobile_no) :$patient->mobile_no;;
-                $patient->email_id = array_key_exists('email_id', $input) ? ($input['email_id'] ?  $input['email_id'] : $patient->email_id) :$patient->email_id ;;
-                $patient->dob =array_key_exists('dob', $input) ? ($input['dob'] ? $input['dob'] : $patient-> dob) :$patient->dob;;
-                $patient->city = array_key_exists('city', $input) ? ($input['city'] ? $input['city'] : $patient->city ) :$patient->city;;
-                $patient->city_id = array_key_exists('city_id', $input) ? ($input['city_id'] ? $input['city_id'] : $patient->city_id) :$patient->city_id;
-                $patient->state = array_key_exists('state', $input) ? ($input['state'] ? $input['city_id'] : $patient->state) :$patient->state;;
-                $patient->state_id =array_key_exists('state_id', $input) ? ($input['state_id'] ? $input['state_id'] : $patient->state_id) :$patient->state_id;;
-                $patient->age = array_key_exists('age', $input) ? ($input['age'] ? $input['age'] : $patient-> age) :$patient->age;;
-                $patient->address =array_key_exists('address', $input) ?( $input['address'] ?  $input['address'] : $patient->address) :$patient->address;;
+                $patient->patient_name = array_key_exists('patient_name', $input) ? ($input['patient_name'] ? $input['patient_name'] : $patient->patient_name) : $patient->patient_name;;
+                $patient->gender = array_key_exists('gender', $input) ? ($input['gender'] ? $input['gender'] : $patient->gender) : $patient->gender;;
+                $patient->mobile_no = array_key_exists('mobile_no', $input) ? ($input['mobile_no'] ?  $input['mobile_no'] : $patient->mobile_no) : $patient->mobile_no;;
+                $patient->email_id = array_key_exists('email_id', $input) ? ($input['email_id'] ?  $input['email_id'] : $patient->email_id) : $patient->email_id;;
+                $patient->dob = array_key_exists('dob', $input) ? ($input['dob'] ? $input['dob'] : $patient->dob) : $patient->dob;;
+                $patient->city = array_key_exists('city', $input) ? ($input['city'] ? $input['city'] : $patient->city) : $patient->city;;
+                $patient->city_id = array_key_exists('city_id', $input) ? ($input['city_id'] ? $input['city_id'] : $patient->city_id) : $patient->city_id;
+                $patient->state = array_key_exists('state', $input) ? ($input['state'] ? $input['city_id'] : $patient->state) : $patient->state;;
+                $patient->state_id = array_key_exists('state_id', $input) ? ($input['state_id'] ? $input['state_id'] : $patient->state_id) : $patient->state_id;;
+                $patient->age = array_key_exists('age', $input) ? ($input['age'] ? $input['age'] : $patient->age) : $patient->age;;
+                $patient->address = array_key_exists('address', $input) ? ($input['address'] ?  $input['address'] : $patient->address) : $patient->address;;
                 $patient->created_by_doctor = $esteblishmentusermapID;
-                $patient->flag =array_key_exists('flag', $input) ?( $input['flag'] ?  $input['flag'] : $patient->flag) :$patient->flag;;
+                $patient->flag = array_key_exists('flag', $input) ? ($input['flag'] ?  $input['flag'] : $patient->flag) : $patient->flag;;
 
                 if ($patient->update()) {
                     return response()->json(['status' => "true", 'message' => "patient update successfully"], 200);
                 } else {
                     return response()->json(['status' => "false", 'message' => "failed to update patient"], 400);
                 }
-            }else{
+            } else {
                 return response()->json(['status' => "false", 'message' => "patient not found"], 200);
-
             }
-
         } catch (\Throwable $th) {
-            return response()->json(["status" => false, "message" => "Internal Server Error" ,"error" => $th->getMessage() ], 500);
-
+            return response()->json(["status" => false, "message" => "Internal Server Error", "error" => $th->getMessage()], 500);
         }
     }
 
-    public function deletePatient($patientId){
+    public function deletePatient($patientId)
+    {
         try {
-            $result = Patientmaster::Where('patient_id',$patientId)->first();
-            if($result){
+            $result = Patientmaster::Where('patient_id', $patientId)->first();
+            if ($result) {
                 $result->deleted_date = Carbon::now();
-                $delete =$result->save();
-                if($delete){
-                    return response()->json(['status' => true, 'message' => "Patient deleted successfully", 'code' =>200],200);
-                }else{
-                    return response()->json(['status' => false , 'message' => "Something went wrong", 'code' => 400],400);
+                $delete = $result->save();
+                if ($delete) {
+                    return response()->json(['status' => true, 'message' => "Patient deleted successfully", 'code' => 200], 200);
+                } else {
+                    return response()->json(['status' => false, 'message' => "Something went wrong", 'code' => 400], 400);
                 }
-               
-            }                   
+            }
         } catch (\Throwable $th) {
-            return response()->json(["status" => false, "message" => "Internal Server Error" ,"error" => $th->getMessage() , "code" => 500 ], 500);
+            return response()->json(["status" => false, "message" => "Internal Server Error", "error" => $th->getMessage(), "code" => 500], 500);
         }
     }
     public function patientlistV4($esteblishmentusermapID)
