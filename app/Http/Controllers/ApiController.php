@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Doctor;
+use App\Jobs\StoreChatMessage;
 use App\Models\Appointments;
 use App\Models\AppointmentSlot;
 use App\Models\Chats;
@@ -178,7 +179,8 @@ class ApiController extends Controller
   public function storeChat(array $data)
   {
 
-    Chats::create($data);
+    // Chats::create($data);
+    dispatch(new StoreChatMessage($data));
 
     return response()->json(['message' => 'Chat stored successfully']);
   }

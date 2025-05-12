@@ -234,7 +234,8 @@ class SkinAnalysisController extends Controller
             $pythonPath = 'python3'; // Adjust if your system uses another path
 
             // $output = shell_exec("$pythonPath $scriptPath $question");
-            $output = shell_exec("python3 /var/www/html/aesthetic_backend/afterImage.py $escapedQuestion 2>&1");
+            // $output = shell_exec("python3 /var/www/html/aesthetic_backend/afterImage.py $escapedQuestion 2>&1");
+            $output = shell_exec("python3 ~/var/docexa/afterImage.py $escapedQuestion 2>&1");
             Log::info("image analysis output: $output");
 
             if (!$output) {
