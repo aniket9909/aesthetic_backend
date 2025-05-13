@@ -9,6 +9,7 @@ use App\Jobs\StoreWebhookJson;
 use App\Models\Appointments;
 use App\Models\AppointmentSlot;
 use App\Models\Chats;
+use App\Models\ConverstionState;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -151,8 +152,14 @@ class ApiController extends Controller
   {
     $messageData = $jsonData['entry'][0]['changes'][0]['value']['messages'][0] ?? null;
     $messageId = $jsonData['entry'][0]['changes'][0]['value']['messages'][0]['id'] ?? null;
+    if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
+      $patientNo = substr($patientNo, 2);
+    }
+    $converstionState =  $this->handleConversationFlow($patientNo, $messageData['text']['body'] ?? '');
+    if ($converstionState != null) {
 
-
+      return ['message' => $converstionState, 'isBooking' => false];
+    }
     if ($messageData) {
       if (isset($messageData['type'])) {
         switch ($messageData['type']) {
@@ -165,9 +172,6 @@ class ApiController extends Controller
     }
 
     $message = $jsonData['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'] ?? '';
-    if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
-      $patientNo = substr($patientNo, 2);
-    }
     $this->storeChat([
       'sender_id' => $patientNo,
       'receiver_id' => self::DOCTOR_NUMBER,
@@ -287,7 +291,7 @@ class ApiController extends Controller
       $isBookingSuccessful = $bookingResponse->getData(true)['success'] ?? false;
 
       return [
-        'message' => $isBookingSuccessful ? 'Appointment booked successfully!' : 'Failed to book appointment.',
+        'message' => $isBookingSuccessful ? "Appointment booked for $selectedSlot . Thank You." : 'Failed to book appointment.',
         'isBooking' => !$isBookingSuccessful,
       ];
     }
@@ -353,6 +357,62 @@ class ApiController extends Controller
     return ["message" => implode("\n\n", $matchedResponses), "isBooking" => $isBooking];
   }
 
+  function handleConversationFlow($userId, $messageText)
+  {
+    // Fetch or create the conversation state
+    $state = ConverstionState::firstOrCreate(
+      ['user_id' => $userId],
+      [
+        'current_state' => 'idle',
+        'flow_type' => null,
+        'data' => [],
+        'is_active' => true,
+      ]
+    );
+
+    // If the state is idle, don't do anything
+    if ($state->state === 'idle') {
+      return null; // or return 'idle' if you want to check
+    }
+
+    $data = $state->data ?? [];
+    $nextMessage = '';
+
+    if ($state->state === 'book') {
+      $state->state = 'ask_name';
+      $state->save();
+      return 'Please provide your full name.';
+    }
+
+    switch ($state->state) {
+      case 'ask_name':
+        $data['name'] = $messageText;
+        $state->state = 'ask_age';
+        $state->data = $data;
+        $state->save();
+        return 'Thanks! Now please provide your age.';
+
+      case 'ask_age':
+        $data['age'] = $messageText;
+        $state->state = 'ask_slot';
+        $state->data = $data;
+        $state->save();
+        return 'Great! Please select a time slot: 10AM, 2PM, or 4PM.';
+
+      case 'ask_slot':
+        $data['slot'] = $messageText;
+        $state->state = 'confirmed';
+        $state->data = $data;
+        $state->save();
+        return "Thanks {$data['name']}! Your appointment at {$data['slot']} is booked.";
+
+      case 'confirmed':
+        return "Your appointment is already booked. To book again, type 'book'.";
+
+      default:
+        return "Sorry, I didn’t understand that.";
+    }
+  }
   /**
    * Check if a message is similar to a predefined phrase.
    */
@@ -936,7 +996,7 @@ class ApiController extends Controller
         'flag' => $request->input('flag', null),
         'visit_type' => $request->input('visit_type', null),
       ]);
-      
+
       $patient = new PatientApi();
 
       $patient = $patient->createPatientv2($establishId->id, $patientRequest);
