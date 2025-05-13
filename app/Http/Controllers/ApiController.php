@@ -89,50 +89,70 @@ class ApiController extends Controller
   /**
    * Handle incoming JSON payload from webhook.
    */
-  public function handleJsonInput(Request $request): JsonResponse
+  public function handleJsonInput(Request $request)
   {
-    if (!$request->isJson()) {
-      return response()->json(['error' => 'Invalid content type, JSON expected'], 415);
-    }
+    try {
+      //code...
 
-    $jsonData = $request->all();
-    // Log::info('Incoming JSON:', $jsonData);
-    // Handle message status updates
-    if ($this->isStatusUpdate($jsonData)) {
-      // Log::info('Message status update received. Skipping processing.');
-      return response()->json(['message' => 'Status update ignored.'], 200);
-    } else {
+      if (!$request->isJson()) {
+        return response()->json(['error' => 'Invalid content type, JSON expected'], 415);
+      }
+
+      $jsonData = $request->all();
       // Log::info('Incoming JSON:', $jsonData);
+      // Handle message status updates
+      if ($this->isStatusUpdate($jsonData)) {
+        // Log::info('Message status update received. Skipping processing.');
+        return response()->json(['message' => 'Status update ignored.'], 200);
+      } else {
+        // Log::info('Incoming JSON:', $jsonData);
+      }
+
+      // Extract patient details
+      $patientName = $jsonData['entry'][0]['changes'][0]['value']['contacts'][0]['profile']['name'] ?? null;
+      $patientNo = $jsonData['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'] ?? null;
+
+      if (!$patientName || !$patientNo) {
+        return response()->json(['error' => 'Missing patient information'], 400);
+      }
+
+      dispatch(new CheckPatient([
+        'patient_number' => $patientNo,
+        'doctor_number' => self::DOCTOR_NUMBER,
+        'patient_name' => $patientName,
+      ]));
+
+      Log::info("Patient Name: $patientName, Patient Number: $patientNo");
+
+      // Process user message or interactive input
+      $sendMessage = $this->processMessage($jsonData, $patientName, $patientNo);
+      $handleConversationFlow = $this->handleConversationFlow($patientNo, $sendMessage['message']);
+
+
+      // Send response to WhatsApp API
+      $this->sendResponseToWhatsApp($sendMessage, $patientNo);
+
+
+      Log::info("Handle Conversation Flow: $handleConversationFlow");
+      if ($handleConversationFlow != null) {
+        $this->sendResponseToWhatsApp(["message" => $handleConversationFlow, 'isBooking' => false], $patientNo);
+      } else {
+        $this->sendResponseToWhatsApp(["message" => "Available Slots", 'isBooking' => true], $patientNo);
+        $this->sendResponseToWhatsApp(["message" => "Please upload a photo if you would like to have your skin analyzed.", 'isBooking' => false], $patientNo);
+      }
+
+
+      // Save the incoming JSON payload
+      $this->saveWebhookData($jsonData);
+
+      return response()->json(['message' => 'Full JSON received and stored successfully']);
+    } catch (\Throwable $th) {
+      //throw $th;
+      Log::error('Error in handleJsonInput:', [
+        'error' => $th->getMessage(),
+        'request' => $request->all(),
+      ]);
     }
-
-    // Extract patient details
-    $patientName = $jsonData['entry'][0]['changes'][0]['value']['contacts'][0]['profile']['name'] ?? null;
-    $patientNo = $jsonData['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'] ?? null;
-
-    if (!$patientName || !$patientNo) {
-      return response()->json(['error' => 'Missing patient information'], 400);
-    }
-    dispatch(new CheckPatient([
-      'patient_number' => $patientNo,
-      'doctor_number' => self::DOCTOR_NUMBER,
-      'patient_name' => $patientName,
-    ]));
-
-    Log::info("Patient Name: $patientName, Patient Number: $patientNo");
-
-    // Process user message or interactive input
-    $sendMessage = $this->processMessage($jsonData, $patientName, $patientNo);
-
-    // Send response to WhatsApp API
-    $this->sendResponseToWhatsApp($sendMessage, $patientNo);
-    $this->sendResponseToWhatsApp(["message" => "Available Slots", 'isBooking' => true], $patientNo);
-    $this->sendResponseToWhatsApp(["message" => "Please upload a photo if you would like to have your skin analyzed.", 'isBooking' => false], $patientNo);
-
-
-    // Save the incoming JSON payload
-    $this->saveWebhookData($jsonData);
-
-    return response()->json(['message' => 'Full JSON received and stored successfully']);
   }
 
   /**
@@ -155,10 +175,18 @@ class ApiController extends Controller
     if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
       $patientNo = substr($patientNo, 2);
     }
-    $converstionState =  $this->handleConversationFlow($patientNo, $messageData['text']['body'] ?? '');
-    if ($converstionState != null) {
+    $converstionState = ConverstionState::firstOrCreate(
+      ['user_id' => $patientNo],
+      [
+        'current_state' => 'idle',
+        'flow_type' => null,
+        'data' => [],
+        'is_active' => true,
+      ]
+    );
+    if ($converstionState != null && $converstionState->current_state != 'idle' && $converstionState->current_state != 'confirmed') {
 
-      return ['message' => $converstionState, 'isBooking' => false];
+      return ['message' => $messageData['text']['body'], 'isBooking' => false];
     }
     if ($messageData) {
       if (isset($messageData['type'])) {
@@ -209,7 +237,7 @@ class ApiController extends Controller
     $imageUrl = null;
     $analysis = null;
     $responseData = json_decode($response->getContent(), true);
-    Log::info(json_encode($responseData));
+    // Log::info(json_encode($responseData));
     if (isset($responseData['result'])) {
       $imageUrl = $responseData['media_url'] ?? null;
       $analysis = $responseData['analysis'] ?? null;
@@ -240,8 +268,8 @@ class ApiController extends Controller
       'whatsapp_message_id' => null,
     ]);
 
-    Log::info("Image ID: $imageId");
-    Log::info(json_encode($matchedResponses));
+    // Log::info("Image ID: $imageId");
+    // Log::info(json_encode($matchedResponses));
 
     // Simulate saving image or processing it
     // In a real scenario, you would use the image ID to fetch and process the image
@@ -255,7 +283,7 @@ class ApiController extends Controller
   {
     $interactive = $messageData['interactive'] ?? [];
     $messageId = $messageData['id'] ?? null;
-    Log::info('Interactive Message:', $interactive);
+    // Log::info('Interactive Message:', $interactive);
 
     if (isset($interactive['type']) && $interactive['type'] === 'list_reply') {
       $selectedSlot = $interactive['list_reply']['title'] ?? '';
@@ -289,6 +317,26 @@ class ApiController extends Controller
 
       $bookingResponse = $this->bookAppointment($bookingRequest);
       $isBookingSuccessful = $bookingResponse->getData(true)['success'] ?? false;
+      if ($isBookingSuccessful) {
+        $convertionState = ConverstionState::firstOrCreate(
+          ['user_id' => $patientNo],
+          [
+            'current_state' => 'book',
+            'flow_type' => null,
+            'data' => [],
+            'is_active' => true,
+          ]
+        );
+        if ($convertionState->current_state != 'confirmed') {
+
+          $convertionState->current_state = 'book';
+          $convertionState->save();
+        }
+        Log::info("-------------------------------------------------------------------------------------------------------------------------------------------------------------");
+        Log::info($convertionState);
+        Log::info("-------------------------------------------------------------------------------------------------------------------------------------------------------------");
+      }
+      // $this->handleConversationFlow($patientNo, $selectedSlot);
 
       return [
         'message' => $isBookingSuccessful ? "Appointment booked for $selectedSlot . Thank You." : 'Failed to book appointment.',
@@ -359,58 +407,142 @@ class ApiController extends Controller
 
   function handleConversationFlow($userId, $messageText)
   {
-    // Fetch or create the conversation state
-    $state = ConverstionState::firstOrCreate(
-      ['user_id' => $userId],
-      [
-        'current_state' => 'idle',
-        'flow_type' => null,
-        'data' => [],
-        'is_active' => true,
-      ]
-    );
+    try {
+      //code...
 
-    // If the state is idle, don't do anything
-    if ($state->state === 'idle') {
-      return null; // or return 'idle' if you want to check
-    }
+      if (substr($userId, 0, 2) === '91' && strlen($userId) > 10) {
+        $userId = substr($userId, 2);
+      }
 
-    $data = $state->data ?? [];
-    $nextMessage = '';
+      // Fetch or create the conversation state
+      $state = ConverstionState::firstOrCreate(
+        ['user_id' => $userId],
+        [
+          'current_state' => 'idle',
+          'flow_type' => null,
+          'data' => [],
+          'is_active' => true,
+        ]
+      );
+      if ($state->current_state === 'idle') {
+        return null;
+      }
+      if ($state->current_state === 'confirmed') {
+        return null;
+      }
 
-    if ($state->state === 'book') {
-      $state->state = 'ask_name';
-      $state->save();
-      return 'Please provide your full name.';
-    }
+      $data = $state->data ?? [];
+      $nextMessage = '';
 
-    switch ($state->state) {
-      case 'ask_name':
-        $data['name'] = $messageText;
-        $state->state = 'ask_age';
-        $state->data = $data;
+      if ($state->current_state === 'book') {
+        $state->current_state = 'ask_name';
         $state->save();
-        return 'Thanks! Now please provide your age.';
+        return 'Please provide your full name.';
+      }
 
-      case 'ask_age':
-        $data['age'] = $messageText;
-        $state->state = 'ask_slot';
-        $state->data = $data;
-        $state->save();
-        return 'Great! Please select a time slot: 10AM, 2PM, or 4PM.';
 
-      case 'ask_slot':
-        $data['slot'] = $messageText;
-        $state->state = 'confirmed';
-        $state->data = $data;
-        $state->save();
-        return "Thanks {$data['name']}! Your appointment at {$data['slot']} is booked.";
+      $patient = Patientmaster::where('mobile_no', $userId)->first();
 
-      case 'confirmed':
-        return "Your appointment is already booked. To book again, type 'book'.";
+      switch ($state->current_state) {
+        case 'ask_name':
+          $data['name'] = $messageText;
+          $state->current_state = 'ask_age';
+          $state->data = $data;
+          $state->save();
+          $patient->patient_name = $messageText;
+          $patient->save();
 
-      default:
-        return "Sorry, I didn’t understand that.";
+          return 'Thanks! Now please provide your age.';
+
+        case 'ask_age':
+          $data['age'] = $messageText;
+          $state->current_state = 'ask_gender';
+          $state->data = $data;
+          $state->save();
+          $patient->age = $messageText;
+          $patient->save();
+
+
+          return 'Great! Please provide your gender.';
+
+        case 'ask_gender':
+          $data['gender'] = $messageText;
+          $state->current_state = 'ask_primary_concern';
+          $state->data = $data;
+
+          $state->save();
+          // Store gender as 1 for male, 2 for female, else store as-is
+          $genderValue = strtolower(trim($messageText));
+          if ($genderValue === 'male') {
+            $patient->gender = 1;
+          } elseif ($genderValue === 'female') {
+            $patient->gender = 2;
+          } else {
+            $patient->gender = $messageText;
+          }
+          $patient->save();
+
+          return "
+          Thanks! What is your primary skin concern today? You can choose one or more from the list below:
+          
+      Options (multiple choice):
+
+      Wrinkles / Fine Lines
+      Pigmentation / Dark Spots
+      Acne / Acne Scars
+      Dull or Uneven Skin Tone
+      Large Pores
+      Sagging Skin / Loss of Firmness
+      Under-Eye Circles / Puffiness
+      Dry / Dehydrated Skin
+      Oily / Acne-Prone Skin
+      Redness / Sensitive Skin
+      Unwanted Facial Hair
+      Sun Damage
+      Other (Please specify)
+          ";
+
+        case 'ask_primary_concern':
+          $data['primary_concern'] = $messageText;
+          $state->current_state = 'existing_condition';
+          $state->data = $data;
+          $state->save();
+          $patient->primary_concern = $messageText;
+          $patient->save();
+          return "Do you have any existing medical conditions or a history of major illnesses? If yes, please specify. If not, you can reply with 'No'.";
+        case 'existing_condition':
+          $data['existing_condition'] = $messageText;
+          $state->current_state = 'allergy';
+          $state->data = $data;
+          $state->save();
+          $patient->existing_condition = $messageText;
+          $patient->save();
+          return "Do you have any allergies — including to medications, skincare products, or food? If yes, please specify. If not, you can reply with 'No'.";
+        case 'allergy':
+          $data['allergy'] = $messageText;
+          $state->current_state = 'confirmed';
+          $state->data = $data;
+          $state->save();
+          $patient->allergy = $messageText;
+          $patient->save();
+          return "Thank you for the information. Your appointment is booked!
+Please upload a photo if you would like to have your skin analyzed.
+          ";
+        case 'confirmed':
+          return "Your appointment is already booked. To book again, type 'book'.";
+
+        default:
+          return null;
+      }
+    } catch (\Throwable $th) {
+      //throw $th;
+      Log::error('Error in handleConversationFlow:', [
+        'error' => $th->getMessage(),
+        'userId' => $userId,
+        'messageText' => $messageText,
+      ]);
+      // die;
+      return null;
     }
   }
   /**
@@ -452,7 +584,8 @@ class ApiController extends Controller
     $response = Http::withHeaders(self::WHATSAPP_HEADERS)->post(self::WHATSAPP_API_URL, $body);
 
     if ($response->successful()) {
-      Log::info('WhatsApp API Response:', $response->json());
+      Log::info('WhatsApp API Response success:');
+      // Log::info('WhatsApp API Response:', $response->json());
     } else {
       Log::error('WhatsApp API Error:', $response->json());
     }
@@ -669,7 +802,7 @@ class ApiController extends Controller
   public function bookAppointment(Request $request)
   {
     try {
-      Log::info($request->all());
+      // Log::info($request->all());
       $doctorNumber = $request->input('doctor_number');
       if (!$doctorNumber) {
         return response()->json([
@@ -779,6 +912,8 @@ class ApiController extends Controller
           'success' => true,
           'error' => true,
           'message' => 'Missing required parameters: doctor_id or patient_number.',
+          'patient' => [],
+          'chats' => [],
           'analysis' => [],
         ], 400);
       }
@@ -789,6 +924,8 @@ class ApiController extends Controller
           'error' => true,
           'message' => 'Doctor not found.',
           'analysis' => [],
+          'patient' => [],
+          'chats' => [],
         ], 404);
       }
       $patient = Patientmaster::where('mobile_no', $request->patient_number)->first();
@@ -798,8 +935,21 @@ class ApiController extends Controller
           'error' => true,
           'message' => 'Patient not found.',
           'analysis' => [],
+          'patient' => [],
+          'chats' => [],
         ], 404);
       }
+      $patientInfo = [
+        'patient_id' => $patient->patient_id,
+        'patient_name' => $patient->patient_name,
+        'mobile_no' => $patient->mobile_no,
+        'age' => $patient->age,
+        'gender' => $patient->gender,
+        'allergy' => $patient->allergy,
+        'primary_concern' => $patient->primary_concern,
+        'existing_condition' => $patient->existing_condition
+
+      ];
       $messages = Chats::where(function ($query) use ($patient, $doctor) {
         $query->where('sender_id', $doctor->mobile_no ?? null)
           ->where('receiver_id', $patient->mobile_no ?? null);
@@ -847,6 +997,7 @@ class ApiController extends Controller
         'message' => 'Analysis fetched successfully.',
         'chats' => $messages,
         'imageAnalysis' => $imageAnalysis,
+        'patient' => $patientInfo,
       ], 200);
     } catch (\Throwable $th) {
       Log::error('Error fetching analysis:', [
@@ -858,6 +1009,8 @@ class ApiController extends Controller
         'error' => true,
         'message' => $th->getMessage(),
         'analysis' => [],
+        'patient' => [],
+        'chats' => [],
       ], 500);
       //throw $th;
     }
@@ -868,7 +1021,7 @@ class ApiController extends Controller
     try {
       if (!$request->has('doctor_id') || !$request->has('patient_number')) {
         return response()->json([
-          'success' => true,
+          'success' => false,
           'error' => true,
           'message' => 'Missing required parameters: doctor_id or patient_number.',
           'images' => [],
@@ -877,7 +1030,7 @@ class ApiController extends Controller
       $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
       if (!$doctor) {
         return response()->json([
-          'success' => true,
+          'success' => false,
           'error' => true,
           'message' => 'Doctor not found.',
           'images' => [],
@@ -886,7 +1039,7 @@ class ApiController extends Controller
       $patient = Patientmaster::where('mobile_no', $request->patient_number)->first();
       if (!$patient) {
         return response()->json([
-          'success' => true,
+          'success' => false,
           'error' => true,
           'message' => 'Patient not found.',
           'images' => [],
@@ -908,6 +1061,14 @@ class ApiController extends Controller
         ->whereNotNull('media_id')
         ->orderBy('created_at', 'asc')
         ->first();
+      if (!$images) {
+        return response()->json([
+          'success' => false,
+          'error' => true,
+          'message' => 'No images found.',
+          'images' => [],
+        ], 404);
+      }
       $afterImages = [];
       if ($images->after_image != null) {
         $afterImages = [
@@ -919,9 +1080,7 @@ class ApiController extends Controller
         $response = $chabotResponse->afterImageAnalysis(new Request(['mediaId' => $images->media_id]));
         $responseData = json_decode($response->getContent(), true);
 
-        Log::info(json_encode($responseData));
-
-
+        // Log::info(json_encode($responseData));
         if (isset($responseData['images'])) {
           $matchedResponses[] = $responseData['images'];
           $images->after_image = $responseData['images'];
@@ -943,7 +1102,7 @@ class ApiController extends Controller
     } catch (\Throwable $th) {
       //throw $th;
       return response()->json([
-        'success' => true,
+        'success' => false,
         'error' => true,
         'message' => $th->getMessage(),
         'images' => [],

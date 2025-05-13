@@ -14,5 +14,8 @@ class ConverstionState extends Model
         'data',
         'is_active',
     ];
+    protected $casts = [
+        'data' => 'array',
+    ];
 
 }

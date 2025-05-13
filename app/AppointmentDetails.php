@@ -177,7 +177,7 @@ class AppointmentDetails extends Model
             // $prescriptionArray = PrescriptionData::whereRaw("md5(booking_id) = ?", [$bookingID])->get();
             $prescriptionArray = PrescriptionData::where('booking_id', $bookingID)->get();
 
-            Log::info(['ttttttttttttt', $tabdata]);
+            // Log::info(['ttttttttttttt', $tabdata]);
 
             $data = [];
             foreach ($timingArray as $timing) {
@@ -214,7 +214,7 @@ class AppointmentDetails extends Model
                         "urls" => ''
                     ];
                 }
-                Log::info(['url of the precription' => $tabdata[0]->prescription_details]);
+                // Log::info(['url of the precription' => $tabdata[0]->prescription_details]);
                 // $tabdata[0]->payment_url = Controller::urlshorten($_ENV['PAYMENT_URL_V1'] . $bookingID . '/pay');
                 $tabdata[0]->payment_url = $_ENV['APP_URL'] . '/api/v3/payment/' . $bookingID . '/pay';
                 $tabdata[0]->appointment_url = Controller::urlshorten($tabdata[0]->appointment_url);
@@ -1936,7 +1936,7 @@ class AppointmentDetails extends Model
     {
 
         $data = $request->input();
-        Log::info([$data]);
+        // Log::info([$data]);
         if (!isset($data['age'])) {
             $data['age'] = 0;
         }
@@ -1946,39 +1946,39 @@ class AppointmentDetails extends Model
         if (!isset($data['schedule_remark'])) {
             $data['schedule_remark'] = '';
         }
-        Log::info($data['gender']);
+        // Log::info($data['gender']);
 
         $medicaldata = Medicalestablishmentsmedicalusermap::find($data['user_map_id'])->get()->first();
 
         $skuobj = new Skumaster();
-        Log::Info(['skuid', $data['sku_id']]);
+        // Log::Info(['skuid', $data['sku_id']]);
         $skudata = $skuobj->getskudetailsbyid($data['user_map_id'], $data['sku_id']);
-        Log::info(['skudataa', $skudata]);
+        // Log::info(['skudataa', $skudata]);
 
         if (isset($data['payment_amount'])) {
-            Log::info(['1']);
+            // Log::info(['1']);
             $fee = $data['payment_amount'];
         } else {
-            Log::info(['2']);
+            // Log::info(['2']);
 
             $fee = $skudata->fee ?? "0";
         }
         if (isset($data['slot_size']) && $data['slot_size'] != '') {
-            Log::info(['3']);
+            // Log::info(['3']);
             $slot_size = $data['slot_size'];
         } else {
             $slot_size = (int) $_ENV['SLOT_SIZE'];
-            Log::info(['4']);
+            // Log::info(['4']);
         }
         if (isset($data['schedule_date']) && $data['schedule_date'] != null) {
-            Log::info(['status 2']);
+            // Log::info(['status 2']);
             $status = 2;
             $date = date('Y-m-d', strtotime($data['schedule_date']));
             $time = date('H:i', strtotime($data['schedule_time']));
             $start_booking_time = date('Y-m-d H:i:s', strtotime($data['schedule_date'] . " " . $data['schedule_time']));
             $end_booking_time = date('Y-m-d H:i:s', strtotime('+' . $slot_size . ' minutes', strtotime($data['schedule_date'] . " " . $data['schedule_time'])));
         } else {
-            Log::info(['statuschabged to 1']);
+            // Log::info(['statuschabged to 1']);
             $status = 1;
             $start_booking_time = null;
             $end_booking_time = null;
@@ -1986,7 +1986,7 @@ class AppointmentDetails extends Model
             $time = null;
         }
         // dd($start_booking_time, $end_booking_time, $slot_size, $data['schedule_date'], $data['schedule_time']);
-        Log::info(['payyyyyyyyyyymentMode', isset($data['payment_mode'])]);
+        // Log::info(['payyyyyyyyyyymentMode', isset($data['payment_mode'])]);
         if (isset($data['payment_mode'])) {
             $payment_mode = $data['payment_mode'];
             $created_by = 'doctor';
@@ -2025,7 +2025,7 @@ class AppointmentDetails extends Model
 
         ]);
         //  Log::info(['id', DB::table('docexa_patient_booking_details')->where('id', $iudy)])
-        Log::info(['idddddddddddd', $id]);
+        // Log::info(['idddddddddddd', $id]);
         //var_dump($id);die;
         DB::table('docexa_appointment_sku_details')->insertGetId(['start_booking_time' => $start_booking_time, 'end_booking_time' => $end_booking_time, 'slot_size' => $slot_size, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'), 'booking_id' => $id, 'esteblishment_user_map_sku_id' => $data['sku_id'], 'cost' => $fee, 'payable_price' => $fee, 'discount' => 0, 'booking_type' => $skudata->booking_type ?? null]);
 
@@ -2038,14 +2038,14 @@ class AppointmentDetails extends Model
         // $paymentdata = $res->createpayment($bookinggIdmd5);
         $paymentdata = [];
 
-        Log::info(['payyyy', $paymentdata]);
+        // Log::info(['payyyy', $paymentdata]);
 
         $urlArray = parse_url($tabdata['appointment'][0]->handle, PHP_URL_PATH);
         $segments = explode('/', $urlArray);
         $numSegments = count($segments);
         $currentSegment = $segments[$numSegments - 1];
         $c = new Controller();
-        Log::info("status", [$status, $payment_mode, $created_by]);
+        // Log::info("status", [$status, $payment_mode, $created_by]);
 
         if ($status == 2 && $payment_mode == 'byPatient' && $created_by == 'doctor') {
             $notificationdata = [
@@ -2076,7 +2076,7 @@ class AppointmentDetails extends Model
             ];
             $c->sendNotification($notificationdata);
         }
-        Log::info(['aptt' => $tabdata['appointment'], 'payment' => $paymentdata]);
+        // Log::info(['aptt' => $tabdata['appointment'], 'payment' => $paymentdata]);
 
         return ['appointment' => $tabdata['appointment'], 'payment' => $paymentdata, "appointment_id" => $id];
     }
