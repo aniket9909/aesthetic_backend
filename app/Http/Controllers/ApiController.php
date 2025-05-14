@@ -359,6 +359,7 @@ class ApiController extends Controller
       foreach ($phrases as $phrase) {
         if ($this->isSimilar($message, $phrase)) {
           $response = match ($category) {
+            'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
             'appointment' => "You can book an appointment here",
             default => null
           };
