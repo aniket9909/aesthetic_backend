@@ -19,8 +19,9 @@ class Chats extends Model
         'media_mime_type',
         'media_sha256',
         'media_id',
-        'whatsapp_message_id',    
-        'date',   
+        'whatsapp_message_id',
+        'after_image',
+        'date',
     ];
 
   
