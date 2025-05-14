@@ -211,7 +211,8 @@ class ApiController extends Controller
       'media_mime_type' => null,
       'media_sha256' => null,
       'media_id' => null,
-      'whatsapp_message_id' => $messageId,
+      'whatsapp_message_id'=> $messageId, 
+      'date'=>Carbon::now()
     ]);
     return $this->processUserMessage($message);
   }
@@ -266,6 +267,7 @@ class ApiController extends Controller
       'media_sha256' => null,
       'media_id' => $imageId,
       'whatsapp_message_id' => null,
+      'date'=>Carbon::now()
     ]);
 
     // Log::info("Image ID: $imageId");
@@ -311,7 +313,8 @@ class ApiController extends Controller
         'media_mime_type' => null,
         'media_sha256' => null,
         'media_id' => null,
-        'whatsapp_message_id' => $messageId,
+        'whatsapp_message_id'=> $messageId, 
+        'date'=>Carbon::now()
       ]);
       Log::info("Selected Slot: $selectedSlot");
 
@@ -451,7 +454,8 @@ class ApiController extends Controller
         'media_mime_type' => null,
         'media_sha256' => null,
         'media_id' => null,
-        'whatsapp_message_id' => null,
+        'whatsapp_message_id' =>null,
+        'date'=>Carbon::now()
       ]);
 
       $patient = Patientmaster::where('mobile_no', $userId)->first();
@@ -592,6 +596,7 @@ Please upload a photo if you would like to have your skin analyzed.
       'media_mime_type' => null,
       'media_sha256' => null,
       'whatsapp_message_id' => null,
+      'date'=>Carbon::now()
 
     ]);
     $response = Http::withHeaders(self::WHATSAPP_HEADERS)->post(self::WHATSAPP_API_URL, $body);
