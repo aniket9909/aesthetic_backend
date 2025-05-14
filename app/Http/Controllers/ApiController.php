@@ -440,7 +440,19 @@ class ApiController extends Controller
         $state->save();
         return 'Please provide your full name.';
       }
-
+      $this->storeChat([
+        'sender_id' => $userId,
+        'receiver_id' => self::DOCTOR_NUMBER,
+        'message_type' => 'text',
+        'message_text' => $messageText,
+        'analysis' => null,
+        'output' => null,
+        'media_url' => null,
+        'media_mime_type' => null,
+        'media_sha256' => null,
+        'media_id' => null,
+        'whatsapp_message_id' => null,
+      ]);
 
       $patient = Patientmaster::where('mobile_no', $userId)->first();
 
