@@ -377,8 +377,8 @@ class ApiController extends Controller
 
 
       $chabotResponse = new SkinAnalysisController();
-      $response = $chabotResponse->greetingChatbot(new Request(['question' => $message]));
-      // $response = $chabotResponse->chatbot(new Request(['question' => $message]));
+      // $response = $chabotResponse->greetingChatbot(new Request(['question' => $message]));
+      $response = $chabotResponse->chatbot(new Request(['question' => $message]));
       $responseData = json_decode($response->getContent(), true);
       if (isset($responseData['chatbot_response'])) {
         $matchedResponses[] = $responseData['chatbot_response'];
