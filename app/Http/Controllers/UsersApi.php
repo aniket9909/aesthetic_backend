@@ -863,8 +863,12 @@ class UsersApi extends Controller
         $data = $request->all();
         //Slotmaster::where(array("user_map_id" => $esteblishmentusermapID))->delete();
         foreach ($data['slots'] as $slots) {
+            // Remove " Minutes" or " minutes" from slot_size if present
+            if (isset($slots['slot_size'])) {
+            $slots['slot_size'] = preg_replace('/\s*minutes?/i', '', $slots['slot_size']);
+            }
             if ((int)$slots['slot_size']) {
-                $insert[] = $slots;
+            $insert[] = $slots;
             }
         }
         Slotmaster::insert($insert);
