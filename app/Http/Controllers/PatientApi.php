@@ -497,7 +497,12 @@ class PatientApi extends Controller
         $pm = new Patientmaster();
         return response()->json(['status' => 'success', 'data' => $pm->searchv2($esteblishmentusermapID, $key, $value, $page, $limit)], 200);
     }
-
+    function assignIfExists(&$property, $input, $key)
+    {
+        if (array_key_exists($key, $input) && $input[$key] !== null && $input[$key] !== '') {
+            $property = $input[$key];
+        }
+    }
     public function updatepatientDetails(Request $request, $esteblishmentusermapID, $patientId)
     {
         try {
@@ -508,19 +513,33 @@ class PatientApi extends Controller
             }
             $patient = Patientmaster::where('patient_id', $patientId)->first();
             if ($patient) {
-                $patient->patient_name = array_key_exists('patient_name', $input) ? $input['patient_name'] : $patient->patient_name;;
-                $patient->gender = array_key_exists('gender', $input) ? $input['gender'] : $patient->gender;;
-                $patient->mobile_no = array_key_exists('mobile_no', $input) ? $input['mobile_no'] : $patient->mobile_no;;
-                $patient->email_id = array_key_exists('email_id', $input) ? $input['email_id'] : $patient->email_id;;
-                $patient->dob = array_key_exists('dob', $input) ? $input['dob'] : $patient->dob;;
-                $patient->city = array_key_exists('city', $input) ? $input['city'] : $patient->city;;
-                $patient->city_id = array_key_exists('city_id', $input) ? $input['city_id'] : $patient->city_id;
-                $patient->state = array_key_exists('state', $input) ? $input['state'] : $patient->state;;
-                $patient->state_id = array_key_exists('state_id', $input) ? $input['state_id'] : $patient->state_id;;
-                $patient->age = array_key_exists('age', $input) ? $input['age'] : $patient->age;;
-                $patient->address = array_key_exists('address', $input) ? $input['address'] : $patient->address;;
+                // $patient->patient_name = array_key_exists('patient_name', $input) ? $input['patient_name'] : $patient->patient_name;;
+                // $patient->gender = array_key_exists('gender', $input) ? $input['gender'] : $patient->gender;;
+                // $patient->mobile_no = array_key_exists('mobile_no', $input) ? $input['mobile_no'] : $patient->mobile_no;;
+                // $patient->email_id = array_key_exists('email_id', $input) ? $input['email_id'] : $patient->email_id;;
+                // $patient->dob = array_key_exists('dob', $input) ? $input['dob'] : $patient->dob;;
+                // $patient->city = array_key_exists('city', $input) ? $input['city'] : $patient->city;;
+                // $patient->city_id = array_key_exists('city_id', $input) ? $input['city_id'] : $patient->city_id;
+                // $patient->state = array_key_exists('state', $input) ? $input['state'] : $patient->state;;
+                // $patient->state_id = array_key_exists('state_id', $input) ? $input['state_id'] : $patient->state_id;;
+                // $patient->age = array_key_exists('age', $input) ? $input['age'] : $patient->age;;
+                // $patient->address = array_key_exists('address', $input) ? $input['address'] : $patient->address;;
+                // $patient->created_by_doctor = $esteblishmentusermapID;
+                // $patient->flag = array_key_exists('flag', $input) ? ($input['flag'] ?  $input['flag'] : null) : $patient->flag;
+                $this->assignIfExists($patient->patient_name, $input, 'patient_name');
+                $this->assignIfExists($patient->gender, $input, 'gender');
+                $this->assignIfExists($patient->mobile_no, $input, 'mobile_no');
+                $this->assignIfExists($patient->email_id, $input, 'email_id');
+                $this->assignIfExists($patient->dob, $input, 'dob');
+                $this->assignIfExists($patient->city, $input, 'city');
+                $this->assignIfExists($patient->city_id, $input, 'city_id');
+                $this->assignIfExists($patient->state, $input, 'state');
+                $this->assignIfExists($patient->state_id, $input, 'state_id');
+                $this->assignIfExists($patient->age, $input, 'age');
+                $this->assignIfExists($patient->address, $input, 'address');
+                $this->assignIfExists($patient->flag, $input, 'flag');
+
                 $patient->created_by_doctor = $esteblishmentusermapID;
-                $patient->flag = array_key_exists('flag', $input) ? ($input['flag'] ?  $input['flag'] : null) : $patient->flag;
 
 
                 // $patient->pincode = $input['pincode'];
