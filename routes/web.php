@@ -807,4 +807,4 @@ $router->get('/', function () use ($router) {
 
 $router->post('/image', 'SkinAnalysisController@analyzeSkin');
 // $router->post('/image', [SkinAnalysisController::class, 'analyzeSkin']);
-$router->post('/chatbot', [SkinAnalysisController::class, 'chatbot']);
+$router->post('/chatbot', 'SkinAnalysisController@chatbot');

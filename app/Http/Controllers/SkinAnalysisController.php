@@ -83,12 +83,49 @@ class SkinAnalysisController extends Controller
             $otherIssues = str_replace('\n', "\n", $message[2]);
 
             // Create the formatted message
-            $formatMessage = "My skin type is {$skinType}\n";
-            $formatMessage .= "Condition is {$mainCondition}\n";
-            $formatMessage .= "Other probabilities are:\n{$otherIssues}\n\n";
-            $formatMessage .= "Give me  treatment/solution in short. within 150 words \n";
+            // $formatMessage = "My skin type is {$skinType}\n";
+            // $formatMessage .= "Condition is {$mainCondition}\n";
+            // $formatMessage .= "Other probabilities are:\n{$otherIssues}\n\n";
+            // $formatMessage .= "Give me  treatment/solution in short. within 1000 words \n";
+            // $formatMessage = "Patient Skin Type: {$skinType}\n";
+            // $formatMessage .= "Primary Dermatological Condition: {$mainCondition}\n";
+            // $formatMessage .= "Differential Diagnoses / Other Probable Conditions:\n{$otherIssues}\n\n";
+            $formatMessage = "You are an expert dermatologist AI assistant.\n\n";
+            $formatMessage .= "Patient Details:\n";
+            $formatMessage .= "• Skin Type: {$skinType}\n";
+            $formatMessage .= "• Primary Skin Condition: {$mainCondition}\n";
+            $formatMessage .= "• Possible Other Conditions: {$otherIssues}\n\n";
+
+            $formatMessage .= "Based on this information, generate a short diagnosis-based treatment plan for a dermatologist to review.\n";
+            $formatMessage .= "Include both medicinal and aesthetic procedure suggestions (e.g., Botox, fillers, chemical peels, laser treatments, etc) where clinically appropriate.\n";
+            $formatMessage .= "Include the following:\n";
+            $formatMessage .= "- Confirmed Diagnosis\n";
+            $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
+            $formatMessage .= "- Treatment notes (application instructions, any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
+            $formatMessage .= "Return the response in under 1000 words in this format:\n\n";
+            // $formatMessage .= "🔍 Clinical Summary:\n";
+            // $formatMessage .= "- Presenting symptoms consistent with {$mainCondition}.\n";
+            // $formatMessage .= "- Skin type indicates potential reactivity to specific agents or treatments.\n";
+            // $formatMessage .= "- Consider ruling out: {$otherIssues}.\n\n";
+
+            // $formatMessage .= "🩺 Recommended First-Line Treatment (within 400 words):\n";
+            // $formatMessage .= "Please provide a short, evidence-based treatment or solution tailored to the patient's skin type and diagnosed condition. This includes preferred topical/systemic agents, lifestyle advice, and diagnostic steps if necessary. Ensure language is suitable for professional dermatological reference.\n";
+
+            // $formatMessage = "You are an expert dermatologist AI assistant.\n\n";
+            // $formatMessage .= "Patient Details:\n";
+            // $formatMessage .= "• Skin Type: {$skinType}\n";
+            // $formatMessage .= "• Primary Skin Condition: {$mainCondition}\n";
+            // $formatMessage .= "• Possible Other Conditions: {$otherIssues}\n\n";
+
+            // $formatMessage .= "Based on this information, generate a short diagnosis-based treatment plan for a dermatologist to review.\n";
+            // $formatMessage .= "Include the following:\n";
+            // $formatMessage .= "- Confirmed Diagnosis\n";
+            // $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
+            // $formatMessage .= "- Treatment notes (application instructions, any test advice, or skin-type considerations)\n\n";
+            // $formatMessage .= "Return the response in under 400 words in this format:\n\n";
 
             $chatbotResponse = $this->chatbot(new Request(['question' => $formatMessage]))->getData(true);
+
 
             dispatch(new AfterImageStore(['mediaId' => $mediaId]));
 
@@ -122,35 +159,83 @@ class SkinAnalysisController extends Controller
         }
 
         $question = $request->input('question');
+
+        // Static greeting message
+        $greeting = "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!";
+
+        // Append instruction to ensure skin-related answers only
+        $instruction = "Note: Only respond to skin-related questions. If this question is not related to skin, reply: 'I can only answer skin-related questions. Please ask accordingly.'";
+
+        // Combine everything
+        $finalPrompt = "$greeting\n\nUser: $question\n\n$instruction";
+
+
+        // $question = $request->input('question');
+        // $finalPrompt = $question . "\n\nNote: Only respond to skin-related questions. If this question is not related to skin, reply: 'I can only answer skin-related questions. Please ask accordingly.'";
         $escapedQuestion = escapeshellarg($question); // Escape to prevent shell injection
         try {
-            $pythonPath = 'python3'; // Adjust if your system uses another path
+            // $pythonPath = 'python3'; // Adjust if your system uses another path
 
             // $output = shell_exec("$pythonPath $scriptPath $question");
-            $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/chatbot.py $escapedQuestion 2>&1");
-            Log::info("Chatbot output: $output");
+            // $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/chatbot.py $escapedQuestion 2>&1");
+            // Log::info("Chatbot output: $output");
+            $groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            $bearerToken = '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'; // Replace with your actual token
 
-            if (!$output) {
-                return response()->json([
-                    'error' => 'No response from chatbot',
-                    'status' => 500,
-                    'message' => 'No response from chatbot',
-                    'chatbot_response' => 'No response.Please try again.',
-                ], 500);
+            $groqBody = [
+                "model" => "llama-3.3-70b-versatile",
+                "messages" => [
+                    [
+                        "role" => "user",
+                        "content" => $finalPrompt
+                    ]
+                ],
+                "temperature" => 0.7,
+                "max_tokens" => 1000
+            ];
+
+            $groqResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $bearerToken,
+                'Content-Type' => 'application/json'
+            ])->post($groqApiUrl, $groqBody);
+
+            if ($groqResponse->successful()) {
+                $groqData = $groqResponse->json();
+                $chatbotResponse = [
+                    'chatbot_response' => $groqData['choices'][0]['message']['content'] ?? 'No response'
+                ];
+            } else {
+                $chatbotResponse = [
+                    'chatbot_response' => 'No response from  API'
+                ];
             }
 
-            $lines = explode("\n", trim($output));
-            $lastLine = end($lines);
+            // if (!$output) {
+            //     return response()->json([
+            //         'error' => 'No response from chatbot',
+            //         'status' => 500,
+            //         'message' => 'No response from chatbot',
+            //         'chatbot_response' => 'No response.Please try again.',
+            //     ], 500);
+            // }
 
-            $responseData = json_decode($lastLine, true);
+            // Format the chatbot response for better readability
+            // $formattedResponse = preg_replace('/\\\n/', "\n", $chatbotResponse['chatbot_response']);
+            // $formattedResponse = preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $formattedResponse); // Bold formatting
+            // $formattedResponse = preg_replace('/\n{2,}/', "\n\n", $formattedResponse); // Normalize multiple newlines
+            $formattedResponse = preg_replace('/\*\*(.*?)\*\*/', strtoupper('$1'), $chatbotResponse['chatbot_response']);
+            // $lines = explode("\n", trim($formattedResponse));
+            // $lastLine = end($lines);
 
-            if ($responseData === null) {
+            // $responseData = json_decode($lastLine, true);
+
+            if ($formattedResponse === null) {
                 return response()->json([
                     'error' => 'Failed to decode JSON',
                     'status' => 500,
                     'message' => 'Failed to decode JSON response from chatbot',
                     'chatbot_response' => 'No response',
-                    'raw_output' => $output
+                    'raw_output' => $formattedResponse
                 ], 500);
             }
             return response()->json([
@@ -158,7 +243,7 @@ class SkinAnalysisController extends Controller
                 'message' => 'Chatbot response received successfully',
                 'status' => 200,
                 'question' => $request->input('question'),
-                'chatbot_response' => $responseData['response'] ?? 'No response'
+                'chatbot_response' => $formattedResponse ?? 'No response'
             ]);
         } catch (\Exception $e) {
             return response()->json([

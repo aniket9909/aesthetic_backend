@@ -184,19 +184,24 @@ class ApiController extends Controller
         'is_active' => true,
       ]
     );
-    if ($converstionState != null && $converstionState->current_state != 'idle' && $converstionState->current_state != 'confirmed') {
 
-      return ['message' => $messageData['text']['body'], 'isBooking' => false];
-    }
     if ($messageData) {
       if (isset($messageData['type'])) {
         switch ($messageData['type']) {
           case 'interactive':
             return $this->handleInteractiveMessage($messageData, $patientName, $patientNo);
           case 'image':
-            return $this->handleImageMessage($messageData, $patientNo);
+            if ($converstionState != null && $converstionState->current_state != 'idle' && $converstionState->current_state != 'confirmed') {
+              return ['message' => $messageData['text']['body'], 'isBooking' => false];
+            }else{
+              return $this->handleImageMessage($messageData, $patientNo);
+            }
         }
       }
+    }
+    if ($converstionState != null && $converstionState->current_state != 'idle' && $converstionState->current_state != 'confirmed') {
+
+      return ['message' => $messageData['text']['body'], 'isBooking' => false];
     }
 
     $message = $jsonData['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'] ?? '';
@@ -357,12 +362,12 @@ class ApiController extends Controller
   {
     $matchedResponses = [];
     $isBooking = false;
-
+    
     foreach ($this->categories as $category => $phrases) {
       foreach ($phrases as $phrase) {
         if ($this->isSimilar($message, $phrase)) {
           $response = match ($category) {
-            'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
+            // 'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
             'appointment' => "You can book an appointment here",
             default => null
           };
