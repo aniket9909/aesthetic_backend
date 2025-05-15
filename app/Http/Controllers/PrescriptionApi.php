@@ -4130,9 +4130,9 @@ class PrescriptionApi extends Controller
             $medicalCertificate->age = $input['age'];
             $medicalCertificate->resident_of = $input['resident_of'];
             $medicalCertificate->diagnosis = $input['diagnosis'];
-            $medicalCertificate->start_date = $input['start_date'];
-            $medicalCertificate->end_date = $input['end_date'];
-            $medicalCertificate->join_date = $input['join_date'];
+            $medicalCertificate->start_date = !empty($input['start_date']) ? $input['start_date'] : null;
+            $medicalCertificate->end_date = !empty($input['end_date']) ? $input['end_date'] : null;
+            $medicalCertificate->join_date = !empty($input['join_date']) ? $input['join_date'] : null;;
             $medicalCertificate->passport_number = $input['passport_number'];
             $medicalCertificate->nationality = $input['nationality'];
             $medicalCertificate->visa_procedure = $input['visa_procedure'];
@@ -4157,8 +4157,8 @@ class PrescriptionApi extends Controller
             $medicalCertificate->any_oher_problem = $input['any_oher_problem'];
             $medicalCertificate->impression = $input['impression'];
             $medicalCertificate->gender = $input['gender'];
-            $medicalCertificate->date_of_admission = $input['date_of_admission'];
-            $medicalCertificate->date_of_discharge = $input['date_of_discharge'];
+            $medicalCertificate->date_of_admission = !empty($input['date_of_admission']) ? $input['date_of_admission'] : null;
+            $medicalCertificate->date_of_discharge = !empty($input['date_of_discharge']) ? $input['date_of_discharge'] : null;
             $medicalCertificate->incharge = $input['incharge'];
             $medicalCertificate->history_findings = $input['history_findings'];
             $medicalCertificate->course_treatment = $input['course_treatment'];
