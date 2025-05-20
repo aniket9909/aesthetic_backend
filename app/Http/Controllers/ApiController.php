@@ -77,14 +77,14 @@ class ApiController extends Controller
   ];
 
   private const WHATSAPP_API_URL = 'https://api.dovesoft.io/REST/directApi/message';
-  private const WHATSAPP_HEADERS = [
+  private  $WHATSAPP_HEADERS = [
     'key' => "a2608dfcbeXX",
     'Accept' => 'application/json',
     'wabaNumber' => '919321962947',
     'Content-Type' => 'application/json',
   ];
 
-  private const DOCTOR_NUMBER = '9321962947';
+  private $DOCTOR_NUMBER = '9321962947';
 
   /**
    * Handle incoming JSON payload from webhook.
@@ -109,6 +109,13 @@ class ApiController extends Controller
       }
 
       // Extract patient details
+      $this->DOCTOR_NUMBER = $jsonData['entry'][0]['changes'][0]['value']['metadata']['display_phone_number'] ?? null;
+      $this->WHATSAPP_HEADERS['wabaNumber'] = $this->DOCTOR_NUMBER;
+
+      if ($this->DOCTOR_NUMBER && substr($this->DOCTOR_NUMBER, 0, 2) === '91' && strlen($this->DOCTOR_NUMBER) > 10) {
+        $this->DOCTOR_NUMBER = substr($this->DOCTOR_NUMBER, 2);
+      }
+
       $patientName = $jsonData['entry'][0]['changes'][0]['value']['contacts'][0]['profile']['name'] ?? null;
       $patientNo = $jsonData['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id'] ?? null;
 
@@ -116,9 +123,10 @@ class ApiController extends Controller
         return response()->json(['error' => 'Missing patient information'], 400);
       }
 
+
       dispatch(new CheckPatient([
         'patient_number' => $patientNo,
-        'doctor_number' => self::DOCTOR_NUMBER,
+        'doctor_number' => $this->DOCTOR_NUMBER,
         'patient_name' => $patientName,
       ]));
 
@@ -193,7 +201,7 @@ class ApiController extends Controller
           case 'image':
             if ($converstionState != null && $converstionState->current_state != 'idle' && $converstionState->current_state != 'confirmed') {
               return ['message' => $messageData['text']['body'], 'isBooking' => false];
-            }else{
+            } else {
               return $this->handleImageMessage($messageData, $patientNo);
             }
         }
@@ -207,7 +215,7 @@ class ApiController extends Controller
     $message = $jsonData['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'] ?? '';
     $this->storeChat([
       'sender_id' => $patientNo,
-      'receiver_id' => self::DOCTOR_NUMBER,
+      'receiver_id' => $this->DOCTOR_NUMBER,
       'message_type' => 'text',
       'message_text' => $message,
       'analysis' => null,
@@ -262,7 +270,7 @@ class ApiController extends Controller
     }
     $this->storeChat([
       'sender_id' => $patientNo,
-      'receiver_id' => self::DOCTOR_NUMBER,
+      'receiver_id' => $this->DOCTOR_NUMBER,
       'message_type' => 'image',
       'message_text' => "Image received",
       'analysis' => implode(', ', $analysis),
@@ -298,7 +306,7 @@ class ApiController extends Controller
       // Log::info("Selected Slot: $selectedSlot");
 
       $bookingRequest = new Request([
-        'doctor_number' => self::DOCTOR_NUMBER,
+        'doctor_number' => $this->DOCTOR_NUMBER,
         'patient_number' => $patientNo,
         'patient_name' => $patientName,
         'selected_slot' => $selectedSlot,
@@ -309,7 +317,7 @@ class ApiController extends Controller
       }
       $this->storeChat([
         'sender_id' => $patientNo,
-        'receiver_id' => self::DOCTOR_NUMBER,
+        'receiver_id' => $this->DOCTOR_NUMBER,
         'message_type' => 'text',
         'message_text' => $selectedSlot,
         'analysis' => null,
@@ -362,7 +370,7 @@ class ApiController extends Controller
   {
     $matchedResponses = [];
     $isBooking = false;
-    
+
     foreach ($this->categories as $category => $phrases) {
       foreach ($phrases as $phrase) {
         if ($this->isSimilar($message, $phrase)) {
@@ -450,7 +458,7 @@ class ApiController extends Controller
       }
       $this->storeChat([
         'sender_id' => $userId,
-        'receiver_id' => self::DOCTOR_NUMBER,
+        'receiver_id' => $this->DOCTOR_NUMBER,
         'message_type' => 'text',
         'message_text' => $messageText,
         'analysis' => null,
@@ -591,7 +599,7 @@ Please upload a photo if you would like to have your skin analyzed.
       $patientNo = substr($patientNo, 2);
     }
     $this->storeChat([
-      'sender_id' => self::DOCTOR_NUMBER,
+      'sender_id' => $this->DOCTOR_NUMBER,
       'receiver_id' => $patientNo,
       'message_type' => 'text',
       'message_text' => $sendMessage['message'],
@@ -604,7 +612,7 @@ Please upload a photo if you would like to have your skin analyzed.
       'date' => Carbon::now()->toDateTimeString()
 
     ]);
-    $response = Http::withHeaders(self::WHATSAPP_HEADERS)->post(self::WHATSAPP_API_URL, $body);
+    $response = Http::withHeaders($this->WHATSAPP_HEADERS)->post(self::WHATSAPP_API_URL, $body);
 
     if ($response->successful()) {
       Log::info('WhatsApp API Response success:');
@@ -619,7 +627,7 @@ Please upload a photo if you would like to have your skin analyzed.
    */
   private function getSlotInteractiveBody(string $patientNo): array
   {
-    $response = $this->getAvailableSlots(new Request(['doctor_number' => self::DOCTOR_NUMBER]));
+    $response = $this->getAvailableSlots(new Request(['doctor_number' => $this->DOCTOR_NUMBER]));
     if ((is_array($response) && ($response['error'] ?? false) === true) ||
       (is_object($response) && method_exists($response, 'getData') && ($response->getData(true)['error'] ?? false) === true)
     ) {
