@@ -2231,7 +2231,6 @@ class PrescriptionApi extends Controller
             $doctorData = Doctor::where('pharmaclient_id', $doctorUserMap)->first();
 
             // id, user_map_id, font_family, font_size, footer_alignment, prescription_template, medicine_template, investigation_template, letter_head, signuture, top_margin, bottom_margin, left_margin, right_margin, language, created_at
-
             if ($doctorData) {
                 $alreadyExist = PrescriptionLayout::where('user_map_id', $id)->first();
                 if ($alreadyExist) {
@@ -2274,10 +2273,10 @@ class PrescriptionApi extends Controller
                     $presLayout->right_margin = $input['right_margin'] ? $input['right_margin'] : 1;
                     $presLayout->dose_mandatory = array_key_exists('dose_mandatory', $input) ? $input['dose_mandatory'] : null;
                     $presLayout->dose_type = array_key_exists('dose_type', $input) ? $input['dose_type'] : null;
-                    $alreadyExist->is_load_last_prescription = array_key_exists('is_load_last_prescription', $input) ? $input['is_load_last_prescription'] : null;
+                    $presLayout->is_load_last_prescription = array_key_exists('is_load_last_prescription', $input) ? $input['is_load_last_prescription'] : null;
 
 
-                    $save = $presLayout->save();
+                    $save = $presLayout->save();    
                 }
             } else {
                 return response()->json(['status' => false, "message" => "Doctor is not found with this user map id"], 401);
@@ -2291,7 +2290,7 @@ class PrescriptionApi extends Controller
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
-            return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
+            return response()->json(['status' => false, 'message' => $th->getMessage()], 500);
         }
     }
 

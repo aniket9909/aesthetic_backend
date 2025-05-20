@@ -24,7 +24,7 @@ use App\Clinic;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\SpecialityApi;
 use DB;
-use Log;    
+use Log;
 use App\PrescriptionLayout;
 
 
@@ -34,9 +34,7 @@ class RegisterApi extends Controller
     /**
      * Constructor
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * Operation register
@@ -91,118 +89,120 @@ class RegisterApi extends Controller
      */
     public function register(Request $request)
     {
-        
+
         $data = $request->input();
 
-        $check_doctor = Doctor::where('mobile_no',$data['doc_mobile_no'])->count();
-        
-        if($check_doctor>0){
+        $check_doctor = Doctor::where('mobile_no', $data['doc_mobile_no'])->count();
+        if ($check_doctor > 0) {
             $status = true;
-            try
-            {
+            try {
                 DB::beginTransaction();
                 $user = new User();
-                $doctor = Doctor::where('mobile_no',$data['doc_mobile_no'])->first();
-                
+                $doctor = Doctor::where('mobile_no', $data['doc_mobile_no'])->first();
+
                 $doctorquery = Doctor::find($doctor->pharmaclient_id);
-                if(isset($data['medical_certificate_url']) && (string)$data['medical_certificate_url'])
+                if (isset($data['medical_certificate_url']) && (string)$data['medical_certificate_url'])
                     $doctorquery->medical_certificate_url = $data['medical_certificate_url'];
-                if(isset($data['letter_head_copy']) && (string)$data['letter_head_copy'])
+                if (isset($data['letter_head_copy']) && (string)$data['letter_head_copy'])
                     $doctorquery->letter_head_copy = $data['letter_head_copy'];
-                if(isset($data['fee']) && (int)$data['fee'])
+                if (isset($data['fee']) && (int)$data['fee'])
                     $doctorquery->fee = $data['fee'];
-                if(isset($data['is_vaccine']))
+                if (isset($data['is_vaccine']))
                     $doctorquery->is_vaccine = $data['is_vaccine'];
                 $doctorquery->is_lead = 0;
-               $save=     $doctorquery->save();
-               Log::info(['save'=> $save]);
+                $save =     $doctorquery->save();
+                Log::info(['save' => $save]);
 
 
-              
-                $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id',$doctor->pharmaclient_id)->first();
+
+                $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id', $doctor->pharmaclient_id)->first();
                 Log::info(['usermAP' => $usermap]);
                 $presLayout = new PrescriptionLayout();
                 $presLayout->user_map_id = $usermap;
                 $presLayout->save();
-                
-                
+
+
                 $status = $status && $usermap && $doctor;
-            } catch (\Exception $e)
-            {
+            } catch (\Exception $e) {
                 DB::rollBack();
                 //throw $e; //sometime you want to rollback AND throw the exception
             }
-            if ($status)
-            {
+            if ($status) {
                 DB::commit();
-                return response()->json(['status' => "success",'doctor' => $user->autologin($usermap->id)], 200);
-            } else
-            {
+                return response()->json(['status' => "success", 'doctor' => $user->autologin($usermap->id)], 200);
+            } else {
                 DB::rollBack();
                 return response()->json(['status' => "error", 'message' => "something went wrong"], 400);
             }
         }
         $status = true;
-        try
-        {
-            DB::beginTransaction();
-        $medical = new Medicalestablishments();
-        $medical->type = 'individual';
-        $medical->active = 1;
-        $medical->address_id = 1;
-        $medical->email = $data['email'];
-        $medical->save();
-
-         
-
-        $doctor = new Doctor();
-        $doctor->login_name = $data['doc_mobile_no'];
-        if(isset($data['password']))
-            $doctor->password = md5($data['password']);
-        else
-            $doctor->password = md5('welcome');
-        $doctor->email_id = $data['email'];
-        $doctor->mobile_no = $data['doc_mobile_no'];
-        $doctor->pharmaclient_image = 'ProfileImages/docexa_default_image.png';
-        $doctor->image = 'ProfileImages/docexa_default_image.png';
-        if(isset($data['staff_mobile_no']) && (int)$data['staff_mobile_no'])
-            $doctor->staff_mobile_no = $data['staff_mobile_no'];
-        if(isset($data['medical_certificate_url']) && (string)$data['medical_certificate_url'])
-            $doctor->medical_certificate_url = $data['medical_certificate_url'];
-        if(isset($data['letter_head_copy']) && (string)$data['letter_head_copy'])
-            $doctor->letter_head_copy = $data['letter_head_copy'];
-        if(isset($data['fee']) && (int)$data['fee'])
-            $doctor->fee = $data['fee'];
-        if(isset($data['is_vaccine']))
-            $doctor->is_vaccine = $data['is_vaccine'];
-        $doctor->is_lead = 0; 
-     $save = $doctor->save();
-
         $usermap = new Medicalestablishmentsmedicalusermap();
-        $usermap->medical_establishment_id = $medical->id;
-        $usermap->medical_user_id = $doctor->pharmaclient_id;
-        $usermap->is_primary = 1;
-        $usermap->role = 'doctor';
-        $usermap->save();
 
-        
-        if(isset($data['specialities']) && count($data['specialities']) > 0){
-            $speciality = new SpecialityApi();
-            $speciality->updatespecialities($usermap->id,$data['specialities']);
-        }
-        $status = $status && $usermap && $doctor && $medical;
-        } catch (\Exception $e)
-        {
+        try {
+            DB::beginTransaction();
+            $medical = new Medicalestablishments();
+            $medical->type = 'individual';
+            $medical->active = 1;
+            $medical->address_id = 1;
+            $medical->email = $data['email'];
+            $medical->save();
+
+
+            $doctor = new Doctor();
+            $doctor->login_name = $data['doc_mobile_no'];
+            if (isset($data['password']))
+                $doctor->password = md5($data['password']);
+            else
+                $doctor->password = md5('welcome');
+            $doctor->email_id = $data['email'];
+            $doctor->mobile_no = $data['doc_mobile_no'];
+            $doctor->pharmaclient_image = 'ProfileImages/docexa_default_image.png';
+            $doctor->image = 'ProfileImages/docexa_default_image.png';
+
+            if (isset($data['staff_mobile_no']) && (int)$data['staff_mobile_no'])
+                $doctor->staff_mobile_no = $data['staff_mobile_no'];
+            if (isset($data['medical_certificate_url']) && (string)$data['medical_certificate_url'])
+                $doctor->medical_certificate_url = $data['medical_certificate_url'];
+            if (isset($data['letter_head_copy']) && (string)$data['letter_head_copy'])
+                $doctor->letter_head_copy = $data['letter_head_copy'];
+            if (isset($data['fee']) && (int)$data['fee'])
+                $doctor->fee = $data['fee'];
+            if (isset($data['is_vaccine']))
+                $doctor->is_vaccine = $data['is_vaccine'];
+            
+            $doctor->is_lead = 0;
+            $save = $doctor->save();
+             response()->json(["data" => $medical]);
+
+
+
+
+            $usermap->medical_establishment_id = $medical->id;
+            $usermap->medical_user_id = $doctor->pharmaclient_id;
+            $usermap->is_primary = 1;
+            $usermap->role = 'doctor';
+            $usermap->save();
+
+
+
+
+            if (isset($data['specialities']) && count($data['specialities']) > 0) {
+                $speciality = new SpecialityApi();
+                $speciality->updatespecialities($usermap->id, $data['specialities']);
+            }
+            $status = $status && $usermap && $doctor && $medical;
+        } catch (\Exception $e) {
             DB::rollBack();
-            //throw $e; //sometime you want to rollback AND throw the exception
+            // return response()->json(['status'=>'error','message'=>$e]);
+            throw $e; //sometime you want to rollback AND throw the exception
+            return response()->json(['status' => "error", 'message' => $e], 400);
+
         }
         $user = new User();
-        if ($status)
-        {
+        if ($status) {
             DB::commit();
-            return response()->json(['status' => "success", 'doctor' => $user->autologin($usermap->id)], 200);
-        } else
-        {
+            return response()->json(['status' => "success return", 'doctor' => $user->autologin($usermap->id)], 200);
+        } else {
             DB::rollBack();
             return response()->json(['status' => "error", 'message' => "something went wrong"], 400);
         }
@@ -250,112 +250,104 @@ class RegisterApi extends Controller
      */
     public function leadregister(Request $request)
     {
-        
+
         $data = $request->input();
 
-        $check_doctor = Doctor::where('mobile_no',$data['doc_mobile_no'])->count();
-        if($check_doctor>0){
+        $check_doctor = Doctor::where('mobile_no', $data['doc_mobile_no'])->count();
+        if ($check_doctor > 0) {
             $status = true;
-            try
-            {
+            try {
                 DB::beginTransaction();
                 $user = new User();
-                $doctor = Doctor::where('mobile_no',$data['doc_mobile_no'])->first();
+                $doctor = Doctor::where('mobile_no', $data['doc_mobile_no'])->first();
                 $doctorquery = Doctor::find($doctor->pharmaclient_id);
-                if(isset($data['medical_certificate_url']) && (string)$data['medical_certificate_url'])
+                if (isset($data['medical_certificate_url']) && (string)$data['medical_certificate_url'])
                     $doctorquery->medical_certificate_url = $data['medical_certificate_url'];
-                if(isset($data['letter_head_copy']) && (string)$data['letter_head_copy'])
+                if (isset($data['letter_head_copy']) && (string)$data['letter_head_copy'])
                     $doctorquery->letter_head_copy = $data['letter_head_copy'];
-                if(isset($data['fee']) && (int)$data['fee'])
+                if (isset($data['fee']) && (int)$data['fee'])
                     $doctorquery->fee = $data['fee'];
-                if(isset($data['is_vaccine']))
+                if (isset($data['is_vaccine']))
                     $doctorquery->is_vaccine = $data['is_vaccine'];
                 $doctorquery->is_lead = 1;
                 $doctorquery->save();
-                $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id',$doctor->pharmaclient_id)->first();
-                if(isset($data['specialities']) && count($data['specialities']) > 0){
+                $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id', $doctor->pharmaclient_id)->first();
+                if (isset($data['specialities']) && count($data['specialities']) > 0) {
                     $speciality = new SpecialityApi();
-                    $speciality->updatespecialities($usermap->id,$data['specialities']);
+                    $speciality->updatespecialities($usermap->id, $data['specialities']);
                 }
-                
+
                 $status = $status && $usermap && $doctor;
-            } catch (\Exception $e)
-            {
+            } catch (\Exception $e) {
                 DB::rollBack();
                 throw $e; //sometime you want to rollback AND throw the exception
             }
-            if ($status)
-            {
+            if ($status) {
                 DB::commit();
-                return response()->json(['status' => "success",'doctor' => $user->autologin($usermap->id)], 200);
-            } else
-            {
+                return response()->json(['status' => "success", 'doctor' => $user->autologin($usermap->id)], 200);
+            } else {
                 DB::rollBack();
                 return response()->json(['status' => "error", 'message' => "something went wrong"], 400);
             }
         }
         $status = true;
-        try
-        {
+        try {
             DB::beginTransaction();
-        $medical = new Medicalestablishments();
-        $medical->type = 'individual';
-        $medical->active = 1;
-        $medical->address_id = 1;
-        $medical->email = $data['email'];
-        $medical->save();
+            $medical = new Medicalestablishments();
+            $medical->type = 'individual';
+            $medical->active = 1;
+            $medical->address_id = 1;
+            $medical->email = $data['email'];
+            $medical->save();
 
-         
 
-        $doctor = new Doctor();
-        $doctor->login_name = $data['doc_mobile_no'];
-        if(isset($data['password']) && $data['password'] != "")
-            $doctor->password = md5($data['password']);
-        else
-            $doctor->password = md5('welcome');
-        $doctor->email_id = $data['email'];
-        $doctor->mobile_no = $data['doc_mobile_no'];
-        $doctor->pharmaclient_image = 'ProfileImages/docexa_default_image.png';
-        $doctor->image = 'ProfileImages/docexa_default_image.png';
-        if(isset($data['staff_mobile_no']) && (int)$data['staff_mobile_no'])
-            $doctor->staff_mobile_no = $data['staff_mobile_no'];
-        if(isset($data['medical_certificate_url']) && (string)$data['medical_certificate_url'])
-            $doctor->medical_certificate_url = $data['medical_certificate_url'];
-        if(isset($data['letter_head_copy']) && (string)$data['letter_head_copy'])
-            $doctor->letter_head_copy = $data['letter_head_copy'];
-        if(isset($data['fee']) && (int)$data['fee'])
-            $doctor->fee = $data['fee'];
-        if(isset($data['is_vaccine']))
-            $doctor->is_vaccine = $data['is_vaccine'];
-        $doctor->is_lead = 1; 
-        $doctor->save();
 
-        $usermap = new Medicalestablishmentsmedicalusermap();
-        $usermap->medical_establishment_id = $medical->id;
-        $usermap->medical_user_id = $doctor->pharmaclient_id;
-        $usermap->is_primary = 1;
-        $usermap->role = 'doctor';
-        $usermap->save();
-        if(isset($data['specialities']) && count($data['specialities']) > 0){
-            $speciality = new SpecialityApi();
-            $speciality->updatespecialities($usermap->id,$data['specialities']);
-        }
-        $status = $status && $usermap && $doctor && $medical;
-        Log::info([$usermap]);
-        Log::info([$doctor]);
-        Log::info([$medical]);
-        } catch (\Exception $e)
-        {
+            $doctor = new Doctor();
+            $doctor->login_name = $data['doc_mobile_no'];
+            if (isset($data['password']) && $data['password'] != "")
+                $doctor->password = md5($data['password']);
+            else
+                $doctor->password = md5('welcome');
+            $doctor->email_id = $data['email'];
+            $doctor->mobile_no = $data['doc_mobile_no'];
+            $doctor->pharmaclient_image = 'ProfileImages/docexa_default_image.png';
+            $doctor->image = 'ProfileImages/docexa_default_image.png';
+            if (isset($data['staff_mobile_no']) && (int)$data['staff_mobile_no'])
+                $doctor->staff_mobile_no = $data['staff_mobile_no'];
+            if (isset($data['medical_certificate_url']) && (string)$data['medical_certificate_url'])
+                $doctor->medical_certificate_url = $data['medical_certificate_url'];
+            if (isset($data['letter_head_copy']) && (string)$data['letter_head_copy'])
+                $doctor->letter_head_copy = $data['letter_head_copy'];
+            if (isset($data['fee']) && (int)$data['fee'])
+                $doctor->fee = $data['fee'];
+            if (isset($data['is_vaccine']))
+                $doctor->is_vaccine = $data['is_vaccine'];
+            $doctor->is_lead = 1;
+            $doctor->save();
+
+            $usermap = new Medicalestablishmentsmedicalusermap();
+            $usermap->medical_establishment_id = $medical->id;
+            $usermap->medical_user_id = $doctor->pharmaclient_id;
+            $usermap->is_primary = 1;
+            $usermap->role = 'doctor';
+            $usermap->save();
+            if (isset($data['specialities']) && count($data['specialities']) > 0) {
+                $speciality = new SpecialityApi();
+                $speciality->updatespecialities($usermap->id, $data['specialities']);
+            }
+            $status = $status && $usermap && $doctor && $medical;
+            Log::info([$usermap]);
+            Log::info([$doctor]);
+            Log::info([$medical]);
+        } catch (\Exception $e) {
             DB::rollBack();
             throw $e; //sometime you want to rollback AND throw the exception
         }
         $user = new User();
-        if ($status)
-        {
+        if ($status) {
             DB::commit();
             return response()->json(['status' => "success", 'doctor' => $user->autologin($usermap->id)], 200);
-        } else
-        {
+        } else {
             DB::rollBack();
             return response()->json(['status' => "error", 'message' => "something went wrong"], 400);
         }
@@ -391,18 +383,17 @@ class RegisterApi extends Controller
      */
     public function lead($mobileno)
     {
-        
-        
-        $check_doctor = Doctor::where('mobile_no',$mobileno)->count();
-        ;
-        if($check_doctor>0){
-            $doctor = Doctor::where('mobile_no',$mobileno)->first();
-            
-            $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id',$doctor->pharmaclient_id)->first();
+
+
+        $check_doctor = Doctor::where('mobile_no', $mobileno)->count();;
+        if ($check_doctor > 0) {
+            $doctor = Doctor::where('mobile_no', $mobileno)->first();
+
+            $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id', $doctor->pharmaclient_id)->first();
             $user = new User();
-            return response()->json(['status' => "success",'doctor' => $user->autologin($usermap->id)], 200);
-        }else{
-            return response()->json(['status' => "success", 'message' => "No user found",'doctor' => []], 200);
+            return response()->json(['status' => "success", 'doctor' => $user->autologin($usermap->id)], 200);
+        } else {
+            return response()->json(['status' => "success", 'message' => "No user found", 'doctor' => []], 200);
         }
     }
     /**
@@ -436,19 +427,19 @@ class RegisterApi extends Controller
      */
     public function leadunsubscribe($mobileno)
     {
-        
 
-        $check_doctor = Doctor::where('mobile_no',$mobileno)->count();
-        if($check_doctor>0){
-            $doctor = Doctor::where('mobile_no',$mobileno)->first();
+
+        $check_doctor = Doctor::where('mobile_no', $mobileno)->count();
+        if ($check_doctor > 0) {
+            $doctor = Doctor::where('mobile_no', $mobileno)->first();
             $doc = Doctor::find($doctor->pharmaclient_id);
             $doc->unsubscribe = 0;
             $doc->save();
-            $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id',$doctor->pharmaclient_id)->first();
+            $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id', $doctor->pharmaclient_id)->first();
             $user = new User();
-            return response()->json(['status' => "success",'doctor' => $user->autologin($usermap->id)], 200);
-        }else{
-            return response()->json(['status' => "success", 'message' => "No user found",'doctor' => []], 200);
+            return response()->json(['status' => "success", 'doctor' => $user->autologin($usermap->id)], 200);
+        } else {
+            return response()->json(['status' => "success", 'message' => "No user found", 'doctor' => []], 200);
         }
     }
     /**
@@ -482,19 +473,19 @@ class RegisterApi extends Controller
      */
     public function leadsubscribe($mobileno)
     {
-        
 
-        $check_doctor = Doctor::where('mobile_no',$mobileno)->count();
-        if($check_doctor>0){
-            $doctor = Doctor::where('mobile_no',$mobileno)->first();
+
+        $check_doctor = Doctor::where('mobile_no', $mobileno)->count();
+        if ($check_doctor > 0) {
+            $doctor = Doctor::where('mobile_no', $mobileno)->first();
             $doc = Doctor::find($doctor->pharmaclient_id);
             $doc->unsubscribe = 1;
             $doc->save();
-            $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id',$doctor->pharmaclient_id)->first();
+            $usermap = Medicalestablishmentsmedicalusermap::where('medical_user_id', $doctor->pharmaclient_id)->first();
             $user = new User();
-            return response()->json(['status' => "success",'doctor' => $user->autologin($usermap->id)], 200);
-        }else{
-            return response()->json(['status' => "success", 'message' => "No user found",'doctor' => []], 200);
+            return response()->json(['status' => "success", 'doctor' => $user->autologin($usermap->id)], 200);
+        } else {
+            return response()->json(['status' => "success", 'message' => "No user found", 'doctor' => []], 200);
         }
     }
     /**
@@ -547,44 +538,47 @@ class RegisterApi extends Controller
      *     ),
      * )
      */
-    public function updateprofile($esteblishmentusermapID,Request $request)
+    public function updateprofile($esteblishmentusermapID, Request $request)
     {
         $data = $request->input();
-        
-        $user = new User();
-        $handle = $user->uniqueHandle($data['first_name'],$data['last_name']);
-        $usermap = Medicalestablishmentsmedicalusermap::find($esteblishmentusermapID);
-        $usermap->handle = $handle;
-        $usermap->save();
 
-        
+        $user = new User();
+        $handle = $user->uniqueHandle($data['first_name'], $data['last_name']);
+        $usermap = Medicalestablishmentsmedicalusermap::find($esteblishmentusermapID);
+        if ($usermap) {
+            $usermap->handle = $handle ?? null;
+            $usermap->save();
+        } else {
+            return response()->json(['status' => "error", 'message' => "Invalid establishment user map ID"], 400);
+        }
+
+
 
         $doctor = Doctor::find($usermap->medical_user_id);
         $doctor->pharmaclient_name = $data['first_name'];
         $doctor->last_name = $data['last_name'];
-        if(isset($data['state']))
+        if (isset($data['state']))
             $doctor->state_id = $data['state'];
-        if(isset($data['city']))
+        if (isset($data['city']))
             $doctor->city_id = $data['city'];
         $doctor->save();
 
         $medical = Medicalestablishments::find($usermap->medical_establishment_id);
-        $medical->name = $data['first_name'].(($data['last_name'] && $data['last_name']!="")?" ".$data['last_name']:"");
+        $medical->name = $data['first_name'] . (($data['last_name'] && $data['last_name'] != "") ? " " . $data['last_name'] : "");
         $medical->save();
 
-        if(Clinic::where('user_map_id',$esteblishmentusermapID)->count()>0){
-
-        }else{
+        if (Clinic::where('user_map_id', $esteblishmentusermapID)->count() > 0) {
+        } else {
             $clinic = new Clinic();
             $clinic->user_map_id = $esteblishmentusermapID;
-            $clinic->clinic_name = $data['first_name'].(($data['last_name'] && $data['last_name']!="")?" ".$data['last_name']:"");
-            if(isset($data['city']))
+            $clinic->clinic_name = $data['first_name'] . (($data['last_name'] && $data['last_name'] != "") ? " " . $data['last_name'] : "");
+            if (isset($data['city']))
                 $clinic->city = $data['city'];
-            if(isset($data['state']))
+            if (isset($data['state']))
                 $clinic->state = $data['state'];
             $clinic->save();
-            DB::table('docexa_esteblishment_user_map_sku_details')->insert(['clinic_id'=>$clinic->id,'user_map_id' => $esteblishmentusermapID, 'booking_type' => 'Online Consultation','title'=>'Regular Consultation','description'=>'Any questions around vaccines and well being', 'fee' => 100,'is_enabled'=>1,'default_flag'=>1]);
-            DB::table('docexa_esteblishment_user_map_sku_details')->insert(['clinic_id'=>$clinic->id,'user_map_id' => $esteblishmentusermapID, 'booking_type' => 'In clinic Consultation','title'=>'Regular Consultation','description'=>'Any questions around vaccines and well being', 'fee' => 100,'is_enabled'=>1]);
+            DB::table('docexa_esteblishment_user_map_sku_details')->insert(['clinic_id' => $clinic->id, 'user_map_id' => $esteblishmentusermapID, 'booking_type' => 'Online Consultation', 'title' => 'Regular Consultation', 'description' => 'Any questions around vaccines and well being', 'fee' => 100, 'is_enabled' => 1, 'default_flag' => 1]);
+            DB::table('docexa_esteblishment_user_map_sku_details')->insert(['clinic_id' => $clinic->id, 'user_map_id' => $esteblishmentusermapID, 'booking_type' => 'In clinic Consultation', 'title' => 'Regular Consultation', 'description' => 'Any questions around vaccines and well being', 'fee' => 100, 'is_enabled' => 1]);
             $templatedata = [
                 'template' => 'welcome_email_to_doctor',
                 'handle' => $handle,
@@ -643,12 +637,12 @@ class RegisterApi extends Controller
      *     ),
      * )
      */
-    public function updatepicture($esteblishmentusermapID,Request $request)
+    public function updatepicture($esteblishmentusermapID, Request $request)
     {
         $data = $request->input();
 
         $usermap = Medicalestablishmentsmedicalusermap::find($esteblishmentusermapID);
-        
+
         $doctor = Doctor::find($usermap->medical_user_id);
         if (isset($data['doctor_profile_pic']))
             $doctor->pharmaclient_image = $data['doctor_profile_pic'];
@@ -706,14 +700,13 @@ class RegisterApi extends Controller
      *     ),
      * )
      */
-    public function verifymobile($mobile,Request $request)
+    public function verifymobile($mobile, Request $request)
     {
         $data = $request->input();
-        $ot = Otp::where(array('phone_no' => $mobile,'otp' => $data['otp']))->first();
-        if(isset($ot->otp_id))
-            return response()->json(['status' => "success"],200);
+        $ot = Otp::where(array('phone_no' => $mobile, 'otp' => $data['otp']))->first();
+        if (isset($ot->otp_id))
+            return response()->json(['status' => "success"], 200);
         else
-            return response()->json(['status' => "fail",'message'=>"incorrect otp"],400);
+            return response()->json(['status' => "fail", 'message' => "incorrect otp"], 400);
     }
-    
 }
