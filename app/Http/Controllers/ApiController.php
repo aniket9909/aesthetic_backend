@@ -950,7 +950,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
       // $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
-      $doctor = DB::table('dev_docexa.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join('dev_docexa.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'dev_docexa.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if (!$doctor) {
         return response()->json([
           'success' => true,
@@ -1298,7 +1298,7 @@ Please upload a photo if you would like to have your skin analyzed.
 
         ], 404);
       }
-      $doctor = DB::table('dev_docexa.docexa_medical_establishments_medical_user_map')->where('id', $doctorId)->join('dev_docexa.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'dev_docexa.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')->where('id', $doctorId)->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if ($doctor == null) {
         return response()->json([
           'success' => false,
