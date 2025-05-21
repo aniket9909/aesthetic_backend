@@ -798,6 +798,7 @@ $router->post('/getSlots', 'ApiController@getAvailableSlots');
 $router->post('/bookAppointment', 'ApiController@bookAppointment');
 $router->post('/getAnalysis', 'ApiController@getAnalysis');
 $router->post('/getAfterImages', 'ApiController@getAfterImages');
+$router->post('/sendImage', 'ApiController@sendDocumentToWhatsApp');
 $router->get('/checkPatient/{patientNo}/{doctorNumber}', 'ApiController@checkPatient');
 $router->get('/', function () use ($router) {
     dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '9850612045032553']));

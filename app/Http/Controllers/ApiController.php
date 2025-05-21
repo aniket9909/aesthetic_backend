@@ -1217,4 +1217,64 @@ Please upload a photo if you would like to have your skin analyzed.
       ], 200);
     }
   }
+
+  public function sendDocumentToWhatsApp(Request $request)
+  {
+    // dd($request->all());
+    $to = $request->input('to');
+    $from = $request->input('from');
+    if (empty($to) || empty($from)) {
+      return response()->json(['error' => 'Both "to" and "from" fields are required.'], 400);
+    }
+    if (preg_match('/^\d{10}$/', $from)) {
+      $from = '91' . $from;
+    }
+    if (preg_match('/^\d{10}$/', $to)) {
+      $to = '91' . $to;
+    }
+    $body = [
+      "messaging_product" => "whatsapp",
+      "to" => $to,
+      "type" => "document",
+      "document" => [
+        "caption" => $request->input('caption'),
+        "link" => $request->input('link'),
+        "filename" => $request->input('filename'),
+      ]
+    ];
+
+    if (substr($to, 0, 2) === '91' && strlen($request->input('to')) > 10) {
+      $to = substr($to, 2);
+    }
+    $header = [
+      'wabaNumber' => $from,
+      'Key' => 'a2608dfcbeXX'
+    ];
+    
+    // Optionally log or store the outgoing document message
+    // $this->storeChat([
+    //   'sender_id' => $this->DOCTOR_NUMBER,
+    //   'receiver_id' => $to,
+    //   'message_type' => 'document',
+    //   'message_text' => $caption,
+    //   'analysis' => null,
+    //   'output' => null,
+    //   'media_url' => $link,
+    //   'media_mime_type' => null,
+    //   'media_sha256' => null,
+    //   'media_id' => null,
+    //   'whatsapp_message_id' => null,
+    //   'date' => Carbon::now()->toDateTimeString()
+    // ]);
+
+    $response = Http::withHeaders($header)->post(self::WHATSAPP_API_URL, $body);
+
+    if ($response->successful()) {
+      Log::info('WhatsApp document sent successfully.');
+      return response()->json(['success' => true, 'message' => 'WhatsApp document sent successfully.'], 200);
+    } else {
+      Log::error('WhatsApp document send error:', $response->json());
+      return response()->json(['success' => false, 'error' => 'Failed to send WhatsApp document.', 'details' => $response->json()], 500);
+    }
+  }
 }
