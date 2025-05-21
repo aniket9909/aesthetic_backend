@@ -949,7 +949,8 @@ Please upload a photo if you would like to have your skin analyzed.
           'analysis' => [],
         ], 400);
       }
-      $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
+      // $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
+      $doctor = DB::table('dev_docexa.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join('dev_docexa.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'dev_docexa.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if (!$doctor) {
         return response()->json([
           'success' => true,
@@ -1059,7 +1060,8 @@ Please upload a photo if you would like to have your skin analyzed.
           'images' => [],
         ], 400);
       }
-      $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
+      // $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
+      $doctor = DB::table('dev_docexa.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join('dev_docexa.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'dev_docexa.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if (!$doctor) {
         return response()->json([
           'success' => false,
@@ -1223,6 +1225,7 @@ Please upload a photo if you would like to have your skin analyzed.
   {
     // dd($request->all());
     $to = $request->input('to');
+    Log::info($request->all());
     $from = $request->input('from');
     if (empty($to) || empty($from)) {
       return response()->json(['error' => 'Both "to" and "from" fields are required.'], 400);
@@ -1272,7 +1275,7 @@ Please upload a photo if you would like to have your skin analyzed.
 
     if ($response->successful()) {
       Log::info('WhatsApp document sent successfully.');
-      return response()->json(['success' => true, 'message' => 'WhatsApp document sent successfully.'], 200);
+      return response()->json(['success' => true, 'reponse' => $response, 'message' => 'WhatsApp document sent successfully.'], 200);
     } else {
       Log::error('WhatsApp document send error:', $response->json());
       return response()->json(['success' => false, 'error' => 'Failed to send WhatsApp document.', 'details' => $response->json()], 500);
@@ -1284,10 +1287,28 @@ Please upload a photo if you would like to have your skin analyzed.
   {
 
     try {
-      $file = $request->file('pdf_file');
+      $file = $request->file('file');
+      $doctorId = $request->input('doctor_id');
+      $patientNo = $request->input('patient_number');
+      $patient = Patientmaster::where('mobile_no', $patientNo)->get();
+      if ($patient == null) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Patient not found',
+
+        ], 404);
+      }
+      $doctor = DB::table('dev_docexa.docexa_medical_establishments_medical_user_map')->where('id', $doctorId)->join('dev_docexa.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'dev_docexa.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      if ($doctor == null) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Doctor not found',
+        ], 404);
+      }
 
       if (!$file) {
         return response()->json([
+          'success' => false,
           'message' => 'No PDF file uploaded',
           'error' => 'File not found'
         ], 400);
@@ -1298,13 +1319,18 @@ Please upload a photo if you would like to have your skin analyzed.
 
       // Store in storage/app/public/pdf
       $path = $file->storeAs('pdf', $filename, 'public');
-
+      $fullUrl = asset(Storage::url($path));
+      $request->merge(['to' => $patientNo, 'from' => $doctor->mobile_no, 'caption' => "Prescription Details.", 'link' => $fullUrl, 'filename' => 'Prescription ' . Carbon::now() . '']);
+      $messageResponse =  $this->sendDocumentToWhatsApp($request);
+      dd($messageResponse);
       return response()->json([
+        'success' => true,
         'message' => 'PDF uploaded successfully',
         'file_path' => Storage::url($path)
       ]);
     } catch (\Exception $e) {
       return response()->json([
+        'success' => false,
         'message' => 'Failed to upload PDF',
         'error' => $e->getMessage()
       ], 500);
