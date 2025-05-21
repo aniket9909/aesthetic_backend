@@ -22,6 +22,7 @@ use DateTime;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ApiController extends Controller
 {
@@ -1250,7 +1251,7 @@ Please upload a photo if you would like to have your skin analyzed.
       'wabaNumber' => $from,
       'Key' => 'a2608dfcbeXX'
     ];
-    
+
     // Optionally log or store the outgoing document message
     // $this->storeChat([
     //   'sender_id' => $this->DOCTOR_NUMBER,
@@ -1275,6 +1276,50 @@ Please upload a photo if you would like to have your skin analyzed.
     } else {
       Log::error('WhatsApp document send error:', $response->json());
       return response()->json(['success' => false, 'error' => 'Failed to send WhatsApp document.', 'details' => $response->json()], 500);
+    }
+  }
+
+
+  public function uploadPdf(Request $request)
+  {
+    // $request->validate([
+    //   'base64_pdf' => 'required|string',
+    //   'filename' => 'nullable|string'
+    // ]);
+
+    try {
+      $base64Pdf = $request->base64_pdf;
+
+      // Remove prefix if present (like: data:application/pdf;base64,...)
+      if (str_contains($base64Pdf, ',')) {
+        $base64Pdf = explode(',', $base64Pdf)[1];
+      }
+      $base64Pdf = str_replace(' ', '+', $base64Pdf); // Fix spaces
+      $base64Pdf = preg_replace('/\s+/', '', $base64Pdf); // Remove line breaks
+
+      $pdfData = base64_decode($base64Pdf);
+
+      if (!$pdfData) {
+        return response()->json([
+          'message' => 'Base64 decoding failed. Invalid content.'
+        ], 400);
+      }
+
+      $filename = $request->filename ?? 'document_' . time() . '.pdf';
+
+      // Store in storage/app/public/pdf/
+      $path = 'pdf/' . $filename;
+      Storage::disk('public')->put($path, $pdfData);
+
+      return response()->json([
+        'message' => 'PDF saved successfully',
+        'file_path' => Storage::url($path)
+      ]);
+    } catch (\Exception $e) {
+      return response()->json([
+        'message' => 'Failed to save PDF',
+        'error' => $e->getMessage()
+      ], 500);
     }
   }
 }
