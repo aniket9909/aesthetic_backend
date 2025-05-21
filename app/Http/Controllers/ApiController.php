@@ -1282,42 +1282,30 @@ Please upload a photo if you would like to have your skin analyzed.
 
   public function uploadPdf(Request $request)
   {
-    // $request->validate([
-    //   'base64_pdf' => 'required|string',
-    //   'filename' => 'nullable|string'
-    // ]);
 
     try {
-      $base64Pdf = $request->base64_pdf;
+      $file = $request->file('pdf_file');
 
-      // Remove prefix if present (like: data:application/pdf;base64,...)
-      if (str_contains($base64Pdf, ',')) {
-        $base64Pdf = explode(',', $base64Pdf)[1];
-      }
-      $base64Pdf = str_replace(' ', '+', $base64Pdf); // Fix spaces
-      $base64Pdf = preg_replace('/\s+/', '', $base64Pdf); // Remove line breaks
-
-      $pdfData = base64_decode($base64Pdf);
-
-      if (!$pdfData) {
+      if (!$file) {
         return response()->json([
-          'message' => 'Base64 decoding failed. Invalid content.'
+          'message' => 'No PDF file uploaded',
+          'error' => 'File not found'
         ], 400);
       }
 
+      // Use original name or custom name
       $filename = $request->filename ?? 'document_' . time() . '.pdf';
 
-      // Store in storage/app/public/pdf/
-      $path = 'pdf/' . $filename;
-      Storage::disk('public')->put($path, $pdfData);
+      // Store in storage/app/public/pdf
+      $path = $file->storeAs('pdf', $filename, 'public');
 
       return response()->json([
-        'message' => 'PDF saved successfully',
+        'message' => 'PDF uploaded successfully',
         'file_path' => Storage::url($path)
       ]);
     } catch (\Exception $e) {
       return response()->json([
-        'message' => 'Failed to save PDF',
+        'message' => 'Failed to upload PDF',
         'error' => $e->getMessage()
       ], 500);
     }
