@@ -1284,7 +1284,8 @@ Please upload a photo if you would like to have your skin analyzed.
   {
 
     try {
-      $file = $request->file('pdf_file');
+      Log::info($request->all());
+      $file = $request->file('file');
 
       if (!$file) {
         return response()->json([
