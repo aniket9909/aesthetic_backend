@@ -2728,8 +2728,8 @@ class AppointmentDetails extends Model
     public function getTodaysAppointmentv2($request)
     {
         $input = $request->all();
+        
         $paymemtFlag = DB::table('docexa_doctor_precription_data')->where('user_map_id', $input['user_map_id'])->first()->payment_flag;
-
         if ($paymemtFlag == 1 || $paymemtFlag == 3) {
             $todaystabdata = DB::table('docexa_patient_booking_details')
                 ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')

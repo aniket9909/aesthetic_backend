@@ -802,10 +802,11 @@ $router->post('/sendImage', 'ApiController@sendDocumentToWhatsApp');
 $router->get('/checkPatient/{patientNo}/{doctorNumber}', 'ApiController@checkPatient');
 $router->get('/', function () use ($router) {
     dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '9850612045032553']));
-
+    
     return "hii there";
 });
 
+$router->post('/checkAfterImage', 'SkinAnalysisController@afterImageAnalysis');
 $router->post('/image', 'SkinAnalysisController@analyzeSkin');
 // $router->post('/image', [SkinAnalysisController::class, 'analyzeSkin']);
 $router->post('/chatbot', 'SkinAnalysisController@chatbot');

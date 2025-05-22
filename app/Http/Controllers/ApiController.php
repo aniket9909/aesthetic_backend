@@ -42,11 +42,11 @@ class ApiController extends Controller
       'sup',
       'what\'s up',
       'how are you',
-      'how are you doing',
-      'is anyone there',
-      'can you help me',
-      'i need help',
-      'just wanted to say hi'
+      'how are you doing'
+      // 'is anyone there',
+      // 'can you help me',
+      // 'i need help',
+      // 'just wanted to say hi'
     ],
     'asking_name' => [
       'what is your name',
@@ -146,8 +146,18 @@ class ApiController extends Controller
       if ($handleConversationFlow != null) {
         $this->sendResponseToWhatsApp(["message" => $handleConversationFlow, 'isBooking' => false], $patientNo);
       } else {
-        $this->sendResponseToWhatsApp(["message" => "Available Slots", 'isBooking' => true], $patientNo);
-        $this->sendResponseToWhatsApp(["message" => "Please upload a photo if you would like to have your skin analyzed.", 'isBooking' => false], $patientNo);
+        $tempNumber = $patientNo;
+        if (substr($tempNumber, 0, 2) === '91' && strlen($tempNumber) > 10) {
+          $tempNumber = substr($tempNumber, 2);
+        }
+        $state = ConverstionState::where('user_id', $tempNumber)->first();
+
+        if (!empty($state) && ($state->ask_image == false || $state->ask_image == null)) {
+          $this->sendResponseToWhatsApp(["message" => "Please upload a photo if you would like to have your skin analyzed.", 'isBooking' => false], $patientNo);
+        }
+        if (!empty($state) && ($state->ask_appointment == false || $state->ask_appointment == null)) {
+          $this->sendResponseToWhatsApp(["message" => "Available Slots", 'isBooking' => true], $patientNo);
+        }
       }
 
 
@@ -181,11 +191,12 @@ class ApiController extends Controller
   {
     $messageData = $jsonData['entry'][0]['changes'][0]['value']['messages'][0] ?? null;
     $messageId = $jsonData['entry'][0]['changes'][0]['value']['messages'][0]['id'] ?? null;
-    if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
-      $patientNo = substr($patientNo, 2);
+    $tempNumber = $patientNo;
+    if (substr($tempNumber, 0, 2) === '91' && strlen($tempNumber) > 10) {
+      $tempNumber = substr($tempNumber, 2);
     }
     $converstionState = ConverstionState::firstOrCreate(
-      ['user_id' => $patientNo],
+      ['user_id' => $tempNumber],
       [
         'current_state' => 'idle',
         'flow_type' => null,
@@ -214,8 +225,9 @@ class ApiController extends Controller
     }
 
     $message = $jsonData['entry'][0]['changes'][0]['value']['messages'][0]['text']['body'] ?? '';
+
     $this->storeChat([
-      'sender_id' => $patientNo,
+      'sender_id' => $tempNumber,
       'receiver_id' => $this->DOCTOR_NUMBER,
       'message_type' => 'text',
       'message_text' => $message,
@@ -240,6 +252,7 @@ class ApiController extends Controller
   }
   private function handleImageMessage(array $messageData, string $patientNo): array
   {
+
     $this->sendResponseToWhatsApp(["message" => "Image analysis will take 20 to 30 seconds to process. Please wait...", 'isBooking' => false], $patientNo);
 
     $imageId = $messageData['image']['id'] ?? null;
@@ -265,10 +278,15 @@ class ApiController extends Controller
       $matchedResponses[] = "Let me forward this to our assistant. Please wait...";
       $output[] = "Output not generated";
     }
+
     // $matchedResponses = array_map('strval', $matchedResponses); // Ensure all elements are strings
     if (substr($patientNo, 0, 2) === '91' && strlen($patientNo) > 10) {
       $patientNo = substr($patientNo, 2);
     }
+    $state = ConverstionState::where('user_id', $patientNo)->first();
+    $state->ask_image = true;
+    $state->save();
+
     $this->storeChat([
       'sender_id' => $patientNo,
       'receiver_id' => $this->DOCTOR_NUMBER,
@@ -347,6 +365,10 @@ class ApiController extends Controller
         if ($convertionState->current_state != 'confirmed') {
 
           $convertionState->current_state = 'book';
+          $convertionState->ask_appointment = true;
+          $convertionState->save();
+        } else {
+          $convertionState->ask_appointment = true;
           $convertionState->save();
         }
         Log::info("-------------------------------------------------------------------------------------------------------------------------------------------------------------");
@@ -376,7 +398,7 @@ class ApiController extends Controller
       foreach ($phrases as $phrase) {
         if ($this->isSimilar($message, $phrase)) {
           $response = match ($category) {
-            // 'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
+            'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
             'appointment' => "You can book an appointment here",
             default => null
           };
@@ -395,6 +417,7 @@ class ApiController extends Controller
 
       $chabotResponse = new SkinAnalysisController();
       // $response = $chabotResponse->greetingChatbot(new Request(['question' => $message]));
+      
       $response = $chabotResponse->chatbot(new Request(['question' => $message]));
       $responseData = json_decode($response->getContent(), true);
       if (isset($responseData['chatbot_response'])) {
@@ -1319,13 +1342,13 @@ Please upload a photo if you would like to have your skin analyzed.
 
       // Store in storage/app/public/pdf
       $path = $file->storeAs('pdf', $filename, 'public');
-      $fullUrl = asset(Storage::url($path));
+      $fullUrl = url(Storage::url($path));
       $request->merge(['to' => $patientNo, 'from' => $doctor->mobile_no, 'caption' => "Prescription Details.", 'link' => $fullUrl, 'filename' => 'Prescription ' . Carbon::now() . '']);
       $messageResponse =  $this->sendDocumentToWhatsApp($request);
-      dd($messageResponse);
       return response()->json([
         'success' => true,
         'message' => 'PDF uploaded successfully',
+        'link' => $fullUrl,
         'file_path' => Storage::url($path)
       ]);
     } catch (\Exception $e) {
