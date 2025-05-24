@@ -811,3 +811,17 @@ $router->post('/image', 'SkinAnalysisController@analyzeSkin');
 // $router->post('/image', [SkinAnalysisController::class, 'analyzeSkin']);
 $router->post('/chatbot', 'SkinAnalysisController@chatbot');
 $router->post('/uploadpdf', 'ApiController@uploadPdf');
+
+$router->get('services', 'ServiceMasterController@index');
+$router->post('services', 'ServiceMasterController@store');
+$router->get('services/{id}', 'ServiceMasterController@show');
+$router->put('services/{id}', 'ServiceMasterController@update');
+$router->delete('services/{id}', 'ServiceMasterController@destroy');
+
+$router->get('groups', 'ServiceGroupController@index');
+$router->post('groups', 'ServiceGroupController@store');
+$router->get('groups/{id}', 'ServiceGroupController@show');
+$router->put('groups/{id}', 'ServiceGroupController@update');
+$router->delete('groups/{id}', 'ServiceGroupController@destroy');
+
+
