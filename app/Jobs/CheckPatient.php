@@ -24,8 +24,15 @@ class CheckPatient implements ShouldQueue
     public function handle()
     {
         $apiController = new ApiController();
-        $apiController = $apiController->checkPatient($this->payload['patient_number'], $this->payload['doctor_number'], new Request(['patient_name' => $this->payload['patient_name']]));
-        
+        $apiController = $apiController->checkPatient(
+            $this->payload['patient_number'],
+            $this->payload['doctor_number'],
+            new Request(
+                [
+                    'patient_name' => $this->payload['patient_name'],
+                    'visit_type' => $this->payload['visit_type']
+                ]
+            )
+        );
     }
-
 }

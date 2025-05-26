@@ -37,6 +37,7 @@ class ServiceGroupController extends Controller
                 'created_by' => $data['created_by'] ?? null,
                 'remarks' => $data['remarks'] ?? null,
             ]);
+            
             $items = [];
             foreach ($data['services'] as $service) {
                 if (!isset($service['service_master_id'])) continue;

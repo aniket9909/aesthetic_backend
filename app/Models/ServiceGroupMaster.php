@@ -22,4 +22,8 @@ class ServiceGroupMaster extends Model
     {
         return $this->hasMany(ServiceGroupMaster::class, 'group_master_id');
     }
+    public function groupItems()
+    {
+        return $this->hasMany(ServiceGroupItems::class, 'group_master_id','id');
+    }
 }

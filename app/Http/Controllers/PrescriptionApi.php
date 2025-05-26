@@ -61,15 +61,15 @@ use App\Doctor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
+use function PHPUnit\Framework\isEmpty;
+
 class PrescriptionApi extends Controller
 {
 
     /**
      * Constructor
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * Operation prescription 
@@ -601,7 +601,6 @@ class PrescriptionApi extends Controller
                     $pres_item->save();
 
                 endforeach;
-
             }
 
             $vitals = $data['vitals'];
@@ -653,7 +652,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::error(['errorr' => $th]);
         }
-
     }
 
 
@@ -734,7 +732,6 @@ class PrescriptionApi extends Controller
                             $save = $medicationWRTusermap->save();
                             Log::info(['saveeeeeeeeeeeeeeee', $save]);
                         }
-
                     }
 
                     $pres_item = new PrescriptionItems();
@@ -749,7 +746,6 @@ class PrescriptionApi extends Controller
                     $medicationsave = $pres_item->save();
 
                 endforeach;
-
             }
             // id, vaccine_name, vaccine_date, due_date, flag, brand_name, given_date, created_at, updated_at, prescription_id
 
@@ -815,8 +811,7 @@ class PrescriptionApi extends Controller
                 $Invoice->paid_amount = isset($billingCreation['paid_amount']) ? $billingCreation['paid_amount'] : null;
                 $Invoice->total_price = isset($billingCreation['total_price']) ? $billingCreation['total_price'] : null;
                 $Invoice->bill_no = isset($billingCreation['bill_no']) ? $billingCreation['bill_no'] : null;
-                $Invoice->receipt_no = isset($billingCreation['receipt_no']) ? $billingCreation['receipt_no'] : null;
-                ;
+                $Invoice->receipt_no = isset($billingCreation['receipt_no']) ? $billingCreation['receipt_no'] : null;;
                 $Invoice->prescription_id = $prescription->id;
                 $Invoice->items = json_encode($billingCreation['items']);
                 $totalPrice = 0;
@@ -873,6 +868,13 @@ class PrescriptionApi extends Controller
             $systemic_examination->prescription_id = $prescription->id;
             $save = $systemic_examination->save();
 
+
+            //start service store 
+            if (!isEmpty($data['services']) && count($data['services']) > 0) {
+                
+            } else {
+            }
+
             DB::commit();
 
             if ($prescriptionSave) {
@@ -880,13 +882,11 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => 'failed', 'message' => 'Failed to save prescription', 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
         }
-
     }
 
     /**
@@ -1428,14 +1428,11 @@ class PrescriptionApi extends Controller
                 $row->vaccination_due = VaccinationDetailModel::where('prescription_id', $$row->id)->where('flag', 2)
                     ->get();
                 $row->vaccination_given = VaccinationDetailModel::where('prescription_id', $$row->id)->where('flag', 1);
-
-
             }
             return response()->json(['status' => 'success', 'data' => $data], 200);
         } else {
             return response()->json(['status' => 'failed', 'message' => 'doctor patient relation not exist'], 200);
         }
-
     }
     /**
      * @OA\Get(
@@ -1508,7 +1505,7 @@ class PrescriptionApi extends Controller
             foreach ($symptoms1 as $sym) {
                 $prescribesymtoms[] = ['name' => trim($sym->name)];
             }
-            foreach($symptoms3 as $sym){
+            foreach ($symptoms3 as $sym) {
                 $prescribesymtoms[] = ['name' => trim($sym->name)];
             }
             $prescribesymtoms = array_unique($prescribesymtoms, SORT_REGULAR);
@@ -1632,11 +1629,11 @@ class PrescriptionApi extends Controller
             $data['medicine_type'] = [];
 
             //  foreach($medicineType2 as $li){
-//      $exploadeddata = explode("," ,$li->name);
-//      foreach($exploadeddata as $exdata){
-//          $prescribesymtoms[] = ['name' => trim($exdata)]; 
-//      }
-//  }
+            //      $exploadeddata = explode("," ,$li->name);
+            //      foreach($exploadeddata as $exdata){
+            //          $prescribesymtoms[] = ['name' => trim($exdata)]; 
+            //      }
+            //  }
             foreach ($medicineType1 as $li) {
                 $prescribesymtoms[] = [
                     'id' => trim($li->id),
@@ -1889,7 +1886,7 @@ class PrescriptionApi extends Controller
      *         example=2,
      *         @OA\Schema(type="number")
      *     ),
-      * @OA\RequestBody(
+     * @OA\RequestBody(
      *  required=true,
      *  description="Pass doctor details",
      *  @OA\JsonContent(
@@ -2276,7 +2273,7 @@ class PrescriptionApi extends Controller
                     $presLayout->is_load_last_prescription = array_key_exists('is_load_last_prescription', $input) ? $input['is_load_last_prescription'] : null;
 
 
-                    $save = $presLayout->save();    
+                    $save = $presLayout->save();
                 }
             } else {
                 return response()->json(['status' => false, "message" => "Doctor is not found with this user map id"], 401);
@@ -2310,7 +2307,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor is not found with this user map id'], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
@@ -2333,7 +2329,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'data' => []], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
@@ -2378,9 +2373,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'vaccine type not found', 'code' => 200]);
             }
-
-
-
         } catch (\Throwable $th) {
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
         }
@@ -2428,7 +2420,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'something went wrong', 'data' => [], 'code' => 400], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -2473,7 +2464,6 @@ class PrescriptionApi extends Controller
                     $vaccine->vaccine_category = isset($data['vaccine_category']) ? $data['vaccine_category'] : null;
                     $save = $vaccine->save();
                 }
-
             }
             $data = VaccinationDetailModel::Where('patient_id', $input[0]['patient_id'])->get();
 
@@ -2482,7 +2472,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'something went wrong', 'data' => [], 'code' => 400], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -2514,7 +2503,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'something went wrong', 'data' => [], 'code' => 400], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -2570,7 +2558,6 @@ class PrescriptionApi extends Controller
                             $vaccine->deleted_by = 0;
                             $save = $vaccine->save();
                         }
-
                     }
                 } else {
                     $vaccineExistForDue = VaccinationDetailModel::where('vaccine_name', $data['vaccine_name'])->where('patient_id', $data['patient_id'])->where('user_map_id', $data['user_map_id'])->first();
@@ -2611,9 +2598,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'something went wrong', 'data' => [], 'code' => 400], 200);
             }
-
-
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -2642,7 +2626,6 @@ class PrescriptionApi extends Controller
                 }
             } else {
                 return response()->json(['status' => false, 'message' => 'Doctor not found with this Id'], 401);
-
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
@@ -2675,9 +2658,7 @@ class PrescriptionApi extends Controller
                 } else {
                     return response()->json(['status' => false, 'message' => 'patientdetail not found', 'code' => 200], 200);
                 }
-
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500], 500);
@@ -2698,7 +2679,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Patient doctor relation not exist', 'code'], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500], 500);
@@ -2741,8 +2721,7 @@ class PrescriptionApi extends Controller
                 // $row->vitals = $response;
                 // $row->medication = PrescriptionItems::where('prescription_id', $row->id)->join('medication', 'medication.id', 'prescription_items.medication_id')->get();
 
-                $row->medication = PrescriptionItems::
-                    select('prescription_items.*', 'medication.*', 'prescription_items.note as prescription_notes')
+                $row->medication = PrescriptionItems::select('prescription_items.*', 'medication.*', 'prescription_items.note as prescription_notes')
                     ->where('prescription_id', $row->id)
                     ->join('medication', 'medication.id', '=', 'prescription_items.medication_id')
                     ->get()
@@ -2767,8 +2746,6 @@ class PrescriptionApi extends Controller
                 $row->vaccination_given = VaccinationDetailModel::where('prescription_id', $row->id)->where('flag', 1)
                     ->where('deleted_by', 0)
                     ->get();
-
-
             }
             return response()->json(['status' => 'success', 'data' => $data, 'total_prescription' => $totalCount], 200);
         } else {
@@ -2804,8 +2781,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, "message" => 'something went wrong', 'code' => 400], 400);
             }
-
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500, 'error' => $th->getMessage()], 500);
@@ -2831,7 +2806,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500, 'error' => $th->getMessage()], 500);
-
         }
     }
 
@@ -2844,7 +2818,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Data not found', 'data' => [], 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500, 'error' => $th->getMessage()], 500);
@@ -2964,7 +2937,6 @@ class PrescriptionApi extends Controller
                     $pres_item->save();
 
                 endforeach;
-
             }
             // id, vaccine_name, vaccine_date, due_date, flag, brand_name, given_date, created_at, updated_at, prescription_id
 
@@ -3040,7 +3012,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::error(['errorr' => $th]);
         }
-
     }
 
     public function addVaccination(Request $request)
@@ -3067,7 +3038,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['success' => false, 'message' => 'something went wrong', 'code' => 400], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500, 'error' => $th->getMessage()], 500);
@@ -3167,7 +3137,6 @@ class PrescriptionApi extends Controller
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500, 'error' => $th->getMessage()], 500);
         }
-
     }
 
     public function prescriptionNotesSave(Request $request, $usermapId, $patientId)
@@ -3186,8 +3155,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'something went wrong', 'code' => 400], 400);
             }
-
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500, 'error' => $th->getMessage()], 500);
@@ -3203,7 +3170,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'code' => 400], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500, 'error' => $th->getMessage()], 500);
@@ -3224,9 +3190,7 @@ class PrescriptionApi extends Controller
                     return response()->json(['status' => true, 'message' => 'Flag update successfully', 'code' => 200], 200);
                 } else {
                     return response()->json(['status' => false, 'message' => 'something went wrong', 'code' => 400], 400);
-
                 }
-
             } else {
                 return response()->json(['status' => false, 'message' => 'patient not found', 'code' => 400], 400);
             }
@@ -3250,7 +3214,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'code' => 400], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'code' => 500, 'error' => $th->getMessage()], 500);
@@ -3301,8 +3264,7 @@ class PrescriptionApi extends Controller
             $combinedVaccinations = $docexaVaccinationRows->map(function ($chartRow) use ($givenVaccinations, $ungivenVaccinations) {
                 $vaccinationName = $chartRow->types;
                 return $givenVaccinations->get($vaccinationName) ?? $ungivenVaccinations->firstWhere(
-                    'types'
-                    ,
+                    'types',
                     $vaccinationName
                 );
             });
@@ -3381,7 +3343,6 @@ class PrescriptionApi extends Controller
                         $vaccine->deleted_by = 0;
                         $vaccine->vaccine_category = isset($data['vaccine_category']) ? $data['vaccine_category'] : null;
                         $save = $vaccine->save();
-
                     }
                 }
             }
@@ -3424,7 +3385,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'something went wrong', 'code' => 400], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -3449,9 +3409,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'code' => 200], 200);
             }
-
-
-
         } catch (\Throwable $th) {
             Log::innfo(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage(), 'code' => 500], 500);
@@ -3499,7 +3456,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Something went wrong', 'code' => 400], 400);
             }
-
         } catch (\Throwable $th) {
             Log::info(['error' => $th]);
             dd($th);
@@ -3517,7 +3473,6 @@ class PrescriptionApi extends Controller
             if ($prescriptionExist) {
                 $prescriptionExist->prescription_image = isset($data['prescription_image']) ? $data['prescription_image'] : "";
                 $save = $prescriptionExist->save();
-
             } else {
                 $prescription = new PrescriptionData();
                 $prescription->user_map_id = $esteblishmentusermapID;
@@ -3538,7 +3493,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::error(['errorr' => $th]);
         }
-
     }
 
 
@@ -3580,7 +3534,6 @@ class PrescriptionApi extends Controller
                         ];
                         Log::info(['send1']);
                         $ctrl->sendNotificationOfVaccination($notificationdata);
-
                     }
                 } else {
                     $patientData = Patientmaster::find($data['patient_id']);
@@ -3608,10 +3561,8 @@ class PrescriptionApi extends Controller
                         ];
                         Log::info(['send1']);
                         $ctrl->sendNotificationOfVaccination($notificationdata);
-
                     }
                 }
-
             }
             $data = VaccinationDetailModel::Where('patient_id', $input[0]['patient_id'])->get();
 
@@ -3620,7 +3571,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'something went wrong', 'data' => [], 'code' => 400], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -3775,11 +3725,11 @@ class PrescriptionApi extends Controller
             $data['medicine_type'] = [];
 
             //  foreach($medicineType2 as $li){
-//      $exploadeddata = explode("," ,$li->name);
-//      foreach($exploadeddata as $exdata){
-//          $prescribesymtoms[] = ['name' => trim($exdata)]; 
-//      }
-//  }
+            //      $exploadeddata = explode("," ,$li->name);
+            //      foreach($exploadeddata as $exdata){
+            //          $prescribesymtoms[] = ['name' => trim($exdata)]; 
+            //      }
+            //  }
             foreach ($medicineType1 as $li) {
                 $prescribesymtoms[] = [
                     'id' => trim($li->id),
@@ -3840,7 +3790,6 @@ class PrescriptionApi extends Controller
 
                 $data['symptoms'] = array_values($paginated_symptoms);
                 return response()->json($data);
-
             }
             // $paginated_symptoms = array_slice($prescribesymtoms, $count, $per_page);
             // $data['symptoms'] = array_values($paginated_symptoms);
@@ -3848,7 +3797,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
-
         }
     }
     public function getdiagnosisSearch($esteblishmentusermapID, Request $request)
@@ -3885,12 +3833,10 @@ class PrescriptionApi extends Controller
             if (!empty($prefix_term)) {
                 $prescribesymptoms = array_filter($prescribesymtoms, function ($symptom) use ($prefix_term) {
                     return stripos($symptom['name'], $prefix_term) === 0;
-
                 });
                 $paginated_symptoms = array_slice($prescribesymptoms, $count, $per_page);
                 $data['diagnosis'] = array_values($paginated_symptoms);
                 return response()->json($data);
-
             }
 
             // $paginated_symptoms = array_slice($prescribesymtoms, $count, $per_page);
@@ -3899,7 +3845,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
-
         }
     }
     public function gettestrequestedsearch($esteblishmentusermapID, Request $request)
@@ -3939,12 +3884,10 @@ class PrescriptionApi extends Controller
             if (!empty($prefix_term)) {
                 $prescribesymptoms = array_filter($prescribesymtoms, function ($symptom) use ($prefix_term) {
                     return stripos($symptom['name'], $prefix_term) === 0;
-
                 });
                 $paginated_symptoms = array_slice($prescribesymptoms, $count, $per_page);
                 $data['medicaltests'] = array_values($paginated_symptoms);
                 return response()->json($data);
-
             }
 
             // $paginated_symptoms = array_slice($prescribesymtoms, $count, $per_page);
@@ -3953,7 +3896,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
-
         }
     }
     public function getadviceserch($esteblishmentusermapID, Request $request)
@@ -3993,12 +3935,10 @@ class PrescriptionApi extends Controller
             if (!empty($prefix_term)) {
                 $prescribesymptoms = array_filter($prescribesymtoms, function ($symptom) use ($prefix_term) {
                     return stripos($symptom['name'], $prefix_term) === 0;
-
                 });
                 $paginated_symptoms = array_slice($prescribesymptoms, $count, $per_page);
                 $data['advices'] = array_values($paginated_symptoms);
                 return response()->json($data);
-
             }
 
             // $paginated_symptoms = array_slice($prescribesymtoms, $count, $per_page);
@@ -4007,7 +3947,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
-
         }
     }
     public function getadvicemedicalhistorysearch($esteblishmentusermapID, Request $request)
@@ -4045,12 +3984,10 @@ class PrescriptionApi extends Controller
             if (!empty($prefix_term)) {
                 $prescribesymptoms = array_filter($prescribesymtoms, function ($symptom) use ($prefix_term) {
                     return stripos($symptom['name'], $prefix_term) === 0;
-
                 });
                 $paginated_symptoms = array_slice($prescribesymptoms, $count, $per_page);
                 $data['medical_history'] = array_values($paginated_symptoms);
                 return response()->json($data);
-
             }
 
             // $paginated_symptoms = array_slice($prescribesymtoms, $count, $per_page);
@@ -4059,7 +3996,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
-
         }
     }
     public function getLifestyleSearch($esteblishmentusermapID, Request $request)
@@ -4097,12 +4033,10 @@ class PrescriptionApi extends Controller
             if (!empty($prefix_term)) {
                 $prescribesymptoms = array_filter($prescribesymtoms, function ($symptom) use ($prefix_term) {
                     return stripos($symptom['name'], $prefix_term) === 0;
-
                 });
                 $paginated_symptoms = array_slice($prescribesymptoms, $count, $per_page);
                 $data['lifestyle'] = array_values($paginated_symptoms);
                 return response()->json($data);
-
             }
 
             // $paginated_symptoms = array_slice($prescribesymtoms, $count, $per_page);
@@ -4111,7 +4045,6 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
-
         }
     }
 
@@ -4178,13 +4111,10 @@ class PrescriptionApi extends Controller
                 return response()->json(['status' => true, 'message' => "Data saved successfully", 'code' => 200], 200);
             } else {
                 return response()->json(['status' => false, 'message' => "something went wrong", 'code' => 400], 400);
-
             }
-
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
-
         }
     }
     public function getmedicalcertificate($doctorId, $clinicId, $page, $limit)
@@ -4277,8 +4207,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Vaccine not found', 'code' => 200], 200);
             }
-
-
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
@@ -4496,7 +4424,6 @@ class PrescriptionApi extends Controller
                             $valuesave = $vital->save();
                             Log::info(['vita;save' => $valuesave]);
                         }
-
                     }
                 }
                 $systemic_examinations = $data['systemic_examination'];
@@ -4515,7 +4442,6 @@ class PrescriptionApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Prescription not found', 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
@@ -4659,7 +4585,6 @@ class PrescriptionApi extends Controller
                     'code' => 400
                 ], 400);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json([
@@ -4674,17 +4599,17 @@ class PrescriptionApi extends Controller
     {
         try {
             $data = DB::table('patient_investigations')->join('investigation_tests_user_map', 'investigation_test_id', 'investigation_tests_user_map.id')
-            ->select(
-                'patient_investigations.*',
-                'investigation_tests_user_map.name',
-                'investigation_tests_user_map.unit',
-                'investigation_tests_user_map.sequence_no'
-            )
-            ->where('patient_investigations.user_map_id',$usermapId)
-            ->where('patient_investigations.patient_id',$patientId)
-            ->get();
+                ->select(
+                    'patient_investigations.*',
+                    'investigation_tests_user_map.name',
+                    'investigation_tests_user_map.unit',
+                    'investigation_tests_user_map.sequence_no'
+                )
+                ->where('patient_investigations.user_map_id', $usermapId)
+                ->where('patient_investigations.patient_id', $patientId)
+                ->get();
             // $data = PatientInvestigationsModel :: where('user_map_id',$usermapId)->where('patient_id',$patientId)->get();
-            if (count($data)>0) {
+            if (count($data) > 0) {
                 return response()->json([
                     'status' => true,
                     'message' => 'data retrived successfully',
@@ -4713,23 +4638,23 @@ class PrescriptionApi extends Controller
     {
         try {
             $data = InvestigationTestsusermapModel::where('user_map_id', $usermapId)
-            ->where('active',1)
-            ->orderBy('sequence_no','asc')
-            ->get();
+                ->where('active', 1)
+                ->orderBy('sequence_no', 'asc')
+                ->get();
 
             $existingNames = InvestigationTestsusermapModel::where('user_map_id', $usermapId)
-    ->where('active', 1)
-    ->pluck('name')
-    ->toArray();
+                ->where('active', 1)
+                ->pluck('name')
+                ->toArray();
 
-    $masterQuery = InvestigationTestsMaster::query();
-    
-    if (!empty($existingNames)) {
-        $masterQuery->whereNotIn('name', $existingNames);
-    }
-        
-    $masterData = $masterQuery->get();
-            if (count($data)>0) {
+            $masterQuery = InvestigationTestsMaster::query();
+
+            if (!empty($existingNames)) {
+                $masterQuery->whereNotIn('name', $existingNames);
+            }
+
+            $masterData = $masterQuery->get();
+            if (count($data) > 0) {
                 return response()->json([
                     'status' => true,
                     'message' => 'data retrived successfully',
@@ -4757,210 +4682,205 @@ class PrescriptionApi extends Controller
     public function updateinvestigationMasterwrtousermap(Request $request)
     {
         $id = $request->input('id');
-        $newSequence = (int) $request->input('new_sequence');   
-    
+        $newSequence = (int) $request->input('new_sequence');
+
         DB::beginTransaction();
-    
+
         try {
             $test = InvestigationTestsusermapModel::findOrFail($id);
             $currentSequence = (int) $test->sequence_no;
-    
+
             if ($newSequence < $currentSequence) {
                 InvestigationTestsusermapModel::where('sequence_no', '>=', $newSequence)
                     ->where('sequence_no', '<', $currentSequence)
-                    ->where('active',1)
+                    ->where('active', 1)
                     ->increment('sequence_no');
             } elseif ($newSequence > $currentSequence) {
                 InvestigationTestsusermapModel::where('sequence_no', '<=', $newSequence)
-                    ->where('active',1)
+                    ->where('active', 1)
                     ->where('sequence_no', '>', $currentSequence)
                     ->decrement('sequence_no');
             }
-    
+
             $test->sequence_no = $newSequence;
-            $testSave=$test->save();
-    
+            $testSave = $test->save();
+
             DB::commit();
-            
-            if($testSave){
+
+            if ($testSave) {
                 return response()->json([
                     'status' => true,
                     'message' => 'Sequence updated successfully',
                     'code' => 200
-                ],200);
-            }else{
+                ], 200);
+            } else {
                 return response()->json([
                     'status' => false,
                     'message' => 'something went wrong',
                     'code' => 400
-                ],400);
+                ], 400);
             }
-           
         } catch (\Exception $e) {
             DB::rollBack();
-    
+
             return response()->json([
                 'status' => false,
                 'message' => 'Internal server error',
                 'error' => $e->getMessage()
             ], 500);
         }
-          
     }
 
     public function updatepatientinvestigation(Request $request)
-{
-    $inputs = $request->all(); 
+    {
+        $inputs = $request->all();
 
-    try {
-        $success = [];
-        $failed = [];
+        try {
+            $success = [];
+            $failed = [];
 
-        foreach ($inputs as $input) {
-            $investi = PatientInvestigationsModel::find($input['id']);
+            foreach ($inputs as $input) {
+                $investi = PatientInvestigationsModel::find($input['id']);
 
-            if ($investi) {
-                $investi->value = $input['value'];
-                if ($investi->save()) {
-                    $success[] = $input['id'];
+                if ($investi) {
+                    $investi->value = $input['value'];
+                    if ($investi->save()) {
+                        $success[] = $input['id'];
+                    } else {
+                        $failed[] = $input['id'];
+                    }
                 } else {
                     $failed[] = $input['id'];
                 }
-            } else {
-                $failed[] = $input['id'];
             }
-        }
 
-        return response()->json([
-            'status' => true,
-            'message' => 'data update successfully.',
-            'updated_ids' => $success,
-            'failed_ids' => $failed,
-            'code' => 200
-        ], 200);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Internal server error',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
-public function addInvestigationToUserMap(Request $request){
-    try {
-        $input = $request->all();
-        $add = new InvestigationTestsusermapModel();
-        // id, name, unit, sequence_no, user_map_id, active, created_at, updated_at
-        $maxSequence = InvestigationTestsusermapModel::where('user_map_id', $input['user_map_id'])->where('active',1)->max('sequence_no');
-        $nextSequence = $maxSequence ? $maxSequence + 1 : 1;
-        $add->name = $input['name'];
-        $add->unit = $input['unit'];
-        $add->sequence_no =$nextSequence;
-        $add->user_map_id =$input['user_map_id'];
-        $save = $add ->save();
-        if($save){
             return response()->json([
                 'status' => true,
-                'message' => 'data saved successfully.',
+                'message' => 'data update successfully.',
+                'updated_ids' => $success,
+                'failed_ids' => $failed,
                 'code' => 200
             ], 200);
-        }else{
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Something went wrong.',
-                'code' => 200
-            ], 200);
+                'message' => 'Internal server error',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-    } catch (\Throwable $th) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Internal server error',
-            'error' => $th->getMessage()
-        ], 500);
     }
-}
 
-
-public function deleteInvestigationFromUserMap($id)
-{
-    try {
-
-        $record = InvestigationTestsusermapModel::find($id);
-
-        if ($record) {
-            $record->active = 0;
-           $delete=  $record->save();
-          
-           if($delete){
-            return response()->json([
-                'status' => true,
-                'message' => 'Record deleted successfully.',
-                'code' => 200
-            ], 200);
-           }else{
-            return response()->json([
-                'status' => true,
-                'message' => 'Something went wrong',
-                'code' => 400
-            ],400);
-           }
-           
-        } else {
+    public function addInvestigationToUserMap(Request $request)
+    {
+        try {
+            $input = $request->all();
+            $add = new InvestigationTestsusermapModel();
+            // id, name, unit, sequence_no, user_map_id, active, created_at, updated_at
+            $maxSequence = InvestigationTestsusermapModel::where('user_map_id', $input['user_map_id'])->where('active', 1)->max('sequence_no');
+            $nextSequence = $maxSequence ? $maxSequence + 1 : 1;
+            $add->name = $input['name'];
+            $add->unit = $input['unit'];
+            $add->sequence_no = $nextSequence;
+            $add->user_map_id = $input['user_map_id'];
+            $save = $add->save();
+            if ($save) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'data saved successfully.',
+                    'code' => 200
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Something went wrong.',
+                    'code' => 200
+                ], 200);
+            }
+        } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
-                'message' => 'Record not found.',
-                'code' => 404
-            ], 404);
+                'message' => 'Internal server error',
+                'error' => $th->getMessage()
+            ], 500);
         }
-
-    } catch (\Throwable $th) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Internal server error',
-            'error' => $th->getMessage()
-        ], 500);
     }
-}
+
+
+    public function deleteInvestigationFromUserMap($id)
+    {
+        try {
+
+            $record = InvestigationTestsusermapModel::find($id);
+
+            if ($record) {
+                $record->active = 0;
+                $delete =  $record->save();
+
+                if ($delete) {
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'Record deleted successfully.',
+                        'code' => 200
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'Something went wrong',
+                        'code' => 400
+                    ], 400);
+                }
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Record not found.',
+                    'code' => 404
+                ], 404);
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Internal server error',
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
 
 
 
     public function getinvestigationMasterwrtousermapSearch(Request $request): mixed
     {
         try {
-            $input= $request->all();
-            $search = $request->query('search'); 
-            $usermapId = $request->query('usermapid'); 
+            $input = $request->all();
+            $search = $request->query('search');
+            $usermapId = $request->query('usermapid');
 
             $query = InvestigationTestsusermapModel::where('user_map_id', $usermapId)
-                    ->where('active', 1);
+                ->where('active', 1);
 
             if (!empty($search)) {
                 $query->where('name', 'LIKE', "%{$search}%");
             }
-    
+
             $data = $query->orderBy('sequence_no', 'asc')->get();
 
 
             $existingNames = InvestigationTestsusermapModel::where('user_map_id', $usermapId)
-    ->where('active', 1)
-    ->pluck('name')
-    ->toArray();
+                ->where('active', 1)
+                ->pluck('name')
+                ->toArray();
 
-    $masterQuery = InvestigationTestsMaster::query();
-    if (!empty($search)) {
-        $masterQuery->where('name', 'LIKE', "%{$search}%");
-    }
-    if (!empty($existingNames)) {
-        $masterQuery->whereNotIn('name', $existingNames);
-    }
-        
-    $masterData = $masterQuery->get();
+            $masterQuery = InvestigationTestsMaster::query();
+            if (!empty($search)) {
+                $masterQuery->where('name', 'LIKE', "%{$search}%");
+            }
+            if (!empty($existingNames)) {
+                $masterQuery->whereNotIn('name', $existingNames);
+            }
+
+            $masterData = $masterQuery->get();
 
 
-            if (count($data)>0) {
+            if (count($data) > 0) {
                 return response()->json([
                     'status' => true,
                     'message' => 'data retrived successfully',
@@ -4985,5 +4905,4 @@ public function deleteInvestigationFromUserMap($id)
             ], 500);
         }
     }
-
 }

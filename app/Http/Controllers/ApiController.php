@@ -129,6 +129,7 @@ class ApiController extends Controller
         'patient_number' => $patientNo,
         'doctor_number' => $this->DOCTOR_NUMBER,
         'patient_name' => $patientName,
+        'visit_type' => '2',
       ]));
 
       Log::info("Patient Name: $patientName, Patient Number: $patientNo");

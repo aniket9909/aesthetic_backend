@@ -802,7 +802,7 @@ $router->post('/sendImage', 'ApiController@sendDocumentToWhatsApp');
 $router->get('/checkPatient/{patientNo}/{doctorNumber}', 'ApiController@checkPatient');
 $router->get('/', function () use ($router) {
     dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '9850612045032553']));
-    
+
     return "hii there";
 });
 
@@ -813,6 +813,7 @@ $router->post('/chatbot', 'SkinAnalysisController@chatbot');
 $router->post('/uploadpdf', 'ApiController@uploadPdf');
 
 $router->get('services', 'ServiceMasterController@index');
+$router->get('servicesPackages', 'ServiceMasterController@getServiceAndPackages');
 $router->post('services', 'ServiceMasterController@store');
 $router->get('services/{id}', 'ServiceMasterController@show');
 $router->put('services/{id}', 'ServiceMasterController@update');
@@ -823,5 +824,3 @@ $router->post('groups', 'ServiceGroupController@store');
 $router->get('groups/{id}', 'ServiceGroupController@show');
 $router->put('groups/{id}', 'ServiceGroupController@update');
 $router->delete('groups/{id}', 'ServiceGroupController@destroy');
-
-
