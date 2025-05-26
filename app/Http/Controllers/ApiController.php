@@ -1014,7 +1014,7 @@ Please upload a photo if you would like to have your skin analyzed.
           $query->where('sender_id', $patient->mobile_no ?? null)
             ->where('receiver_id', $doctor->mobile_no ?? null);
         })
-        ->orderBy(DB::raw('Date(date)'), 'asc')
+        ->orderBy(DB::raw('Date(now())'), 'asc')
         ->get();
 
 
