@@ -8,4 +8,4 @@ Homestead.yaml
 .env
 myenv
 testenv
-/skin_imges
+/skin_imges/*
