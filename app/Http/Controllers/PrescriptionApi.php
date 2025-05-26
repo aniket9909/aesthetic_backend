@@ -58,6 +58,8 @@ use \Mpdf\Mpdf;
 use Illuminate\Support\Facades\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Doctor;
+use App\Models\ServiceTransaction;
+use App\Models\ServiceTransactionItems;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
@@ -870,9 +872,55 @@ class PrescriptionApi extends Controller
 
 
             //start service store 
-            if (!isEmpty($data['services']) && count($data['services']) > 0) {
-                
+            $serviceTransaction = null;
+            $serviceTransactionItems = null;
+            if (count($data['services']) > 0) {
+                $isPackageAdded = $data['isPackageAdded'] ?? false;
+                $total = array_sum(array_column($data['services'], 'sub_total'));
+                $totalDiscount = array_sum(array_column($data['services'], 'discount'));
+                $totalTax = array_sum(array_column($data['services'], 'tax'));
+                $serviceTransaction = new ServiceTransaction();
+                $serviceTransaction->user_map_id = $esteblishmentusermapID;
+                $serviceTransaction->patient_id = $data['patient_id'];
+                $serviceTransaction->doctor_id = $esteblishmentusermapID;
+                $serviceTransaction->enrollment_type = $isPackageAdded == true ? 'group' : 'individual';
+                $serviceTransaction->group_master_id = isset($data['group_id']) ? $data['group_id'] : null;
+                $serviceTransaction->total_amount = $total != null ? $total : 0.00;
+                $serviceTransaction->total_discount = $totalDiscount != null ? $totalDiscount : 0.00;
+                $serviceTransaction->total_tax = $totalTax != null ? $totalTax : 0.00;
+                $serviceTransaction->remarks = isset($data['remarks']) ? $data['remarks'] : null;
+                $serviceTransaction->enrolled_date = isset($data['enrolled_date']) ? $data['enrolled_date'] : date('Y-m-d');
+                $serviceTransaction->validity_months = isset($data['validity_months']) ? $data['validity_months'] : null;
+                $serviceTransaction->expiry_date = isset($data['expiry_date']) ? $data['expiry_date'] : null;
+                $serviceTransaction->prescription_id = $prescription->id;
+
+                if ($serviceTransaction->save()) {
+                    Log::info(['serviceTransaction' => $serviceTransaction]);
+
+                    foreach ($data['services'] as $service) {
+                        // Insert into service_enrollment_items table
+                        $serviceItem = new ServiceTransactionItems();
+                        $serviceItem->enrollment_transaction_id = $serviceTransaction->id;
+                        $serviceItem->service_master_id = isset($service['id']) ? $service['id'] : null;
+                        $serviceItem->custom_price = isset($service['unit_price']) ? $service['unit_price'] : null;
+                        $serviceItem->tax_amount = isset($service['tax']) ? $service['tax'] : null;
+                        $serviceItem->discount_amount = isset($service['discount']) ? $service['discount'] : null;
+                        $serviceItem->sub_total = isset($service['sub_total']) ? $service['sub_total'] : null;
+                        $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
+                        $serviceItem->total_sessions = isset($service['session']) ? $service['session'] : 0;
+                        $serviceItem->completed_sessions = isset($service['completed_sessions']) ? $service['completed_sessions'] : 0;
+                        $serviceItem->remaining_sessions = isset($service['remaining_sessions']) ? $service['remaining_sessions'] : 0;
+                        if ($serviceItem->save()) {
+                            $serviceTransactionItems[] = $serviceItem;
+                        } else {
+                            throw new \Exception("Failed to save service transaction item");
+                        }
+                    }
+                } else {
+                    throw new \Exception("Failed to save service transaction");
+                }
             } else {
+                throw new \Exception("Failed to save service transaction, no services provided");
             }
 
             DB::commit();

@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class ServiceTransactionItems extends Model
 {
-    //
+    protected $table = 'service_enrollment_items';
 }
