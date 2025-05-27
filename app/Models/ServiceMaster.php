@@ -16,6 +16,7 @@ class ServiceMaster extends Model
 
     ];
     protected $table = 'service_master';
+    protected $primaryKey = 'id';
     protected $with = ['consumable'];
     public function services()
     {
@@ -27,6 +28,6 @@ class ServiceMaster extends Model
     }
     public function consumable()
     {
-        return $this->belongsTo(ServiceConsumable::class, 'service_master_id');
+        return $this->hasMany(ServiceConsumable::class, 'service_master_id','id');
     }
 }

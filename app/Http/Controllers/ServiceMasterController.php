@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ServiceConsumable;
 use App\Models\ServiceGroupMaster;
 use Illuminate\Http\Request;
 use App\Models\ServiceMaster;
@@ -15,7 +16,7 @@ class ServiceMasterController extends Controller
     public function getServiceAndPackages()
     {
         return response()->json(['success' => true, "message" => "Data ferch success", 'data' => [
-            'services' => ServiceMaster::all(),
+            'services' => ServiceMaster::with('consumable')->get(),
             'packages' => ServiceGroupMaster::with('groupItems')->get(),
         ]]);
     }
