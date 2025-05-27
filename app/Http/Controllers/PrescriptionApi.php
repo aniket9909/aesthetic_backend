@@ -58,6 +58,7 @@ use \Mpdf\Mpdf;
 use Illuminate\Support\Facades\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Doctor;
+use App\Models\ConsumableUsageLog;
 use App\Models\ServiceTransaction;
 use App\Models\ServiceTransactionItems;
 use Carbon\Carbon;
@@ -912,6 +913,21 @@ class PrescriptionApi extends Controller
                         $serviceItem->remaining_sessions = isset($service['remaining_sessions']) ? $service['remaining_sessions'] : 0;
                         if ($serviceItem->save()) {
                             $serviceTransactionItems[] = $serviceItem;
+                            foreach ($service['consumable'] as $consumable) {
+                                $consumableUseItem = ConsumableUsageLog::create(
+                                    [
+                                        'enrollment_transaction_id' => $serviceTransaction->id,
+                                        'enrollment_item_id' => $serviceItem->id,
+                                        'consumable_id' => isset($consumable['id']) ? $consumable['id'] : null,
+                                        'used_quantity' => isset($consumable['name']) ? $consumable['name'] : null,
+                                        'used_unit' => isset($consumable['unit']) ? $consumable['unit'] : null,
+                                        'used_by_doctor_id' => $esteblishmentusermapID,
+                                        'used_at' => Carbon::now(),
+                                        'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
+                                        'session_log_id' => isset($consumable['session_log_id']) ? $consumable['session_log_id'] : null,
+                                    ]
+                                );
+                            }
                         } else {
                             throw new \Exception("Failed to save service transaction item");
                         }
@@ -1232,6 +1248,7 @@ class PrescriptionApi extends Controller
 
     public function getPrescription($esteblishmentusermapID, $prescriptionID)
     {
+
         $data = [];
         $data = PrescriptionData::find($prescriptionID);
 
@@ -1242,10 +1259,10 @@ class PrescriptionApi extends Controller
         $data->vaccination_due = VaccinationDetailModel::where('prescription_id', $prescriptionID)->where('flag', 2)
             ->where('deleted_by', 0)
             ->get();
+
         $data->vaccination_given = VaccinationDetailModel::where('prescription_id', $prescriptionID)->where('flag', 1)
             ->where('deleted_by', 0)
             ->get();
-
         $data->services = ServiceTransaction::with('serviceTransactionItems')->where('prescription_id', $prescriptionID)
             ->get();
 
@@ -1710,7 +1727,7 @@ class PrescriptionApi extends Controller
     public function createPdf($prescriptionID, Request $request)
     {
 
-        
+
         $mpdf = new Mpdf();
 
         $header = trim($request->get('header', ''));
