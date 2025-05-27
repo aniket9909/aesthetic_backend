@@ -789,6 +789,28 @@ $router->group(['prefix' => 'api/v3/analytics'], function () use ($router): void
     $router->post('vaccinationByGroup', 'AnalyticsApi@getTopVaccinationbyGroup');
 });
 
+
+$router->group(['prefix' => 'api'], function () use ($router) {
+    $router->get('consumables', 'ConsumableController@index');
+    $router->post('consumables', 'ConsumableController@store');
+    $router->get('consumables/{id}', 'ConsumableController@show');
+    $router->put('consumables/{id}', 'ConsumableController@update');
+    $router->delete('consumables/{id}', 'ConsumableController@destroy');
+
+    $router->get('service-consumables', 'ServiceConsumableController@index');
+    $router->post('service-consumables', 'ServiceConsumableController@store');
+    $router->get('service-consumables/{id}', 'ServiceConsumableController@show');
+    $router->put('service-consumables/{id}', 'ServiceConsumableController@update');
+    $router->delete('service-consumables/{id}', 'ServiceConsumableController@destroy');
+
+    $router->get('consumable-usage', 'ConsumableUsageLogController@index');
+    $router->post('consumable-usage', 'ConsumableUsageLogController@store');
+    $router->get('consumable-usage/{id}', 'ConsumableUsageLogController@show');
+    $router->put('consumable-usage/{id}', 'ConsumableUsageLogController@update');
+    $router->delete('consumable-usage/{id}', 'ConsumableUsageLogController@destroy');
+});
+
+
 $router->post('/webhook', 'ApiController@handleJsonInput');
 $router->get('/webhook', 'ApiController@getAllWebhookInputs');
 $router->get('/webhook/{id}', 'ApiController@getWebhookInputById');

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ServiceGroupItems extends Model
 {
     protected $table = 'group_service_items';
+    protected $with = ['services'];
 
     protected $fillable = [
         "group_master_id",
@@ -18,4 +19,9 @@ class ServiceGroupItems extends Model
         "completed_sessions",
         "is_tax_inclusive"
     ];
+
+    public function services()
+    {
+        return $this->hasMany(ServiceMaster::class, 'id','service_master_id',);
+    }
 }

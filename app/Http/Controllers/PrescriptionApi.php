@@ -1246,6 +1246,9 @@ class PrescriptionApi extends Controller
             ->where('deleted_by', 0)
             ->get();
 
+        $data->services = ServiceTransaction::with('serviceTransactionItems')->where('prescription_id', $prescriptionID)
+            ->get();
+
         $data->perscription_url = URL::to('/v1/generatepdf/' . $prescriptionID);
 
         Log::info(['dataaaaaaaa' => $data]);
@@ -1707,7 +1710,7 @@ class PrescriptionApi extends Controller
     public function createPdf($prescriptionID, Request $request)
     {
 
-        //create PDF
+        
         $mpdf = new Mpdf();
 
         $header = trim($request->get('header', ''));
