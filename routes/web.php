@@ -837,7 +837,7 @@ $router->post('/chatbot', 'SkinAnalysisController@chatbot');
 $router->post('/uploadpdf', 'ApiController@uploadPdf');
 
 $router->get('services', 'ServiceMasterController@index');
-$router->get('servicesPackages', 'ServiceMasterController@getServiceAndPackages');
+$router->get('servicesPackages/{doctorId}/{patientId}', 'ServiceMasterController@getServiceAndPackages');
 $router->post('services', 'ServiceMasterController@store');
 $router->get('services/{id}', 'ServiceMasterController@show');
 $router->put('services/{id}', 'ServiceMasterController@update');

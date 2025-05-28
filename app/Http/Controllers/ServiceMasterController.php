@@ -6,6 +6,9 @@ use App\Models\ServiceConsumable;
 use App\Models\ServiceGroupMaster;
 use Illuminate\Http\Request;
 use App\Models\ServiceMaster;
+use App\Models\ServiceTransaction;
+use App\Patientmaster;
+use Illuminate\Support\Facades\DB;
 
 class ServiceMasterController extends Controller
 {
@@ -13,12 +16,48 @@ class ServiceMasterController extends Controller
     {
         return response()->json(['success' => true, "message" => "Data ferch success", 'data' => ServiceMaster::all()]);
     }
-    public function getServiceAndPackages()
+    public function getServiceAndPackages($doctorId, $patientId)
     {
-        return response()->json(['success' => true, "message" => "Data ferch success", 'data' => [
-            'services' => ServiceMaster::with('consumable')->get(),
-            'packages' => ServiceGroupMaster::with('groupItems')->get(),
-        ]]);
+        $patient = Patientmaster::where('patient_id', $patientId)->first();
+        $doctor = DB::table('docexa_medical_establishments_medical_user_map')->where('id', $doctorId)->join('docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+
+        // Always include service and package data
+        $services = ServiceMaster::with('consumable')->get();
+        $packages = ServiceGroupMaster::with('groupItems')->get();
+
+        // If either doctor or patient is invalid, return defaults
+        if (!$patient || !$doctor) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Fetched general data (no doctor or patient)',
+                'data' => compact('services', 'packages')
+            ]);
+        }
+
+        // Fetch the latest service transaction
+        $serviceTransaction = ServiceTransaction::where('patient_id', $patient->patient_id)
+            ->where('doctor_id', $doctor->id)
+            ->latest()
+            ->first();
+
+        // Default empty arrays
+        $workingSessions = [];
+
+        if ($serviceTransaction) {
+            foreach ($serviceTransaction->serviceTransactionItems as $item) {
+               $workingSessions[]=$item;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Session and service/package data fetched',
+            'data' => [
+                'services' => $services,
+                'packages' => $packages,
+                'workingSessions' => $workingSessions
+            ]
+        ]);
     }
 
 
