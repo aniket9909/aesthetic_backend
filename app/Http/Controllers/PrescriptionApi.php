@@ -878,15 +878,18 @@ class PrescriptionApi extends Controller
             $serviceTransactionItems = null;
             if (count($data['services']) > 0) {
                 $isPackageAdded = $data['isPackageAdded'] ?? false;
-                $total = array_sum(array_column($data['services'], 'sub_total'));
-                $totalDiscount = array_sum(array_column($data['services'], 'discount'));
-                $totalTax = array_sum(array_column($data['services'], 'tax'));
+                $total = array_sum(array_column($data['services'], 'total'));
+                $baseTotal = array_sum(array_column($data['services'], 'base_price'));
+                $totalDiscount = array_sum(array_column($data['services'], 'discount_amount'));
+
+                $totalTax = $total - $baseTotal;
+
                 $serviceTransaction = new ServiceTransaction();
                 $serviceTransaction->user_map_id = $esteblishmentusermapID;
                 $serviceTransaction->patient_id = $data['patient_id'];
                 $serviceTransaction->doctor_id = $esteblishmentusermapID;
                 $serviceTransaction->enrollment_type = $isPackageAdded == true ? 'group' : 'individual';
-                $serviceTransaction->group_master_id = isset($data['group_id']) ? $data['group_id'] : null;
+                $serviceTransaction->group_master_id = $isPackageAdded == true ? $data['group_id'] : null;
                 $serviceTransaction->total_amount = $total != null ? $total : 0.00;
                 $serviceTransaction->total_discount = $totalDiscount != null ? $totalDiscount : 0.00;
                 $serviceTransaction->total_tax = $totalTax != null ? $totalTax : 0.00;
@@ -900,21 +903,24 @@ class PrescriptionApi extends Controller
                     Log::info(['serviceTransaction' => $serviceTransaction]);
 
                     foreach ($data['services'] as $service) {
+                        Log::info("-----------------------------------------------------------------------------------------------");
+                        Log::info($service);
+                        Log::info("-----------------------------------------------------------------------------------------------");
                         // Insert into service_enrollment_items table
                         $serviceItem = new ServiceTransactionItems();
                         $serviceItem->enrollment_transaction_id = $serviceTransaction->id;
                         $serviceItem->service_master_id = isset($service['id']) ? $service['id'] : null;
-                        $serviceItem->custom_price = isset($service['unit_price']) ? $service['unit_price'] : null;
-                        $serviceItem->tax_amount = isset($service['tax']) ? $service['tax'] : null;
-                        $serviceItem->discount_amount = isset($service['discount']) ? $service['discount'] : null;
-                        $serviceItem->sub_total = isset($service['sub_total']) ? $service['sub_total'] : null;
+                        $serviceItem->custom_price = isset($service['base_price']) ? $service['base_price'] : null;
+                        $serviceItem->tax_amount = isset($service['tax_percent']) ? $service['tax_percent'] : null;
+                        $serviceItem->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : null;
+                        $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
                         $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
-                        $serviceItem->total_sessions = isset($service['session']) ? $service['session'] : 1;
+                        $serviceItem->total_sessions = isset($service['qty']) ? $service['qty'] : 1;
                         // Set completed_sessions to 1
                         $serviceItem->completed_sessions = 1;
 
                         // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
-                        $totalSessions = isset($service['session']) ? (int)$service['session'] : 1;
+                        $totalSessions = isset($service['qty']) ? (int)$service['qty'] : 1;
                         $serviceItem->remaining_sessions = max($totalSessions - 1, 0);
                         if ($serviceItem->save()) {
                             $serviceTransactionItems[] = $serviceItem;
@@ -959,7 +965,6 @@ class PrescriptionApi extends Controller
                 return response()->json(['status' => 'failed', 'message' => 'Failed to save prescription', 'code' => 200], 200);
             }
         } catch (\Throwable $th) {
-            return $th;
             DB::rollBack();
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
