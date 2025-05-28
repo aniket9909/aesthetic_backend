@@ -7,9 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class ServiceTransactionItems extends Model
 {
     protected $table = 'service_enrollment_items';
-    protected $with = ['consumable'];
+    protected $with = ['consumable','sessions'];
+
     public function consumable()
     {
-        return $this->belongsTo(ServiceConsumable::class, 'service_master_id');
+        return $this->hasMany(ConsumableUsageLog::class, 'enrollment_item_id');
+    }
+     public function sessions()
+    {
+        return $this->hasMany(ServiceSessionLog::class, 'enrollment_item_id');
     }
 }

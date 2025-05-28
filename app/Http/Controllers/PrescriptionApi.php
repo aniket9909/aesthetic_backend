@@ -59,6 +59,7 @@ use Illuminate\Support\Facades\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Doctor;
 use App\Models\ConsumableUsageLog;
+use App\Models\ServiceSessionLog;
 use App\Models\ServiceTransaction;
 use App\Models\ServiceTransactionItems;
 use Carbon\Carbon;
@@ -908,23 +909,34 @@ class PrescriptionApi extends Controller
                         $serviceItem->discount_amount = isset($service['discount']) ? $service['discount'] : null;
                         $serviceItem->sub_total = isset($service['sub_total']) ? $service['sub_total'] : null;
                         $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
-                        $serviceItem->total_sessions = isset($service['session']) ? $service['session'] : 0;
-                        $serviceItem->completed_sessions = isset($service['completed_sessions']) ? $service['completed_sessions'] : 0;
-                        $serviceItem->remaining_sessions = isset($service['remaining_sessions']) ? $service['remaining_sessions'] : 0;
+                        $serviceItem->total_sessions = isset($service['session']) ? $service['session'] : 1;
+                        // Set completed_sessions to 1
+                        $serviceItem->completed_sessions = 1;
+
+                        // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
+                        $totalSessions = isset($service['session']) ? (int)$service['session'] : 1;
+                        $serviceItem->remaining_sessions = max($totalSessions - 1, 0);
                         if ($serviceItem->save()) {
                             $serviceTransactionItems[] = $serviceItem;
                             foreach ($service['consumable'] as $consumable) {
+                                $session = ServiceSessionLog::create([
+                                    'enrollment_item_id' => $serviceItem->id,
+                                    'session_number' => isset($consumable['session_number']) ? $consumable['session_number'] : 1,
+                                    'conducted_at' => isset($consumable['conducted_at']) ? $consumable['conducted_at'] : Carbon::now(),
+                                    'conducted_by_doctor_id' => $esteblishmentusermapID,
+                                    'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
+                                ]);
                                 $consumableUseItem = ConsumableUsageLog::create(
                                     [
                                         'enrollment_transaction_id' => $serviceTransaction->id,
                                         'enrollment_item_id' => $serviceItem->id,
                                         'consumable_id' => isset($consumable['id']) ? $consumable['id'] : null,
-                                        'used_quantity' => isset($consumable['name']) ? $consumable['name'] : null,
+                                        'used_quantity' => isset($consumable['quantity']) ? $consumable['quantity'] : null,
                                         'used_unit' => isset($consumable['unit']) ? $consumable['unit'] : null,
                                         'used_by_doctor_id' => $esteblishmentusermapID,
                                         'used_at' => Carbon::now(),
                                         'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
-                                        'session_log_id' => isset($consumable['session_log_id']) ? $consumable['session_log_id'] : null,
+                                        'session_log_id' => $session != null ? $session->id : null,
                                     ]
                                 );
                             }
@@ -947,6 +959,7 @@ class PrescriptionApi extends Controller
                 return response()->json(['status' => 'failed', 'message' => 'Failed to save prescription', 'code' => 200], 200);
             }
         } catch (\Throwable $th) {
+            return $th;
             DB::rollBack();
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
@@ -1263,7 +1276,7 @@ class PrescriptionApi extends Controller
         $data->vaccination_given = VaccinationDetailModel::where('prescription_id', $prescriptionID)->where('flag', 1)
             ->where('deleted_by', 0)
             ->get();
-        $data->services = ServiceTransaction::with('serviceTransactionItems')->where('prescription_id', $prescriptionID)
+        $data->services = ServiceTransaction::where('prescription_id', $prescriptionID)
             ->get();
 
         $data->perscription_url = URL::to('/v1/generatepdf/' . $prescriptionID);
