@@ -78,7 +78,7 @@ class ApiController extends Controller
   ];
 
   private const WHATSAPP_API_URL = 'https://api.dovesoft.io/REST/directApi/message';
-  private  $WHATSAPP_HEADERS = [
+  private $WHATSAPP_HEADERS = [
     'key' => "a2608dfcbeXX",
     'Accept' => 'application/json',
     'wabaNumber' => '919321962947',
@@ -418,7 +418,7 @@ class ApiController extends Controller
 
       $chabotResponse = new SkinAnalysisController();
       // $response = $chabotResponse->greetingChatbot(new Request(['question' => $message]));
-      
+
       $response = $chabotResponse->chatbot(new Request(['question' => $message]));
       $responseData = json_decode($response->getContent(), true);
       if (isset($responseData['chatbot_response'])) {
@@ -653,7 +653,8 @@ Please upload a photo if you would like to have your skin analyzed.
   private function getSlotInteractiveBody(string $patientNo): array
   {
     $response = $this->getAvailableSlots(new Request(['doctor_number' => $this->DOCTOR_NUMBER]));
-    if ((is_array($response) && ($response['error'] ?? false) === true) ||
+    if (
+      (is_array($response) && ($response['error'] ?? false) === true) ||
       (is_object($response) && method_exists($response, 'getData') && ($response->getData(true)['error'] ?? false) === true)
     ) {
       return [
@@ -1345,7 +1346,7 @@ Please upload a photo if you would like to have your skin analyzed.
       $path = $file->storeAs('pdf', $filename, 'public');
       $fullUrl = url(Storage::url($path));
       $request->merge(['to' => $patientNo, 'from' => $doctor->mobile_no, 'caption' => "Prescription Details.", 'link' => $fullUrl, 'filename' => 'Prescription ' . Carbon::now() . '']);
-      $messageResponse =  $this->sendDocumentToWhatsApp($request);
+      $messageResponse = $this->sendDocumentToWhatsApp($request);
       return response()->json([
         'success' => true,
         'message' => 'PDF uploaded successfully',
@@ -1360,41 +1361,88 @@ Please upload a photo if you would like to have your skin analyzed.
       ], 500);
     }
   }
-public function uploadImageFromDoc(Request $request)
-{
-    $uploadedFiles = [];
 
-    // Ensure 'images' field is present
-    if (!$request->hasFile('images')) {
+
+  public function uploadImageFromDoc(Request $request)
+  {
+    try {
+      $doctorId = $request->input('doctor_id');
+
+      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
+        ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+        ->select('docexa_doctor_master.mobile_no')
+        ->first();
+
+      if ($doctor == null) {
         return response()->json([
-            'status' => false,
-            'message' => 'No images found in the request.'
-        ], 400);
-    }
+          'success' => false,
+          'message' => 'Doctor not found',
+        ], 404);
+      }
 
-    // Normalize files into an array
-    $files = is_array($request->file('images')) 
-        ? $request->file('images') 
+      if (!$request->hasFile('images')) {
+        return response()->json([
+          'status' => false,
+          'message' => 'No images found in the request.'
+        ], 400);
+      }
+
+      $uploadedFiles = [];
+
+      $files = is_array($request->file('images'))
+        ? $request->file('images')
         : [$request->file('images')];
 
-    foreach ($files as $file) {
+      foreach ($files as $file) {
         if ($file && $file->isValid()) {
-            $path = $file->store('public/patient_images');
-            $filename = basename($path);
+          $path = $file->store('public/patient_images');
+          $filename = basename($path);
 
-            $uploadedFiles[] = [
-                'file_name' => $filename,
-                'url' => Storage::url($path)
-            ];
+          // ✅ Save only the relative path or filename in DB
+          $relativePath = Storage::url($path); // e.g., /storage/patient_images/filename.jpg
+
+          // ✅ Append full URL for API response only
+          //$ip = 'https://aestheticai.globalspace.in/aesthetic_backend/public/'; // Change to your server IP or domain
+          $publicUrl = url($relativePath);
+
+          // ✅ Add to response array
+          $uploadedFiles[] = [
+            'file_name' => $filename,
+            'url' => $publicUrl,
+          ];
+
+          // ✅ Save only relative data to DB
+          $chat = new Chats();
+          $chat->sender_id = $doctor->mobile_no;
+          $chat->receiver_id = $request->input('patient_number');
+          $chat->message_type = 'image';
+          $chat->media_url = $relativePath; // Save only path
+          $chat->media_mime_type = null;
+          $chat->media_sha256 = null;
+          $chat->media_id = $filename;
+          $chat->whatsapp_message_id = null;
+          $chat->is_visible = 1;
+          $chat->date = Carbon::now()->toDateTimeString();
+          $chat->save();
         }
-    }
+      }
 
-    return response()->json([
+      return response()->json([
         'status' => true,
         'message' => 'Images uploaded successfully',
+        'data' => [
+          'uploaded_files' => $uploadedFiles
+        ]
+      ]);
 
-    ]);
-}
+    } catch (\Exception $e) {
+      return response()->json([
+        'status' => false,
+        'message' => 'Server Error: ' . $e->getMessage()
+      ], 500);
+    }
+  }
 
 
 
