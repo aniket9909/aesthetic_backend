@@ -1360,4 +1360,52 @@ Please upload a photo if you would like to have your skin analyzed.
       ], 500);
     }
   }
+public function uploadImageFromDoc(Request $request)
+{
+    // Validate the request
+    // $validator = Validator::make($request->all(), [
+    //     'doctor_id' => 'required|integer',
+    //     'patient_id' => 'required|integer',
+    //     'patient_number' => 'required|string',
+    //     'images' => 'required',
+    //     'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048'  // max 2MB each image
+    // ]);
+
+    // if ($validator->fails()) {
+    //     return response()->json([
+    //         'status' => false,
+    //         'errors' => $validator->errors()
+    //     ], 422);
+    // }
+
+    $uploadedFiles = [];
+
+    // If it's a single file, wrap it in an array
+    $files = is_array($request->file('images')) ? $request->file('images') : [$request->file('images')];
+
+    foreach ($files as $file) {
+        $path = $file->store('public/patient_images');
+        $filename = basename($path);
+
+        // Save to DB if needed here, e.g., Image::create([...])
+
+        $uploadedFiles[] = [
+            'file_name' => $filename,
+            'url' => Storage::url($path)
+        ];
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Images uploaded successfully',
+        'data' => [
+            'doctor_id' => $request->doctor_id,
+            'patient_id' => $request->patient_id,
+            'patient_number' => $request->patient_number,
+            'uploaded_files' => $uploadedFiles
+        ]
+    ]);
+}
+
+
 }
