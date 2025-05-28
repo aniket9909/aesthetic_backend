@@ -18,4 +18,8 @@ class ConsumableUsageLog extends Model
         'remarks',
         'session_log_id',
     ];
+    protected $with = ['consumableInfo'];
+    public function consumableInfo(){
+        return $this->hasMany(ConsumableMaster::class,'id','consumable_id');
+    }
 }
