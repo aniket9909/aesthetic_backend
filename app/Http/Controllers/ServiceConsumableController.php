@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ServiceConsumable;
+use App\Models\ServiceMaster;
+use Illuminate\Support\Facades\DB;
 
 class ServiceConsumableController extends Controller
 {
@@ -35,5 +37,47 @@ class ServiceConsumableController extends Controller
     {
         ServiceConsumable::destroy($id);
         return response()->json(['message' => 'Deleted successfully']);
+    }
+    public function storeServiceConsumable(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Create the service
+            $service = ServiceMaster::create([
+                'name' => $request->name,
+                'description' => $request->description,
+                'base_price' => $request->base_price,
+                'category' => $request->category,
+                'is_tax_applied' => $request->is_tax_applied,
+                'tax_percent' => $request->tax_percent,
+                'is_active' => $request->is_active,
+            ]);
+
+            // Create consumables
+            foreach ($request->consumables ?? [] as $item) {
+                ServiceConsumable::create([
+                    'service_master_id' => $service->id,
+                    'consumable_id' => $item['consumable_id'],
+                    'quantity' => $item['quantity'],
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Service and consumables created successfully',
+                'data' => $service
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create service',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
