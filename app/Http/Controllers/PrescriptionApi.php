@@ -914,10 +914,10 @@ class PrescriptionApi extends Controller
                                     }
                                 }
                             }
-                            }
                         }
                     }
                 }
+
 
 
                 $isPackageAdded = $data['isPackageAdded'] ?? false;
