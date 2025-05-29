@@ -1445,5 +1445,109 @@ Please upload a photo if you would like to have your skin analyzed.
   }
 
 
+  public function getUploadedImages($doctorId, $patientNumber)
+  {
+    try {
+      // Validate request
+      if (!$doctorId || !$patientNumber) {
+        return response()->json([
+          'status' => false,
+          'message' => 'Doctor ID and Patient Number are required.',
+          'data' => null
+        ], 400);
+      }
+
+
+
+
+
+
+      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
+        ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+        ->select('docexa_doctor_master.mobile_no')
+        ->first();
+
+      if (!$doctor) {
+        return response()->json([
+          'status' => false,
+          'message' => 'Doctor not found.',
+          'data' => null
+        ], 404);
+      }
+
+      // Get images from chat
+      $images = Chats::where(function ($query) use ($patientNumber, $doctor) {
+        $query->where('sender_id', $doctor->mobile_no)
+          ->where('message_type', 'image')
+
+          ->where('receiver_id', $patientNumber);
+      })
+        ->orWhere(function ($query) use ($patientNumber, $doctor) {
+          $query->where('sender_id', $patientNumber)
+            ->where('message_type', 'image')
+
+            ->where('receiver_id', $doctor->mobile_no);
+        })
+        ->orderBy('date', 'desc')
+        ->get();
+
+      // Transform the images to match the Dart model
+      $imageList = $images->map(function ($chat) {
+        return [
+          'file_name' => $chat->media_id,
+          'url' => url($chat->media_url), // Generate full URL
+          'uploaded_date' => Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
+          // 'file_size' => $this->getFileSize($chat->media_url) // Add helper method to get file size
+        ];
+      });
+
+      // Return response matching the Dart model structure
+      return response()->json([
+        'status' => true,
+        'message' => 'Image list fetched successfully',
+        'data' => [
+          'uploaded_files' => $imageList
+        ]
+      ]);
+
+    } catch (\Exception $e) {
+      \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+      return response()->json([
+        'status' => false,
+        'message' => 'Server Error: ' . $e->getMessage(),
+        'data' => null
+      ], 500);
+    }
+  }
+
+  /**
+   * Helper method to get file size
+   */
+  private function getFileSize($filePath)
+  {
+    try {
+      $fullPath = public_path($filePath);
+      if (file_exists($fullPath)) {
+        $bytes = filesize($fullPath);
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+
+        $bytes /= pow(1024, $pow);
+
+        return round($bytes, 2) . ' ' . $units[$pow];
+      }
+      return null;
+    } catch (\Exception $e) {
+      \Log::warning('Error getting file size: ' . $e->getMessage());
+      return null;
+    }
+  }
+
+
+
 
 }
