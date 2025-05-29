@@ -15,7 +15,7 @@ class ServiceTransactionItems extends Model
     }
      public function service()
     {
-        return $this->hasMany(ServiceMaster::class, 'id','service_master_id');
+        return $this->belongsTo(ServiceMaster::class, 'service_master_id','id',);
     }
      public function sessions()
     {
