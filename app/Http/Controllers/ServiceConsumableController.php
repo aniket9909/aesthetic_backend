@@ -58,7 +58,7 @@ class ServiceConsumableController extends Controller
             foreach ($request->consumables ?? [] as $item) {
                 ServiceConsumable::create([
                     'service_master_id' => $service->id,
-                    'consumable_id' => $item['consumable_id'],
+                    'consumable_id' => $item['id'],
                     'quantity' => $item['quantity'],
                 ]);
             }

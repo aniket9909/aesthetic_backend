@@ -30,8 +30,6 @@ use App\PrescriptionNotesModel;
 use App\VaccinationBrandNameUsermapidModel;
 use App\VaccinationDetailModel;
 use App\AssistantVital;
-use DB;
-use Log;
 use URL;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
@@ -63,7 +61,9 @@ use App\Models\ServiceSessionLog;
 use App\Models\ServiceTransaction;
 use App\Models\ServiceTransactionItems;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -665,8 +665,9 @@ class PrescriptionApi extends Controller
     {
         try {
             $data = $request->all();
-
+            
             DB::beginTransaction();
+            
             // $validator = Validator::make($data, [
             //     'patient_id' => 'required|integer',
             //     'medication' => 'required|array|min:1',
@@ -877,29 +878,53 @@ class PrescriptionApi extends Controller
             $serviceTransaction = null;
             $serviceTransactionItems = null;
             if (count($data['services']) > 0) {
-                $isPackageAdded = $data['isPackageAdded'] ?? false;
 
+                $serviceTransaction = ServiceTransaction::where('patient_id', $data['patient_id'])
+                    ->where('doctor_id', $esteblishmentusermapID)
+                    ->latest()
+                    ->first();
+
+                $serviceTransactionItems = $serviceTransaction->serviceTransactionItems;
+                if ($serviceTransactionItems && count($serviceTransactionItems) > 0) {
+                    foreach ($serviceTransactionItems as $item) {
+                        // Check if remaining_sessions > 0 and service_item id is present in request
+                        if (
+                            isset($item->remaining_sessions) && $item->remaining_sessions > 0 &&
+                            isset($item->id)
+                        ) {
+                            foreach ($data['services'] as $service) {
+                                if (isset($service['service_item_id']) && $service['service_item_id'] == $item->id) {
+                                    // Update the transaction service item value
+                                    $item->custom_price = isset($service['base_price']) ? $service['base_price'] : $item->custom_price;
+                                    $item->tax_amount = isset($service['tax_percent']) ? $service['tax_percent'] : $item->tax_amount;
+                                    $item->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : $item->discount_amount;
+                                    $item->sub_total = isset($service['total']) ? $service['total'] : $item->sub_total;
+                                    $item->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : $item->is_tax_inclusive;
+                                    $item->total_sessions = isset($service['qty']) ? $service['qty'] : $item->total_sessions;
+                                    $item->completed_sessions = isset($service['completed_sessions']) ? $service['completed_sessions'] : $item->completed_sessions;
+                                    $totalSessions = isset($service['session']) ? (int)$service['session'] : $item->total_sessions;
+                                    $item->remaining_sessions = max($totalSessions - $item->completed_sessions, 0);
+                                    $item->save();
+                                }
+                            }
+                        }
+                    }
+                }
+                
+
+                $isPackageAdded = $data['isPackageAdded'] ?? false;
 
                 $total = array_sum(array_column($data['services'], 'sub_total'));
 
-
                 $totalDiscount = array_sum(array_column($data['services'], 'discount'));
-
 
                 $totalTax = array_sum(array_column($data['services'], 'tax'));
 
-
                 $total = array_sum(array_column($data['services'], 'total'));
-
 
                 $baseTotal = array_sum(array_column($data['services'], 'base_price'));
 
-
                 $totalDiscount = array_sum(array_column($data['services'], 'discount_amount'));
-
-
-
-
 
                 $totalTax = $total - $baseTotal;
 
@@ -935,11 +960,12 @@ class PrescriptionApi extends Controller
                         $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
                         $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
                         $serviceItem->total_sessions = isset($service['qty']) ? $service['qty'] : 1;                        // Set completed_sessions to 1
-                        $serviceItem->completed_sessions = 1;
+                        $serviceItem->completed_sessions = isset($service['completed_sessions']) ? $service['completed_sessions'] : 1;
 
                         // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
                         $totalSessions = isset($service['session']) ? (int)$service['session'] : 1;
-                        $serviceItem->remaining_sessions = max($totalSessions - 1, 0);
+                        $serviceItem->remaining_sessions = max($totalSessions - $serviceItem->completed_sessions, 0);
+
                         if ($serviceItem->save()) {
                             $serviceTransactionItems[] = $serviceItem;
                             foreach ($service['consumable'] as $consumable) {
