@@ -816,6 +816,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->get('/service-categories', 'ServiceCategoryController@index');
     $router->post('/service-categories', 'ServiceCategoryController@store');
+    
 });
 
 

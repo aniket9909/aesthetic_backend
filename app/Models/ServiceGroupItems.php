@@ -17,7 +17,9 @@ class ServiceGroupItems extends Model
         "discount_amount",
         "total_sessions",
         "completed_sessions",
-        "is_tax_inclusive"
+        "is_tax_inclusive",
+        'total',
+        'tax_per'
     ];
 
     public function services()

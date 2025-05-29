@@ -8,7 +8,7 @@ class ServiceMaster extends Model
 {
     protected $fillable = [
         'name',
-        'desciption',
+        'description',
         'base_price',
         'category',
         'is_tax_applied',

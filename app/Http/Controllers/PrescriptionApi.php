@@ -665,9 +665,9 @@ class PrescriptionApi extends Controller
     {
         try {
             $data = $request->all();
-            
+
             DB::beginTransaction();
-            
+
             // $validator = Validator::make($data, [
             //     'patient_id' => 'required|integer',
             //     'medication' => 'required|array|min:1',
@@ -895,22 +895,30 @@ class PrescriptionApi extends Controller
                             foreach ($data['services'] as $service) {
                                 if (isset($service['service_item_id']) && $service['service_item_id'] == $item->id) {
                                     // Update the transaction service item value
-                                    $item->custom_price = isset($service['base_price']) ? $service['base_price'] : $item->custom_price;
-                                    $item->tax_amount = isset($service['tax_percent']) ? $service['tax_percent'] : $item->tax_amount;
-                                    $item->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : $item->discount_amount;
-                                    $item->sub_total = isset($service['total']) ? $service['total'] : $item->sub_total;
-                                    $item->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : $item->is_tax_inclusive;
-                                    $item->total_sessions = isset($service['qty']) ? $service['qty'] : $item->total_sessions;
-                                    $item->completed_sessions = isset($service['completed_sessions']) ? $service['completed_sessions'] : $item->completed_sessions;
-                                    $totalSessions = isset($service['session']) ? (int)$service['session'] : $item->total_sessions;
+                                    $todaySession = isset($service['today_session']) ? (int)$service['today_session'] : 0;
+                                    $item->completed_sessions = (isset($service['completed_sessions']) ? (int)$service['completed_sessions'] : (int)$item->completed_sessions) + $todaySession;
+                                    $totalSessions = isset($service['session']) ? (int)$service['session'] : (int)$item->total_sessions;
                                     $item->remaining_sessions = max($totalSessions - $item->completed_sessions, 0);
+                                    $item->total_sessions = $totalSessions;
                                     $item->save();
+
+                                    // Create a new session log for each session change
+                                    for ($i = 0; $i < $todaySession; $i++) {
+                                        ServiceSessionLog::create([
+                                            'enrollment_item_id' => $item->id,
+                                            'session_number' => ($item->completed_sessions - $todaySession + $i + 1),
+                                            'conducted_at' => Carbon::now(),
+                                            'conducted_by_doctor_id' => $esteblishmentusermapID,
+                                            'remarks' => isset($service['remarks']) ? $service['remarks'] : null,
+                                        ]);
+                                    }
                                 }
+                            }
                             }
                         }
                     }
                 }
-                
+
 
                 $isPackageAdded = $data['isPackageAdded'] ?? false;
 

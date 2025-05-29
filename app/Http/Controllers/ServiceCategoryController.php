@@ -14,14 +14,24 @@ class ServiceCategoryController extends Controller
 
     public function store(Request $request)
     {
-       
 
-        $category = ServiceCategory::create($request->only('name', 'description'));
+        try {
+            //code...
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category created',
-            'data' => $category
-        ]);
+            $category = ServiceCategory::create($request->only('name', 'description'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Category created',
+                'data' => $category
+            ]);
+        } catch (\Throwable $th) {
+            //throw $th;
+             return response()->json([
+                'success' => true,
+                'message' => $th->getMessage(),
+                'data' => []
+            ],500);
+        }
     }
 }
