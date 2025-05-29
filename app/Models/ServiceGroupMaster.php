@@ -20,10 +20,10 @@ class ServiceGroupMaster extends Model
 
     public function services()
     {
-        return $this->hasMany(ServiceGroupMaster::class, 'group_master_id');
+        return $this->hasMany(ServiceGroupMaster::class, 'id','group_master_id');
     }
     public function groupItems()
     {
-        return $this->hasMany(ServiceGroupItems::class, 'group_master_id','id');
+        return $this->hasMany(ServiceGroupItems::class, 'group_master_id');
     }
 }

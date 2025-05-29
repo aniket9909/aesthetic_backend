@@ -39,7 +39,7 @@ class ServiceMasterController extends Controller
             ->where('doctor_id', $doctor->id)
             ->latest()
             ->first();
-            // dd($serviceTransaction->toArray());
+            
 
         // Default empty arrays
         $workingSessions = [];

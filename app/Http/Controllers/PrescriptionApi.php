@@ -61,6 +61,7 @@ use App\Models\ServiceSessionLog;
 use App\Models\ServiceTransaction;
 use App\Models\ServiceTransactionItems;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -683,6 +684,8 @@ class PrescriptionApi extends Controller
             // }
 
             Log::info(['dataaaaaaaaaaaaaaa' => $data]);
+
+
             $vitals = $data['vitals'];
             $prescription = new PrescriptionData();
             $prescription->user_map_id = $esteblishmentusermapID;
@@ -877,6 +880,11 @@ class PrescriptionApi extends Controller
             //start service store 
             $serviceTransaction = null;
             $serviceTransactionItems = null;
+            $servicesCheck = isset($data['services']) ? $data['billing_data'] : null;
+
+            if ($servicesCheck) {
+                throw new Exception("Service not found");
+            }
             if (count($data['services']) > 0) {
 
                 $serviceTransaction = ServiceTransaction::where('patient_id', $data['patient_id'])
@@ -884,8 +892,9 @@ class PrescriptionApi extends Controller
                     ->latest()
                     ->first();
 
-                $serviceTransactionItems = $serviceTransaction->serviceTransactionItems;
+                $serviceTransactionItems = $serviceTransaction->serviceTransactionItems ?? null;
                 if ($serviceTransactionItems && count($serviceTransactionItems) > 0) {
+                    Log::info("service transaction found");
                     foreach ($serviceTransactionItems as $item) {
                         // Check if remaining_sessions > 0 and service_item id is present in request
                         if (
@@ -895,7 +904,7 @@ class PrescriptionApi extends Controller
                             foreach ($data['services'] as $service) {
                                 if (isset($service['service_item_id']) && $service['service_item_id'] == $item->id) {
                                     // Update the transaction service item value
-                                    $todaySession = isset($service['today_session']) ? (int)$service['today_session'] : 0;
+                                    $todaySession = isset($service['today_sessions']) ? (int)$service['today_sessions'] : 0;
                                     $item->completed_sessions = (isset($service['completed_sessions']) ? (int)$service['completed_sessions'] : (int)$item->completed_sessions) + $todaySession;
                                     $totalSessions = isset($service['session']) ? (int)$service['session'] : (int)$item->total_sessions;
                                     $item->remaining_sessions = max($totalSessions - $item->completed_sessions, 0);
@@ -916,94 +925,97 @@ class PrescriptionApi extends Controller
                             }
                         }
                     }
-                }
-
-
-
-                $isPackageAdded = $data['isPackageAdded'] ?? false;
-
-                $total = array_sum(array_column($data['services'], 'sub_total'));
-
-                $totalDiscount = array_sum(array_column($data['services'], 'discount'));
-
-                $totalTax = array_sum(array_column($data['services'], 'tax'));
-
-                $total = array_sum(array_column($data['services'], 'total'));
-
-                $baseTotal = array_sum(array_column($data['services'], 'base_price'));
-
-                $totalDiscount = array_sum(array_column($data['services'], 'discount_amount'));
-
-                $totalTax = $total - $baseTotal;
-
-                $serviceTransaction = new ServiceTransaction();
-                $serviceTransaction->user_map_id = $esteblishmentusermapID;
-                $serviceTransaction->patient_id = $data['patient_id'];
-                $serviceTransaction->doctor_id = $esteblishmentusermapID;
-                $serviceTransaction->enrollment_type = $isPackageAdded == true ? 'group' : 'individual';
-                $serviceTransaction->group_master_id = $isPackageAdded == true ? $data['group_id'] : null;
-                $serviceTransaction->total_amount = $total != null ? $total : 0.00;
-                $serviceTransaction->total_discount = $totalDiscount != null ? $totalDiscount : 0.00;
-                $serviceTransaction->total_tax = $totalTax != null ? $totalTax : 0.00;
-                $serviceTransaction->remarks = isset($data['remarks']) ? $data['remarks'] : null;
-                $serviceTransaction->enrolled_date = isset($data['enrolled_date']) ? $data['enrolled_date'] : date('Y-m-d');
-                $serviceTransaction->validity_months = isset($data['validity_months']) ? $data['validity_months'] : null;
-                $serviceTransaction->expiry_date = isset($data['expiry_date']) ? $data['expiry_date'] : null;
-                $serviceTransaction->prescription_id = $prescription->id;
-
-                if ($serviceTransaction->save()) {
-                    Log::info(['serviceTransaction' => $serviceTransaction]);
-
-                    foreach ($data['services'] as $service) {
-                        // Insert into service_enrollment_items table
-                        $serviceItem = new ServiceTransactionItems();
-                        $serviceItem->enrollment_transaction_id = $serviceTransaction->id;
-                        $serviceItem->service_master_id = isset($service['id']) ? $service['id'] : null;
-                        $serviceItem->custom_price = isset($service['base_price']) ? $service['base_price'] : null;
-
-                        $serviceItem->tax_amount = isset($service['tax_percent']) ? $service['tax_percent'] : null;
-
-                        $serviceItem->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : null;
-
-                        $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
-                        $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
-                        $serviceItem->total_sessions = isset($service['qty']) ? $service['qty'] : 1;                        // Set completed_sessions to 1
-                        $serviceItem->completed_sessions = isset($service['completed_sessions']) ? $service['completed_sessions'] : 1;
-
-                        // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
-                        $totalSessions = isset($service['session']) ? (int)$service['session'] : 1;
-                        $serviceItem->remaining_sessions = max($totalSessions - $serviceItem->completed_sessions, 0);
-
-                        if ($serviceItem->save()) {
-                            $serviceTransactionItems[] = $serviceItem;
-                            foreach ($service['consumable'] as $consumable) {
-                                $session = ServiceSessionLog::create([
-                                    'enrollment_item_id' => $serviceItem->id,
-                                    'session_number' => isset($consumable['session_number']) ? $consumable['session_number'] : 1,
-                                    'conducted_at' => isset($consumable['conducted_at']) ? $consumable['conducted_at'] : Carbon::now(),
-                                    'conducted_by_doctor_id' => $esteblishmentusermapID,
-                                    'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
-                                ]);
-                                $consumableUseItem = ConsumableUsageLog::create(
-                                    [
-                                        'enrollment_transaction_id' => $serviceTransaction->id,
-                                        'enrollment_item_id' => $serviceItem->id,
-                                        'consumable_id' => isset($consumable['id']) ? $consumable['id'] : null,
-                                        'used_quantity' => isset($consumable['quantity']) ? $consumable['quantity'] : null,
-                                        'used_unit' => isset($consumable['unit']) ? $consumable['unit'] : null,
-                                        'used_by_doctor_id' => $esteblishmentusermapID,
-                                        'used_at' => Carbon::now(),
-                                        'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
-                                        'session_log_id' => $session != null ? $session->id : null,
-                                    ]
-                                );
-                            }
-                        } else {
-                            throw new \Exception("Failed to save service transaction item");
-                        }
-                    }
                 } else {
-                    throw new \Exception("Failed to save service transaction");
+
+
+                    Log::info("service transaction not  found");
+
+
+                    $isPackageAdded = $data['isPackageAdded'] ?? false;
+
+                    $total = array_sum(array_column($data['services'], 'sub_total'));
+
+                    $totalDiscount = array_sum(array_column($data['services'], 'discount'));
+
+                    $totalTax = array_sum(array_column($data['services'], 'tax'));
+
+                    $total = array_sum(array_column($data['services'], 'total'));
+
+                    $baseTotal = array_sum(array_column($data['services'], 'base_price'));
+
+                    $totalDiscount = array_sum(array_column($data['services'], 'discount_amount'));
+
+                    $totalTax = $total - $baseTotal;
+
+                    $serviceTransaction = new ServiceTransaction();
+                    $serviceTransaction->user_map_id = $esteblishmentusermapID;
+                    $serviceTransaction->patient_id = $data['patient_id'];
+                    $serviceTransaction->doctor_id = $esteblishmentusermapID;
+                    $serviceTransaction->enrollment_type = $isPackageAdded == true ? 'group' : 'individual';
+                    $serviceTransaction->group_master_id = $isPackageAdded == true ? $data['group_id'] : null;
+                    $serviceTransaction->total_amount = $total != null ? $total : 0.00;
+                    $serviceTransaction->total_discount = $totalDiscount != null ? $totalDiscount : 0.00;
+                    $serviceTransaction->total_tax = $totalTax != null ? $totalTax : 0.00;
+                    $serviceTransaction->remarks = isset($data['remarks']) ? $data['remarks'] : null;
+                    $serviceTransaction->enrolled_date = isset($data['enrolled_date']) ? $data['enrolled_date'] : date('Y-m-d');
+                    $serviceTransaction->validity_months = isset($data['validity_months']) ? $data['validity_months'] : null;
+                    $serviceTransaction->expiry_date = isset($data['expiry_date']) ? $data['expiry_date'] : null;
+                    $serviceTransaction->prescription_id = $prescription->id;
+
+                    if ($serviceTransaction->save()) {
+                        Log::info(['serviceTransaction' => $serviceTransaction]);
+
+                        foreach ($data['services'] as $service) {
+                            // Insert into service_enrollment_items table
+                            $serviceItem = new ServiceTransactionItems();
+                            $serviceItem->enrollment_transaction_id = $serviceTransaction->id;
+                            $serviceItem->service_master_id = isset($service['id']) ? $service['id'] : null;
+                            $serviceItem->custom_price = isset($service['base_price']) ? $service['base_price'] : null;
+
+                            $serviceItem->tax_amount = isset($service['tax_percent']) ? $service['tax_percent'] : null;
+
+                            $serviceItem->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : null;
+
+                            $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
+                            $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
+                            $serviceItem->total_sessions = isset($service['qty']) ? $service['qty'] : 1;                        // Set completed_sessions to 1
+                            $serviceItem->completed_sessions = isset($service['today_sessions']) ? $service['today_sessions'] : 1;
+
+                            // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
+                            $totalSessions = isset($service['session']) ? (int)$service['session'] : 1 ;
+                            $serviceItem->remaining_sessions = max($totalSessions - $serviceItem->completed_sessions, $totalSessions);
+
+                            if ($serviceItem->save()) {
+                                $serviceTransactionItems[] = $serviceItem;
+                                foreach ($service['consumable'] as $consumable) {
+                                    $session = ServiceSessionLog::create([
+                                        'enrollment_item_id' => $serviceItem->id,
+                                        'session_number' => isset($consumable['session_number']) ? $consumable['session_number'] : 1,
+                                        'conducted_at' => isset($consumable['conducted_at']) ? $consumable['conducted_at'] : Carbon::now(),
+                                        'conducted_by_doctor_id' => $esteblishmentusermapID,
+                                        'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
+                                    ]);
+                                    $consumableUseItem = ConsumableUsageLog::create(
+                                        [
+                                            'enrollment_transaction_id' => $serviceTransaction->id,
+                                            'enrollment_item_id' => $serviceItem->id,
+                                            'consumable_id' => isset($consumable['id']) ? $consumable['id'] : null,
+                                            'used_quantity' => isset($consumable['quantity']) ? $consumable['quantity'] : null,
+                                            'used_unit' => isset($consumable['unit']) ? $consumable['unit'] : null,
+                                            'used_by_doctor_id' => $esteblishmentusermapID,
+                                            'used_at' => Carbon::now(),
+                                            'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
+                                            'session_log_id' => $session != null ? $session->id : null,
+                                        ]
+                                    );
+                                }
+                            } else {
+                                throw new \Exception("Failed to save service transaction item");
+                            }
+                        }
+                    } else {
+                        throw new \Exception("Failed to save service transaction");
+                    }
                 }
             } else {
                 throw new \Exception("Failed to save service transaction, no services provided");

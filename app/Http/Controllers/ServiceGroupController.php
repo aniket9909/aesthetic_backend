@@ -11,7 +11,7 @@ class ServiceGroupController extends Controller
 {
     public function index()
     {
-        $groups = ServiceGroupMaster::with('services')->get();
+        $groups = ServiceGroupMaster::with('groupItems')->get();
         return response()->json(['success' => true, 'data' => $groups]);
     }
 
