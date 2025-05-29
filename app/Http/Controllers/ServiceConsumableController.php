@@ -45,13 +45,13 @@ class ServiceConsumableController extends Controller
         try {
             // Create the service
             $service = ServiceMaster::create([
-                'name' => $request->name,
-                'description' => $request->description,
-                'base_price' => $request->base_price,
-                'category' => $request->category,
-                'is_tax_applied' => $request->is_tax_applied,
-                'tax_percent' => $request->tax_percent,
-                'is_active' => $request->is_active,
+                'name' => isset($request->name) ? $request->name : null,
+                'description' => isset($request->description) ? $request->description : null,
+                'base_price' => isset($request->charges) ? $request->charges : 0,
+                'category' => isset($request->category) ? $request->category : null,
+                'is_tax_applied' => isset($request->is_tax_applied) ? $request->is_tax_applied : 0,
+                'tax_percent' => isset($request->tax_percent) ? $request->tax_percent : 18,
+                'is_active' => isset($request->is_active) ? $request->is_active : 1,
             ]);
 
             // Create consumables
@@ -64,7 +64,7 @@ class ServiceConsumableController extends Controller
             }
 
             DB::commit();
-
+    
             return response()->json([
                 'success' => true,
                 'message' => 'Service and consumables created successfully',
