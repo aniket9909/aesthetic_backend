@@ -35,7 +35,11 @@ class ServiceConsumableController extends Controller
 
     public function destroy($id)
     {
-        ServiceConsumable::destroy($id);
+        // Delete the related ServiceMaster record first
+        ServiceMaster::where('id', $id)->delete();
+
+        ServiceConsumable::where('service_master_id', $id)->delete();
+
         return response()->json(['message' => 'Deleted successfully']);
     }
     public function storeServiceConsumable(Request $request)
