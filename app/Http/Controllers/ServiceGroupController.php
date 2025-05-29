@@ -23,8 +23,8 @@ class ServiceGroupController extends Controller
             return response()->json(['error' => 'Name, Package Amount, and Services are required'], 422);
         }
 
-        DB::beginTransaction();
         try {
+            DB::beginTransaction();
             //code...
 
             $group = ServiceGroupMaster::create([
@@ -40,17 +40,19 @@ class ServiceGroupController extends Controller
             
             $items = [];
             foreach ($data['services'] as $service) {
-                if (!isset($service['service_master_id'])) continue;
+                if (!isset($service['id'])) continue;
 
                 $items[] = ServiceGroupItems::create([
                     'group_master_id' => $group->id,
-                    'service_master_id' => $service['service_master_id'],
-                    'custom_price' => $service['custom_price'] ?? null,
-                    'tax_amount' => $service['tax_amount'] ?? 0,
+                    'service_master_id' => $service['id'],
+                    'custom_price' => $service['base_price'] ?? null,
+                    'tax_amount' => ($service['total'] ?? 0.0) - ($service['base_price'] ?? 0.0),
                     'discount_amount' => $service['discount_amount'] ?? 0,
                     'total_sessions' => $service['total_sessions'] ?? 0,
                     'completed_sessions' => $service['completed_sessions'] ?? 0,
                     'is_tax_inclusive' => $service['is_tax_inclusive'] ?? false,
+                    'total'=>$service['total'] ?? 0.0,
+                    'tax_per'=>$service['tax'] ?? 0.0,
                 ]);
             }
             DB::commit();
