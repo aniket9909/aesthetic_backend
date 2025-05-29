@@ -683,8 +683,7 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
     $router->delete('delete/investigation/{id}', 'PrescriptionApi@deleteInvestigationFromUserMap');
 
     $router->get('search/investigation', 'PrescriptionApi@getinvestigationMasterwrtousermapSearch');
-$router->post('uploadImageFromDoc', 'ApiController@uploadImageFromDoc');
-
+    $router->post('uploadImageFromDoc', 'ApiController@uploadImageFromDoc');
 });
 
 $router->group(['prefix' => 'api/v4/symptoms'], function () use ($router) {
@@ -811,6 +810,11 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('consumable-usage/{id}', 'ConsumableUsageLogController@show');
     $router->put('consumable-usage/{id}', 'ConsumableUsageLogController@update');
     $router->delete('consumable-usage/{id}', 'ConsumableUsageLogController@destroy');
+
+
+
+    $router->get('/service-categories', 'ServiceCategoryController@index');
+    $router->post('/service-categories', 'ServiceCategoryController@store');
 });
 
 
@@ -849,5 +853,3 @@ $router->post('groups', 'ServiceGroupController@store');
 $router->get('groups/{id}', 'ServiceGroupController@show');
 $router->put('groups/{id}', 'ServiceGroupController@update');
 $router->delete('groups/{id}', 'ServiceGroupController@destroy');
-
-
