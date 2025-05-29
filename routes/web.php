@@ -804,6 +804,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->put('service-consumables/{id}', 'ServiceConsumableController@update');
     $router->delete('service-consumables/{id}', 'ServiceConsumableController@destroy');
     $router->post('store-service-consumables', 'ServiceConsumableController@storeServiceConsumable');
+    $router->put('service-consumables/{id}/update', 'ServiceConsumableController@updateServiceConsumable');
 
     $router->get('consumable-usage', 'ConsumableUsageLogController@index');
     $router->post('consumable-usage', 'ConsumableUsageLogController@store');

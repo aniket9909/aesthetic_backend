@@ -64,7 +64,7 @@ class ServiceConsumableController extends Controller
             }
 
             DB::commit();
-    
+
             return response()->json([
                 'success' => true,
                 'message' => 'Service and consumables created successfully',
@@ -76,6 +76,53 @@ class ServiceConsumableController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create service',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateServiceConsumable(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Update the service
+            $service = ServiceMaster::findOrFail($id);
+            $service->update([
+                'name' => isset($request->name) ? $request->name : $service->name,
+                'description' => isset($request->description) ? $request->description : $service->description,
+                'base_price' => isset($request->charges) ? $request->charges : $service->base_price,
+                'category' => isset($request->category) ? $request->category : $service->category,
+                'is_tax_applied' => isset($request->is_tax_applied) ? $request->is_tax_applied : $service->is_tax_applied,
+                'tax_percent' => isset($request->tax_percent) ? $request->tax_percent : $service->tax_percent,
+                'is_active' => isset($request->is_active) ? $request->is_active : $service->is_active,
+            ]);
+
+            // Remove existing consumables
+            ServiceConsumable::where('service_master_id', $service->id)->delete();
+
+            // Add new consumables
+            foreach ($request->consumables ?? [] as $item) {
+                ServiceConsumable::create([
+                    'service_master_id' => $service->id,
+                    'consumable_id' => $item['id'],
+                    'quantity' => $item['quantity'],
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Service and consumables updated successfully',
+                'data' => $service
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update service',
                 'error' => $e->getMessage()
             ], 500);
         }
