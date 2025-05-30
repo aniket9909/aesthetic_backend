@@ -45,7 +45,7 @@ class ServiceSessionController extends Controller
             foreach ($transaction->serviceTransactionItems as $item) {
                 $itemData = [
                     'service_item_id' => $item->id,
-                    'service_name' => $item->service,
+                    'service_name' => $item->service->name ?? null,
                     'custom_price' => $item->custom_price,
                     'tax_amount' => $item->tax_amount,
                     'discount_amount' => $item->discount_amount,
