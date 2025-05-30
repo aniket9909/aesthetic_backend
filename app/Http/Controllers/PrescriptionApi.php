@@ -972,10 +972,6 @@ class PrescriptionApi extends Controller
                         }
                     }
                 } else {
-
-
-
-
                     $isPackageAdded = $data['isPackageAdded'] ?? false;
 
                     $total = array_sum(array_column($data['services'], 'sub_total'));
@@ -1028,7 +1024,7 @@ class PrescriptionApi extends Controller
 
                             // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
                             $totalSessions = isset($service['qty']) ? (int)$service['qty'] : 1;
-                            $serviceItem->remaining_sessions = max($totalSessions - $serviceItem->completed_sessions, $totalSessions);
+                            $serviceItem->remaining_sessions = $totalSessions - $serviceItem->completed_sessions;
 
                             if ($serviceItem->save()) {
                                 $serviceTransactionItems[] = $serviceItem;
