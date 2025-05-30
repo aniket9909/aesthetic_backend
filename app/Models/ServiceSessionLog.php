@@ -14,5 +14,6 @@ class ServiceSessionLog extends Model
         'conducted_at',
         'conducted_by_doctor_id',
         'remarks',
+        "prescription_id"
     ];
 }

@@ -939,60 +939,62 @@ class PrescriptionApi extends Controller
                                             'conducted_at' => Carbon::now(),
                                             'conducted_by_doctor_id' => $esteblishmentusermapID,
                                             'remarks' => isset($service['remarks']) ? $service['remarks'] : null,
+                                            'prescription_id' => $prescription->id,
                                         ]);
                                     }
                                 }
                             }
                         }
                     }
-                }
+                } else {
 
 
 
-                $isPackageAdded = $data['isPackageAdded'] ?? false;
 
-                $total = array_sum(array_column($data['services'], 'sub_total'));
+                    $isPackageAdded = $data['isPackageAdded'] ?? false;
 
-                $totalDiscount = array_sum(array_column($data['services'], 'discount'));
+                    $total = array_sum(array_column($data['services'], 'sub_total'));
 
-                $totalTax = array_sum(array_column($data['services'], 'tax'));
+                    $totalDiscount = array_sum(array_column($data['services'], 'discount'));
 
-                $total = array_sum(array_column($data['services'], 'total'));
+                    $totalTax = array_sum(array_column($data['services'], 'tax'));
 
-                $baseTotal = array_sum(array_column($data['services'], 'base_price'));
+                    $total = array_sum(array_column($data['services'], 'total'));
 
-                $totalDiscount = array_sum(array_column($data['services'], 'discount_amount'));
+                    $baseTotal = array_sum(array_column($data['services'], 'base_price'));
 
-                $totalTax = $total - $baseTotal;
+                    $totalDiscount = array_sum(array_column($data['services'], 'discount_amount'));
 
-                $serviceTransaction = new ServiceTransaction();
-                $serviceTransaction->user_map_id = $esteblishmentusermapID;
-                $serviceTransaction->patient_id = $data['patient_id'];
-                $serviceTransaction->doctor_id = $esteblishmentusermapID;
-                $serviceTransaction->enrollment_type = $isPackageAdded == true ? 'group' : 'individual';
-                $serviceTransaction->group_master_id = $isPackageAdded == true ? $data['group_id'] : null;
-                $serviceTransaction->total_amount = $total != null ? $total : 0.00;
-                $serviceTransaction->total_discount = $totalDiscount != null ? $totalDiscount : 0.00;
-                $serviceTransaction->total_tax = $totalTax != null ? $totalTax : 0.00;
-                $serviceTransaction->remarks = isset($data['remarks']) ? $data['remarks'] : null;
-                $serviceTransaction->enrolled_date = isset($data['enrolled_date']) ? $data['enrolled_date'] : date('Y-m-d');
-                $serviceTransaction->validity_months = isset($data['validity_months']) ? $data['validity_months'] : null;
-                $serviceTransaction->expiry_date = isset($data['expiry_date']) ? $data['expiry_date'] : null;
-                $serviceTransaction->prescription_id = $prescription->id;
+                    $totalTax = $total - $baseTotal;
 
-                if ($serviceTransaction->save()) {
-                    Log::info(['serviceTransaction' => $serviceTransaction]);
+                    $serviceTransaction = new ServiceTransaction();
+                    $serviceTransaction->user_map_id = $esteblishmentusermapID;
+                    $serviceTransaction->patient_id = $data['patient_id'];
+                    $serviceTransaction->doctor_id = $esteblishmentusermapID;
+                    $serviceTransaction->enrollment_type = $isPackageAdded == true ? 'group' : 'individual';
+                    $serviceTransaction->group_master_id = $isPackageAdded == true ? $data['group_id'] : null;
+                    $serviceTransaction->total_amount = $total != null ? $total : 0.00;
+                    $serviceTransaction->total_discount = $totalDiscount != null ? $totalDiscount : 0.00;
+                    $serviceTransaction->total_tax = $totalTax != null ? $totalTax : 0.00;
+                    $serviceTransaction->remarks = isset($data['remarks']) ? $data['remarks'] : null;
+                    $serviceTransaction->enrolled_date = isset($data['enrolled_date']) ? $data['enrolled_date'] : date('Y-m-d');
+                    $serviceTransaction->validity_months = isset($data['validity_months']) ? $data['validity_months'] : null;
+                    $serviceTransaction->expiry_date = isset($data['expiry_date']) ? $data['expiry_date'] : null;
+                    $serviceTransaction->prescription_id = $prescription->id;
 
-                    foreach ($data['services'] as $service) {
-                        // Insert into service_enrollment_items table
-                        $serviceItem = new ServiceTransactionItems();
-                        $serviceItem->enrollment_transaction_id = $serviceTransaction->id;
-                        $serviceItem->service_master_id = isset($service['id']) ? $service['id'] : null;
-                        $serviceItem->custom_price = isset($service['base_price']) ? $service['base_price'] : null;
+                    if ($serviceTransaction->save()) {
+                        Log::info(['serviceTransaction' => $serviceTransaction]);
 
-                        $serviceItem->tax_amount = isset($service['tax_percent']) ? $service['tax_percent'] : null;
+                        foreach ($data['services'] as $service) {
+                            // Insert into service_enrollment_items table
+                            $serviceItem = new ServiceTransactionItems();
+                            $serviceItem->enrollment_transaction_id = $serviceTransaction->id;
+                            $serviceItem->service_master_id = isset($service['id']) ? $service['id'] : null;
+                            $serviceItem->custom_price = isset($service['base_price']) ? $service['base_price'] : null;
 
-                        $serviceItem->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : null;
+                            $serviceItem->tax_amount = isset($service['tax_percent']) ? $service['tax_percent'] : null;
+
+                            $serviceItem->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : null;
 
                             $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
                             $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
@@ -2903,9 +2905,8 @@ class PrescriptionApi extends Controller
                                 $item->$key = '';
                             }
                         }
-                        return $item;
+                        return $item ;
                     });
-
 
 
                 $row->systemic_examination = Systemic_examination::where('prescription_id', $row->id)->first();
@@ -2917,6 +2918,12 @@ class PrescriptionApi extends Controller
                 $row->vaccination_given = VaccinationDetailModel::where('prescription_id', $row->id)->where('flag', 1)
                     ->where('deleted_by', 0)
                     ->get();
+                $session = ServiceSessionLog::where('prescription_id', $row->id)->get();
+                $trasactionIds = $session->pluck('enrollment_item_id')->toArray();
+                $row->session=$session;
+                if($session != null ){   
+                    $row->services = ServiceTransactionItems::whereIn('id', $trasactionIds)->get();
+                }
             }
             return response()->json(['status' => 'success', 'data' => $data, 'total_prescription' => $totalCount], 200);
         } else {
