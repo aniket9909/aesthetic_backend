@@ -621,7 +621,9 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
 
 
     $router->get('totalpatient/{esteblishmentusermapID}', 'PatientApi@getTotalCountOfPatient');
+
     $router->get('doctor/{esteblishmentusermapID}/patient/{mobileNumber}', 'DoctorsApi@getPatientByMobilenumber');
+
     $router->get('getpatientById/{patientid}', 'PatientApi@getPatientById');
 
     $router->post('upload/offlineSyncked/prescription/{esteblishmentusermapID}/{patientId}', 'PrescriptionApi@saveOfflineSynckedPrescription');
@@ -817,7 +819,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->get('/service-categories', 'ServiceCategoryController@index');
     $router->post('/service-categories', 'ServiceCategoryController@store');
-    
+
+    $router->get('/sesssion-by-patient/{esteblishmentusermapID}/{patientId}', 'ServiceSessionController@getSessionsByPatientId');
 });
 
 
