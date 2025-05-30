@@ -877,6 +877,12 @@ class PrescriptionApi extends Controller
             //start service store 
             $serviceTransaction = null;
             $serviceTransactionItems = null;
+            $servicesCheck = isset($data['services']) ? $data['billing_data'] : null;
+
+            if ($servicesCheck) {
+                throw new Exception("Service not found");
+            }
+            // Log::info($data['services']);
             if (count($data['services']) > 0) {
 
                 $serviceTransaction = ServiceTransaction::where('patient_id', $data['patient_id'])
@@ -884,23 +890,46 @@ class PrescriptionApi extends Controller
                     ->latest()
                     ->first();
 
-                $serviceTransactionItems = $serviceTransaction->serviceTransactionItems;
+                $serviceTransactionItems = $serviceTransaction->serviceTransactionItems ?? null;
+                $hasRemainingSessions = false;
                 if ($serviceTransactionItems && count($serviceTransactionItems) > 0) {
                     foreach ($serviceTransactionItems as $item) {
+                        if (isset($item->remaining_sessions) && $item->remaining_sessions > 0) {
+                            $hasRemainingSessions = true;
+                            break;
+                        }
+                    }
+                }
+                if ($hasRemainingSessions) {
+                    Log::info("service transaction found");
+                    foreach ($serviceTransactionItems as $item) {
                         // Check if remaining_sessions > 0 and service_item id is present in request
+
+                        Log::info("check condiction======================================");
+                        Log::info(isset($item->remaining_sessions) && $item->remaining_sessions > 0 &&
+                            isset($item->id));
+                        Log::info("======================================");
                         if (
                             isset($item->remaining_sessions) && $item->remaining_sessions > 0 &&
                             isset($item->id)
                         ) {
+
                             foreach ($data['services'] as $service) {
-                                if (isset($service['service_item_id']) && $service['service_item_id'] == $item->id) {
+
+                                if (isset($service['id']) && $service['id'] == $item->service->id) {
+                                    Log::info("today session======================================");
+                                    // Log::info($service);
+                                    Log::info($item->service->id);
+                                    Log::info("======================================");
                                     // Update the transaction service item value
-                                    $todaySession = isset($service['today_session']) ? (int)$service['today_session'] : 0;
+                                    $todaySession = isset($service['todays_sessions']) ? (int)$service['todays_sessions'] : 0;
                                     $item->completed_sessions = (isset($service['completed_sessions']) ? (int)$service['completed_sessions'] : (int)$item->completed_sessions) + $todaySession;
                                     $totalSessions = isset($service['session']) ? (int)$service['session'] : (int)$item->total_sessions;
                                     $item->remaining_sessions = max($totalSessions - $item->completed_sessions, 0);
                                     $item->total_sessions = $totalSessions;
-                                    $item->save();
+                                    Log::info($item);
+                                    Log::info($item->save());
+
 
                                     // Create a new session log for each session change
                                     for ($i = 0; $i < $todaySession; $i++) {
@@ -965,52 +994,53 @@ class PrescriptionApi extends Controller
 
                         $serviceItem->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : null;
 
-                        $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
-                        $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
-                        $serviceItem->total_sessions = isset($service['qty']) ? $service['qty'] : 1;                        // Set completed_sessions to 1
-                        $serviceItem->completed_sessions = isset($service['completed_sessions']) ? $service['completed_sessions'] : 1;
+                            $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
+                            $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
+                            $serviceItem->total_sessions = isset($service['qty']) ? $service['qty'] : 1;                        // Set completed_sessions to 1
+                            $serviceItem->completed_sessions = isset($service['todays_sessions']) ? $service['todays_sessions'] : 0;
 
-                        // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
-                        $totalSessions = isset($service['session']) ? (int)$service['session'] : 1;
-                        $serviceItem->remaining_sessions = max($totalSessions - $serviceItem->completed_sessions, 0);
+                            // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
+                            $totalSessions = isset($service['qty']) ? (int)$service['qty'] : 1;
+                            $serviceItem->remaining_sessions = max($totalSessions - $serviceItem->completed_sessions, $totalSessions);
 
-                        if ($serviceItem->save()) {
-                            $serviceTransactionItems[] = $serviceItem;
-                            foreach ($service['consumable'] as $consumable) {
-                                $session = ServiceSessionLog::create([
-                                    'enrollment_item_id' => $serviceItem->id,
-                                    'session_number' => isset($consumable['session_number']) ? $consumable['session_number'] : 1,
-                                    'conducted_at' => isset($consumable['conducted_at']) ? $consumable['conducted_at'] : Carbon::now(),
-                                    'conducted_by_doctor_id' => $esteblishmentusermapID,
-                                    'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
-                                ]);
-                                $consumableUseItem = ConsumableUsageLog::create(
-                                    [
-                                        'enrollment_transaction_id' => $serviceTransaction->id,
+                            if ($serviceItem->save()) {
+                                $serviceTransactionItems[] = $serviceItem;
+                                foreach ($service['consumable'] as $consumable) {
+
+                                    $session = ServiceSessionLog::create([
                                         'enrollment_item_id' => $serviceItem->id,
-                                        'consumable_id' => isset($consumable['id']) ? $consumable['id'] : null,
-                                        'used_quantity' => isset($consumable['quantity']) ? $consumable['quantity'] : null,
-                                        'used_unit' => isset($consumable['unit']) ? $consumable['unit'] : null,
-                                        'used_by_doctor_id' => $esteblishmentusermapID,
-                                        'used_at' => Carbon::now(),
+                                        'session_number' => isset($consumable['session_number']) ? $consumable['session_number'] : 1,
+                                        'conducted_at' => isset($consumable['conducted_at']) ? $consumable['conducted_at'] : Carbon::now(),
+                                        'conducted_by_doctor_id' => $esteblishmentusermapID,
                                         'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
-                                        'session_log_id' => $session != null ? $session->id : null,
-                                    ]
-                                );
+                                    ]);
+                                    $consumableUseItem = ConsumableUsageLog::create(
+                                        [
+                                            'enrollment_transaction_id' => $serviceTransaction->id,
+                                            'enrollment_item_id' => $serviceItem->id,
+                                            'consumable_id' => isset($consumable['id']) ? $consumable['id'] : null,
+                                            'used_quantity' => isset($consumable['quantity']) ? $consumable['quantity'] : null,
+                                            'used_unit' => isset($consumable['unit']) ? $consumable['unit'] : null,
+                                            'used_by_doctor_id' => $esteblishmentusermapID,
+                                            'used_at' => Carbon::now(),
+                                            'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
+                                            'session_log_id' => $session != null ? $session->id : null,
+                                        ]
+                                    );
+                                }
+                            } else {
+                                throw new \Exception("Failed to save service transaction item");
                             }
-                        } else {
-                            throw new \Exception("Failed to save service transaction item");
                         }
+                    } else {
+                        throw new \Exception("Failed to save service transaction");
                     }
-                } else {
-                    throw new \Exception("Failed to save service transaction");
                 }
             } else {
                 throw new \Exception("Failed to save service transaction, no services provided");
             }
 
             DB::commit();
-
             if ($prescriptionSave) {
                 return $this->getPrescription($esteblishmentusermapID, $prescription->id);
             } else {

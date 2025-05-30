@@ -48,7 +48,7 @@ class ServiceGroupController extends Controller
                     'custom_price' => $service['base_price'] ?? null,
                     'tax_amount' => ($service['total'] ?? 0.0) - ($service['base_price'] ?? 0.0),
                     'discount_amount' => $service['discount_amount'] ?? 0,
-                    'total_sessions' => $service['total_sessions'] ?? 0,
+                    'total_sessions' => $service['qty'] ?? 0,
                     'completed_sessions' => $service['completed_sessions'] ?? 0,
                     'is_tax_inclusive' => $service['is_tax_inclusive'] ?? false,
                     'total'=>$service['total'] ?? 0.0,
