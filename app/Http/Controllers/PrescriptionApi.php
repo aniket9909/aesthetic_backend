@@ -908,6 +908,7 @@ class PrescriptionApi extends Controller
                         Log::info("check condiction======================================");
                         Log::info(isset($item->remaining_sessions) && $item->remaining_sessions > 0 &&
                             isset($item->id));
+                        Log::info($item);
                         Log::info("======================================");
                         if (
                             isset($item->remaining_sessions) && $item->remaining_sessions > 0 &&
@@ -915,11 +916,13 @@ class PrescriptionApi extends Controller
                         ) {
 
                             foreach ($data['services'] as $service) {
+                                Log::info($service['id']);
+                                Log::info($item->service_master_id);
 
-                                if (isset($service['id']) && $service['id'] == $item->service->id) {
+                                if (isset($service['id']) && ($service['id'] == $item->service_master_id)) {
                                     Log::info("today session======================================");
                                     // Log::info($service);
-                                    Log::info($item->service->id);
+                                    Log::info($item->service_master_id);
                                     Log::info("======================================");
                                     // Update the transaction service item value
                                     $todaySession = isset($service['todays_sessions']) ? (int)$service['todays_sessions'] : 0;
@@ -928,19 +931,41 @@ class PrescriptionApi extends Controller
                                     $item->remaining_sessions = max($totalSessions - $item->completed_sessions, 0);
                                     $item->total_sessions = $totalSessions;
                                     Log::info($item);
-                                    Log::info($item->save());
+                                    if ($item->save()) {
 
+                                        $sessionLogs = [];
+                                        // Create a new session log for each session change
+                                        for ($i = 0; $i < $todaySession; $i++) {
+                                            $sessionLog = ServiceSessionLog::create([
+                                                'enrollment_item_id' => $item->id,
+                                                'session_number' => ($item->completed_sessions - $todaySession + $i + 1),
+                                                'conducted_at' => Carbon::now(),
+                                                'conducted_by_doctor_id' => $esteblishmentusermapID,
+                                                'remarks' => isset($service['remarks']) ? $service['remarks'] : null,
+                                                'prescription_id' => $prescription->id,
+                                            ]);
+                                            $sessionLogs[] = $sessionLog;
+                                        }
 
-                                    // Create a new session log for each session change
-                                    for ($i = 0; $i < $todaySession; $i++) {
-                                        ServiceSessionLog::create([
-                                            'enrollment_item_id' => $item->id,
-                                            'session_number' => ($item->completed_sessions - $todaySession + $i + 1),
-                                            'conducted_at' => Carbon::now(),
-                                            'conducted_by_doctor_id' => $esteblishmentusermapID,
-                                            'remarks' => isset($service['remarks']) ? $service['remarks'] : null,
-                                            'prescription_id' => $prescription->id,
-                                        ]);
+                                        // Step 2: Assign consumables to each session log (divide total quantity)
+                                        foreach ($sessionLogs as $sessionLog) {
+                                            foreach ($service['consumable'] as $consumable) {
+                                                $totalQty = $consumable['quantity'] ?? 0;
+                                                $perSessionQty = $todaySession > 0 ? $totalQty / $todaySession : $totalQty;
+
+                                                ConsumableUsageLog::create([
+                                                    'enrollment_transaction_id' => $serviceTransaction->id,
+                                                    'enrollment_item_id' => $item->id,
+                                                    'consumable_id' => $consumable['id'] ?? null,
+                                                    'used_quantity' => $perSessionQty,
+                                                    'used_unit' => $consumable['unit'] ?? null,
+                                                    'used_by_doctor_id' => $esteblishmentusermapID,
+                                                    'used_at' => Carbon::now(),
+                                                    'remarks' => $consumable['remarks'] ?? null,
+                                                    'session_log_id' => $sessionLog->id,
+                                                ]);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1007,28 +1032,40 @@ class PrescriptionApi extends Controller
 
                             if ($serviceItem->save()) {
                                 $serviceTransactionItems[] = $serviceItem;
-                                foreach ($service['consumable'] as $consumable) {
+                                $todaySession = isset($service['todays_sessions']) ? (int)$service['todays_sessions'] : 0;
 
-                                    $session = ServiceSessionLog::create([
+                                // Step 1: Create session logs and collect their IDs
+                                $sessionLogs = [];
+                                for ($i = 0; $i < $todaySession; $i++) {
+                                    $sessionLog = ServiceSessionLog::create([
                                         'enrollment_item_id' => $serviceItem->id,
-                                        'session_number' => isset($consumable['session_number']) ? $consumable['session_number'] : 1,
-                                        'conducted_at' => isset($consumable['conducted_at']) ? $consumable['conducted_at'] : Carbon::now(),
+                                        'session_number' => ($serviceItem->completed_sessions - $todaySession + $i + 1),
+                                        'conducted_at' => Carbon::now(),
                                         'conducted_by_doctor_id' => $esteblishmentusermapID,
-                                        'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
+                                        'remarks' => $service['remarks'] ?? null,
+                                        'prescription_id' => $prescription->id,
                                     ]);
-                                    $consumableUseItem = ConsumableUsageLog::create(
-                                        [
+                                    $sessionLogs[] = $sessionLog;
+                                }
+
+                                // Step 2: Assign consumables to each session log (divide total quantity)
+                                foreach ($sessionLogs as $sessionLog) {
+                                    foreach ($service['consumable'] as $consumable) {
+                                        $totalQty = $consumable['quantity'] ?? 0;
+                                        $perSessionQty = $todaySession > 0 ? $totalQty / $todaySession : $totalQty;
+
+                                        ConsumableUsageLog::create([
                                             'enrollment_transaction_id' => $serviceTransaction->id,
                                             'enrollment_item_id' => $serviceItem->id,
-                                            'consumable_id' => isset($consumable['id']) ? $consumable['id'] : null,
-                                            'used_quantity' => isset($consumable['quantity']) ? $consumable['quantity'] : null,
-                                            'used_unit' => isset($consumable['unit']) ? $consumable['unit'] : null,
+                                            'consumable_id' => $consumable['id'] ?? null,
+                                            'used_quantity' => $perSessionQty,
+                                            'used_unit' => $consumable['unit'] ?? null,
                                             'used_by_doctor_id' => $esteblishmentusermapID,
                                             'used_at' => Carbon::now(),
-                                            'remarks' => isset($consumable['remarks']) ? $consumable['remarks'] : null,
-                                            'session_log_id' => $session != null ? $session->id : null,
-                                        ]
-                                    );
+                                            'remarks' => $consumable['remarks'] ?? null,
+                                            'session_log_id' => $sessionLog->id,
+                                        ]);
+                                    }
                                 }
                             } else {
                                 throw new \Exception("Failed to save service transaction item");
@@ -1043,14 +1080,15 @@ class PrescriptionApi extends Controller
             }
 
             DB::commit();
+            
             if ($prescriptionSave) {
                 return $this->getPrescription($esteblishmentusermapID, $prescription->id);
             } else {
                 return response()->json(['status' => 'failed', 'message' => 'Failed to save prescription', 'code' => 200], 200);
             }
         } catch (\Throwable $th) {
-            return $th;
             DB::rollBack();
+            return $th;
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
         }
@@ -2905,7 +2943,7 @@ class PrescriptionApi extends Controller
                                 $item->$key = '';
                             }
                         }
-                        return $item ;
+                        return $item;
                     });
 
 
@@ -2920,8 +2958,8 @@ class PrescriptionApi extends Controller
                     ->get();
                 $session = ServiceSessionLog::where('prescription_id', $row->id)->get();
                 $trasactionIds = $session->pluck('enrollment_item_id')->toArray();
-                $row->session=$session;
-                if($session != null ){   
+                $row->session = $session;
+                if ($session != null) {
                     $row->services = ServiceTransactionItems::whereIn('id', $trasactionIds)->get();
                 }
             }

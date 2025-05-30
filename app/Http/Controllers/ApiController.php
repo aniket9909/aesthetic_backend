@@ -1367,6 +1367,7 @@ Please upload a photo if you would like to have your skin analyzed.
   {
     try {
       $doctorId = $request->input('doctor_id');
+      $patientNumber = $request->input('patient_number');
 
       $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
         ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
@@ -1428,18 +1429,48 @@ Please upload a photo if you would like to have your skin analyzed.
         }
       }
 
+      // Get images from chat
+      $images = Chats::where(function ($query) use ($patientNumber, $doctor) {
+        $query->where('sender_id', $doctor->mobile_no)
+          ->where('message_type', 'image')
+
+          ->where('receiver_id', $patientNumber);
+      })
+        ->orWhere(function ($query) use ($patientNumber, $doctor) {
+          $query->where('sender_id', $patientNumber)
+            ->where('message_type', 'image')
+
+            ->where('receiver_id', $doctor->mobile_no);
+        })
+        ->orderBy('date', 'desc')
+        ->get();
+
+
+      // Transform the images to match the Dart model
+      $imageList = $images->map(function ($chat) {
+        return [
+          'file_name' => $chat->media_id,
+          'url' => url($chat->media_url), // Generate full URL
+          'uploaded_date' => Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
+          // 'file_size' => $this->getFileSize($chat->media_url) // Add helper method to get file size
+        ];
+      });
+
+      // Return response matching the Dart model structure
       return response()->json([
         'status' => true,
-        'message' => 'Images uploaded successfully',
+        'message' => 'Image uploaded successfully',
         'data' => [
-          'uploaded_files' => $uploadedFiles
+          'uploaded_files' => $imageList
         ]
       ]);
 
     } catch (\Exception $e) {
+      \Log::error('Error in getUploadedImages: ' . $e->getMessage());
       return response()->json([
         'status' => false,
-        'message' => 'Server Error: ' . $e->getMessage()
+        'message' => 'Server Error: ' . $e->getMessage(),
+        'data' => null
       ], 500);
     }
   }
