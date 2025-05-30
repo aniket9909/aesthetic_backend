@@ -1564,9 +1564,11 @@ class PrescriptionApi extends Controller
                 $row->systemic_examination = Systemic_examination::where('prescription_id', $row->id)->first();
                 $row->perscription_url = URL::to('/v1/generatepdf/' . $row->id);
                 $row->vaccination_deatails = VaccinationDetailModel::where('prescription_id', $row->id)->get();
-                $row->vaccination_due = VaccinationDetailModel::where('prescription_id', $$row->id)->where('flag', 2)
+                $row->vaccination_due = VaccinationDetailModel::where('prescription_id', $row->id)->where('flag', 2)
                     ->get();
-                $row->vaccination_given = VaccinationDetailModel::where('prescription_id', $$row->id)->where('flag', 1);
+                $row->vaccination_given = VaccinationDetailModel::where('prescription_id', $row->id)->where('flag', 1);
+                $row->services = ServiceTransaction::where('prescription_id', $row->id)
+                    ->get();
             }
             return response()->json(['status' => 'success', 'data' => $data], 200);
         } else {

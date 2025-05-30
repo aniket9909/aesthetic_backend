@@ -35,6 +35,7 @@ class ServiceConsumableController extends Controller
 
     public function destroy($id)
     {
+        
         // Delete the related ServiceMaster record first
         ServiceMaster::where('id', $id)->delete();
 
