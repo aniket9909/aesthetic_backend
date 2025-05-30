@@ -885,6 +885,7 @@ class PrescriptionApi extends Controller
             if ($servicesCheck) {
                 throw new Exception("Service not found");
             }
+            // Log::info($data['services']);
             if (count($data['services']) > 0) {
 
                 $serviceTransaction = ServiceTransaction::where('patient_id', $data['patient_id'])
@@ -893,23 +894,45 @@ class PrescriptionApi extends Controller
                     ->first();
 
                 $serviceTransactionItems = $serviceTransaction->serviceTransactionItems ?? null;
+                $hasRemainingSessions = false;
                 if ($serviceTransactionItems && count($serviceTransactionItems) > 0) {
+                    foreach ($serviceTransactionItems as $item) {
+                        if (isset($item->remaining_sessions) && $item->remaining_sessions > 0) {
+                            $hasRemainingSessions = true;
+                            break;
+                        }
+                    }
+                }
+                if ($hasRemainingSessions) {
                     Log::info("service transaction found");
                     foreach ($serviceTransactionItems as $item) {
                         // Check if remaining_sessions > 0 and service_item id is present in request
+
+                        Log::info("check condiction======================================");
+                        Log::info(isset($item->remaining_sessions) && $item->remaining_sessions > 0 &&
+                            isset($item->id));
+                        Log::info("======================================");
                         if (
                             isset($item->remaining_sessions) && $item->remaining_sessions > 0 &&
                             isset($item->id)
                         ) {
+
                             foreach ($data['services'] as $service) {
-                                if (isset($service['service_item_id']) && $service['service_item_id'] == $item->id) {
+
+                                if (isset($service['id']) && $service['id'] == $item->service->id) {
+                                    Log::info("today session======================================");
+                                    // Log::info($service);
+                                    Log::info($item->service->id);
+                                    Log::info("======================================");
                                     // Update the transaction service item value
-                                    $todaySession = isset($service['today_sessions']) ? (int)$service['today_sessions'] : 0;
+                                    $todaySession = isset($service['todays_sessions']) ? (int)$service['todays_sessions'] : 0;
                                     $item->completed_sessions = (isset($service['completed_sessions']) ? (int)$service['completed_sessions'] : (int)$item->completed_sessions) + $todaySession;
                                     $totalSessions = isset($service['session']) ? (int)$service['session'] : (int)$item->total_sessions;
                                     $item->remaining_sessions = max($totalSessions - $item->completed_sessions, 0);
                                     $item->total_sessions = $totalSessions;
-                                    $item->save();
+                                    Log::info($item);
+                                    Log::info($item->save());
+
 
                                     // Create a new session log for each session change
                                     for ($i = 0; $i < $todaySession; $i++) {
@@ -979,15 +1002,16 @@ class PrescriptionApi extends Controller
                             $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
                             $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
                             $serviceItem->total_sessions = isset($service['qty']) ? $service['qty'] : 1;                        // Set completed_sessions to 1
-                            $serviceItem->completed_sessions = isset($service['today_sessions']) ? $service['today_sessions'] : 1;
+                            $serviceItem->completed_sessions = isset($service['todays_sessions']) ? $service['todays_sessions'] : 0;
 
                             // Set remaining_sessions to (session - 1), ensuring it doesn't go below 0
-                            $totalSessions = isset($service['session']) ? (int)$service['session'] : 1 ;
+                            $totalSessions = isset($service['qty']) ? (int)$service['qty'] : 1;
                             $serviceItem->remaining_sessions = max($totalSessions - $serviceItem->completed_sessions, $totalSessions);
 
                             if ($serviceItem->save()) {
                                 $serviceTransactionItems[] = $serviceItem;
                                 foreach ($service['consumable'] as $consumable) {
+
                                     $session = ServiceSessionLog::create([
                                         'enrollment_item_id' => $serviceItem->id,
                                         'session_number' => isset($consumable['session_number']) ? $consumable['session_number'] : 1,
@@ -1022,7 +1046,6 @@ class PrescriptionApi extends Controller
             }
 
             DB::commit();
-
             if ($prescriptionSave) {
                 return $this->getPrescription($esteblishmentusermapID, $prescription->id);
             } else {

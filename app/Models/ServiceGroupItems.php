@@ -24,6 +24,6 @@ class ServiceGroupItems extends Model
 
     public function services()
     {
-        return $this->hasMany(ServiceMaster::class, 'id','service_master_id',);
+        return $this->belongsTo(ServiceMaster::class, 'service_master_id',);
     }
 }

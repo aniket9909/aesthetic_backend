@@ -39,14 +39,17 @@ class ServiceMasterController extends Controller
             ->where('doctor_id', $doctor->id)
             ->latest()
             ->first();
-            
+
 
         // Default empty arrays
         $workingSessions = [];
 
         if ($serviceTransaction) {
             foreach ($serviceTransaction->serviceTransactionItems as $item) {
-               $workingSessions[]=$item;
+            if ($item->remaining_sessions > 0) {
+                $workingSessions = $serviceTransaction->serviceTransactionItems;
+                break;
+            }
             }
         }
 
