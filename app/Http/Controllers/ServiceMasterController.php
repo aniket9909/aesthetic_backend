@@ -62,7 +62,8 @@ class ServiceMasterController extends Controller
             'data' => [
                 'services' => $services,
                 'packages' => $packages,
-                'workingSessions' => $workingSessions
+                'workingSessions' => $workingSessions,
+                "billingData"=>$billingData
             ]
         ]);
     }

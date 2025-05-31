@@ -685,6 +685,8 @@ class PrescriptionApi extends Controller
             // }
 
             Log::info(['dataaaaaaaaaaaaaaa' => $data]);
+            // throw new Exception("wde");
+
             $vitals = $data['vitals'];
             $prescription = new PrescriptionData();
             $prescription->user_map_id = $esteblishmentusermapID;
@@ -805,12 +807,16 @@ class PrescriptionApi extends Controller
                     }
                 }
             }
+            $serviceTransaction = null;
+            $serviceTransactionItems = null;
+
             $serviceTransaction = ServiceTransaction::where('patient_id', $data['patient_id'])
                 ->where('doctor_id', $esteblishmentusermapID)
                 ->latest()
                 ->first();
 
             $serviceTransactionItems = $serviceTransaction->serviceTransactionItems ?? null;
+
             $hasRemainingSessions = false;
             if ($serviceTransactionItems && count($serviceTransactionItems) > 0) {
                 foreach ($serviceTransactionItems as $item) {
@@ -821,38 +827,48 @@ class PrescriptionApi extends Controller
                 }
             }
 
-            if ($hasRemainingSessions == true) {
+            $billingData = null;
 
-                $billingId = $data['billing_id'] ?? null;
-                $paymentAmount = $data['billing_data']['paid_amount'] ?? 0;
+            if ($hasRemainingSessions) {
+
+                $billing = BillingModel::where('transaction_id', $serviceTransaction->id)->first();
+                $billingCreation = isset($data['billing_data']) ? $data['billing_data'] : null;
+
+                Log::info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                Log::info(["billing", $billing]);
+                $paymentAmount = $billingCreation['paid_amount'];
                 $modeOfPayment = $data['billing_data']['mode_of_payment'] ?? null;
 
-                if ($billingId && $paymentAmount > 0) {
-                    $billing = BillingModel::where('transaction_id', $serviceTransaction->id)->first();
-                    if ($billing) {
-                        $billing->paid_amount += $paymentAmount;
-                        $billing->balanced_amount = $billing->total_price - $billing->paid_amount;
-                        $billing->save();
+                Log::info(["amount", $paymentAmount]);
+                Log::info(["mode", $modeOfPayment]);
 
-                        // Insert into payment logs
-                        BillingLogModel::insert([
-                            'billing_id' => $billing->id,
-                            'paid_amount' => $paymentAmount,
-                            'payment_date' => Carbon::now(),
-                            'mode_of_payment' => $modeOfPayment,
-                            'balanced_amount' => $billing->balanced_amount,
-                            'remarks' => 'Partial payment',
-                            'created_at' => Carbon::now()
-                        ]);
+                if ($billing != null &&  $paymentAmount > 0) {
+                    $billing->paid_amount += $paymentAmount;
+                    $billing->balanced_amount = $billing->total_price - $billing->paid_amount;
+                    $billing->save();
 
-                        Log::info(['billing_updated_with_payment_log' => $billing->id]);
-                    }
+                    Log::info(["after billing amount", $billing]);
+                    $billingData = $billing;
+                    // Insert into payment logs
+                    BillingLogModel::insert([
+                        'billing_id' => $billing->id,
+                        'paid_amount' => $paymentAmount,
+                        'payment_date' => Carbon::now(),
+                        'mode_of_payment' => $modeOfPayment,
+                        'balanced_amount' => $billing->balanced_amount,
+                        'remarks' => 'Partial payment',
+                        'created_at' => Carbon::now()
+                    ]);
+
+                    Log::info(['billing_updated_with_payment_log' => $billing->id]);
                 }
+                Log::info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             } else {
                 $billingCreation = isset($data['billing_data']) ? $data['billing_data'] : null;
                 Log::info(['billingCreation', $billingCreation]);
                 if ($billingCreation) {
                     $Invoice = new BillingModel();
+
                     $Invoice->clinic_id = isset($billingCreation['clinic_id']) ? $billingCreation['clinic_id'] : null;
                     $Invoice->patient_id = isset($data['patient_id']) ? $data['patient_id'] : null;
                     $Invoice->usermap_id = $esteblishmentusermapID;
@@ -870,11 +886,26 @@ class PrescriptionApi extends Controller
                     }
                     $Invoice->balanced_amount = $billingCreation['total_price'] - $billingCreation['paid_amount'];
                     $billingSave = $Invoice->save();
+
+                    $billingData = $Invoice;
+
                     if ($billingSave) {
+                        BillingLogModel::insert([
+                            'billing_id' => $Invoice->id,
+                            'paid_amount' => $Invoice->paid_amount,
+                            'payment_date' => Carbon::now(),
+                            'mode_of_payment' => $Invoice->mode_of_payment,
+                            'balanced_amount' => $Invoice->balanced_amount,
+                            'remarks' => 'Partial payment',
+                            'created_at' => Carbon::now()
+                        ]);
                     }
                     Log::info(['billingsave' => $billingSave]);
                 }
             }
+            Log::info("===================================================================================");
+            Log::info($billingData);
+            Log::info("===================================================================================");
 
 
             $vitals = $data['vitals'];
@@ -924,8 +955,7 @@ class PrescriptionApi extends Controller
 
 
             //start service store 
-            $serviceTransaction = null;
-            $serviceTransactionItems = null;
+
             $servicesCheck = isset($data['services']);
 
             if (!$servicesCheck) {
@@ -1041,9 +1071,17 @@ class PrescriptionApi extends Controller
 
                     if ($serviceTransaction->save()) {
                         Log::info(['serviceTransaction' => $serviceTransaction]);
-                        $billingTransation = BillingModel::find($Invoice->id);
-                        $billingTransation->transaction_id = $serviceTransaction->id;
-                        $billingTransation->save();
+                        Log::info(['invoice' => $billingData]);
+                        if ($billingData != null) {
+
+                            $billingTransation = BillingModel::find($billingData->id);
+                            if ($billingTransation) {
+                                $billingTransation->transaction_id = $serviceTransaction->id;
+                                $billingTransation->save();
+                            } else {
+                                Log::info("invoice not found");
+                            }
+                        }
 
                         foreach ($data['services'] as $service) {
                             // Insert into service_enrollment_items table
@@ -1087,8 +1125,11 @@ class PrescriptionApi extends Controller
 
                                 // Step 2: Assign consumables to each session log (divide total quantity)
                                 foreach ($sessionLogs as $sessionLog) {
+
                                     foreach ($service['consumable'] as $consumable) {
+
                                         $totalQty = $consumable['quantity'] ?? 0;
+
                                         $perSessionQty = $todaySession > 0 ? $totalQty / $todaySession : $totalQty;
 
                                         ConsumableUsageLog::create([
