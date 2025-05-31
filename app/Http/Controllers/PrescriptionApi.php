@@ -821,7 +821,7 @@ class PrescriptionApi extends Controller
                 $Invoice->items = json_encode($billingCreation['items']);
                 $totalPrice = 0;
                 foreach ($billingCreation['items'] as $item) {
-                    $totalPrice += $item['item_price'];
+                    $totalPrice += $item['total'];
                 }
                 $Invoice->balanced_amount = $billingCreation['total_price'] - $billingCreation['paid_amount'];
                 $billingSave = $Invoice->save();
@@ -1074,7 +1074,7 @@ class PrescriptionApi extends Controller
             } else {
                 throw new \Exception("Failed to save service transaction, no services provided");
             }
-
+            
             DB::commit();
             
             if ($prescriptionSave) {
@@ -1084,7 +1084,6 @@ class PrescriptionApi extends Controller
             }
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $th;
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
         }
