@@ -878,11 +878,12 @@ class PrescriptionApi extends Controller
             //start service store 
             $serviceTransaction = null;
             $serviceTransactionItems = null;
-            $servicesCheck = isset($data['services']) ? $data['billing_data'] : null;
+            $servicesCheck = isset($data['services']);
 
             if ($servicesCheck) {
                 throw new Exception("Service not found");
             }
+            
             // Log::info($data['services']);
             if (count($data['services']) > 0) {
 
