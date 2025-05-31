@@ -880,10 +880,10 @@ class PrescriptionApi extends Controller
             $serviceTransactionItems = null;
             $servicesCheck = isset($data['services']);
 
-            if ($servicesCheck) {
+            if (!$servicesCheck) {
                 throw new Exception("Service not found");
             }
-            
+
             // Log::info($data['services']);
             if (count($data['services']) > 0) {
 
