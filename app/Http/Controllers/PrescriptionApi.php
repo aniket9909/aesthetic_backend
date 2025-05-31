@@ -61,6 +61,7 @@ use App\Models\ServiceSessionLog;
 use App\Models\ServiceTransaction;
 use App\Models\ServiceTransactionItems;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
