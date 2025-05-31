@@ -56,6 +56,7 @@ use \Mpdf\Mpdf;
 use Illuminate\Support\Facades\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Doctor;
+use App\Models\BillingLogModel;
 use App\Models\ConsumableUsageLog;
 use App\Models\ServiceSessionLog;
 use App\Models\ServiceTransaction;
@@ -804,30 +805,77 @@ class PrescriptionApi extends Controller
                     }
                 }
             }
+            $serviceTransaction = ServiceTransaction::where('patient_id', $data['patient_id'])
+                ->where('doctor_id', $esteblishmentusermapID)
+                ->latest()
+                ->first();
 
-            $billingCreation = isset($data['billing_data']) ? $data['billing_data'] : null;
-            Log::info(['billingCreation', $billingCreation]);
-            if ($billingCreation) {
-                $Invoice = new BillingModel();
-                $Invoice->clinic_id = isset($billingCreation['clinic_id']) ? $billingCreation['clinic_id'] : null;
-                $Invoice->patient_id = isset($data['patient_id']) ? $data['patient_id'] : null;
-                $Invoice->usermap_id = $esteblishmentusermapID;
-                $Invoice->appointment_id = isset($billingCreation['appointment_id']) ? $billingCreation['appointment_id'] : null;
-                $Invoice->mode_of_payment = isset($billingCreation['mode_of_payment']) ? $billingCreation['mode_of_payment'] : null;
-                $Invoice->paid_amount = isset($billingCreation['paid_amount']) ? $billingCreation['paid_amount'] : null;
-                $Invoice->total_price = isset($billingCreation['total_price']) ? $billingCreation['total_price'] : null;
-                $Invoice->bill_no = isset($billingCreation['bill_no']) ? $billingCreation['bill_no'] : null;
-                $Invoice->receipt_no = isset($billingCreation['receipt_no']) ? $billingCreation['receipt_no'] : null;;
-                $Invoice->prescription_id = $prescription->id;
-                $Invoice->items = json_encode($billingCreation['items']);
-                $totalPrice = 0;
-                foreach ($billingCreation['items'] as $item) {
-                    $totalPrice += $item['total'];
+            $serviceTransactionItems = $serviceTransaction->serviceTransactionItems ?? null;
+            $hasRemainingSessions = false;
+            if ($serviceTransactionItems && count($serviceTransactionItems) > 0) {
+                foreach ($serviceTransactionItems as $item) {
+                    if (isset($item->remaining_sessions) && $item->remaining_sessions > 0) {
+                        $hasRemainingSessions = true;
+                        break;
+                    }
                 }
-                $Invoice->balanced_amount = $billingCreation['total_price'] - $billingCreation['paid_amount'];
-                $billingSave = $Invoice->save();
-                Log::info(['billingsave' => $billingSave]);
             }
+
+            if ($hasRemainingSessions == true) {
+
+                $billingId = $data['billing_id'] ?? null;
+                $paymentAmount = $data['billing_data']['paid_amount'] ?? 0;
+                $modeOfPayment = $data['billing_data']['mode_of_payment'] ?? null;
+
+                if ($billingId && $paymentAmount > 0) {
+                    $billing = BillingModel::where('transaction_id', $serviceTransaction->id)->first();
+                    if ($billing) {
+                        $billing->paid_amount += $paymentAmount;
+                        $billing->balanced_amount = $billing->total_price - $billing->paid_amount;
+                        $billing->save();
+
+                        // Insert into payment logs
+                        BillingLogModel::insert([
+                            'billing_id' => $billing->id,
+                            'paid_amount' => $paymentAmount,
+                            'payment_date' => Carbon::now(),
+                            'mode_of_payment' => $modeOfPayment,
+                            'balanced_amount' => $billing->balanced_amount,
+                            'remarks' => 'Partial payment',
+                            'created_at' => Carbon::now()
+                        ]);
+
+                        Log::info(['billing_updated_with_payment_log' => $billing->id]);
+                    }
+                }
+            } else {
+                $billingCreation = isset($data['billing_data']) ? $data['billing_data'] : null;
+                Log::info(['billingCreation', $billingCreation]);
+                if ($billingCreation) {
+                    $Invoice = new BillingModel();
+                    $Invoice->clinic_id = isset($billingCreation['clinic_id']) ? $billingCreation['clinic_id'] : null;
+                    $Invoice->patient_id = isset($data['patient_id']) ? $data['patient_id'] : null;
+                    $Invoice->usermap_id = $esteblishmentusermapID;
+                    $Invoice->appointment_id = isset($billingCreation['appointment_id']) ? $billingCreation['appointment_id'] : null;
+                    $Invoice->mode_of_payment = isset($billingCreation['mode_of_payment']) ? $billingCreation['mode_of_payment'] : null;
+                    $Invoice->paid_amount = isset($billingCreation['paid_amount']) ? $billingCreation['paid_amount'] : null;
+                    $Invoice->total_price = isset($billingCreation['total_price']) ? $billingCreation['total_price'] : null;
+                    $Invoice->bill_no = isset($billingCreation['bill_no']) ? $billingCreation['bill_no'] : null;
+                    $Invoice->receipt_no = isset($billingCreation['receipt_no']) ? $billingCreation['receipt_no'] : null;;
+                    $Invoice->prescription_id = $prescription->id;
+                    $Invoice->items = json_encode($billingCreation['items']);
+                    $totalPrice = 0;
+                    foreach ($billingCreation['items'] as $item) {
+                        $totalPrice += $item['total'];
+                    }
+                    $Invoice->balanced_amount = $billingCreation['total_price'] - $billingCreation['paid_amount'];
+                    $billingSave = $Invoice->save();
+                    if ($billingSave) {
+                    }
+                    Log::info(['billingsave' => $billingSave]);
+                }
+            }
+
 
             $vitals = $data['vitals'];
             Log::info(['vitalssssss' => $vitals]);
@@ -887,21 +935,7 @@ class PrescriptionApi extends Controller
             // Log::info($data['services']);
             if (count($data['services']) > 0) {
 
-                $serviceTransaction = ServiceTransaction::where('patient_id', $data['patient_id'])
-                    ->where('doctor_id', $esteblishmentusermapID)
-                    ->latest()
-                    ->first();
 
-                $serviceTransactionItems = $serviceTransaction->serviceTransactionItems ?? null;
-                $hasRemainingSessions = false;
-                if ($serviceTransactionItems && count($serviceTransactionItems) > 0) {
-                    foreach ($serviceTransactionItems as $item) {
-                        if (isset($item->remaining_sessions) && $item->remaining_sessions > 0) {
-                            $hasRemainingSessions = true;
-                            break;
-                        }
-                    }
-                }
                 if ($hasRemainingSessions) {
                     Log::info("service transaction found");
                     foreach ($serviceTransactionItems as $item) {
@@ -1007,6 +1041,9 @@ class PrescriptionApi extends Controller
 
                     if ($serviceTransaction->save()) {
                         Log::info(['serviceTransaction' => $serviceTransaction]);
+                        $billingTransation = BillingModel::find($Invoice->id);
+                        $billingTransation->transaction_id = $serviceTransaction->id;
+                        $billingTransation->save();
 
                         foreach ($data['services'] as $service) {
                             // Insert into service_enrollment_items table
@@ -1029,6 +1066,8 @@ class PrescriptionApi extends Controller
                             $serviceItem->remaining_sessions = $totalSessions - $serviceItem->completed_sessions;
 
                             if ($serviceItem->save()) {
+
+
                                 $serviceTransactionItems[] = $serviceItem;
                                 $todaySession = isset($service['todays_sessions']) ? (int)$service['todays_sessions'] : 0;
 
@@ -1076,9 +1115,9 @@ class PrescriptionApi extends Controller
             } else {
                 throw new \Exception("Failed to save service transaction, no services provided");
             }
-            
+
             DB::commit();
-            
+
             if ($prescriptionSave) {
                 return $this->getPrescription($esteblishmentusermapID, $prescription->id);
             } else {

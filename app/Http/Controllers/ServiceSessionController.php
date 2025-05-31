@@ -25,7 +25,7 @@ class ServiceSessionController extends Controller
             ->where('patient_id', $patientId)
             ->get();
 
-            
+
 
         $data = [];
 
@@ -38,7 +38,7 @@ class ServiceSessionController extends Controller
                 'total_discount' => $transaction->total_discount,
                 'total_tax' => $transaction->total_tax,
                 'enrollment_type' => $transaction->enrollment_type,
-                "groupInfo"=>$transaction->groupInfo,
+                "groupInfo" => $transaction->groupInfo,
                 'services' => []
             ];
 

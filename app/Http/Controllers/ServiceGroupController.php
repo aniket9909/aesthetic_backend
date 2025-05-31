@@ -37,7 +37,7 @@ class ServiceGroupController extends Controller
                 'created_by' => $data['created_by'] ?? null,
                 'remarks' => $data['remarks'] ?? null,
             ]);
-            
+
             $items = [];
             foreach ($data['services'] as $service) {
                 if (!isset($service['id'])) continue;
@@ -51,8 +51,8 @@ class ServiceGroupController extends Controller
                     'total_sessions' => $service['qty'] ?? 0,
                     'completed_sessions' => $service['completed_sessions'] ?? 0,
                     'is_tax_inclusive' => $service['is_tax_inclusive'] ?? false,
-                    'total'=>$service['total'] ?? 0.0,
-                    'tax_per'=>$service['tax'] ?? 0.0,
+                    'total' => $service['total'] ?? 0.0,
+                    'tax_per' => $service['tax'] ?? 0.0,
                 ]);
             }
             DB::commit();

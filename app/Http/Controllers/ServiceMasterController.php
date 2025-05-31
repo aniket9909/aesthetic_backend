@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\BillingModel;
 use App\Models\ServiceConsumable;
 use App\Models\ServiceGroupMaster;
 use Illuminate\Http\Request;
@@ -43,6 +44,7 @@ class ServiceMasterController extends Controller
 
         // Default empty arrays
         $workingSessions = [];
+        $billingData=null;
 
         if ($serviceTransaction) {
             foreach ($serviceTransaction->serviceTransactionItems as $item) {
@@ -52,6 +54,7 @@ class ServiceMasterController extends Controller
             }
             }
         }
+        $billingData = BillingModel::where('transaction_id',$serviceTransaction->id)->first();
 
         return response()->json([
             'success' => true,
