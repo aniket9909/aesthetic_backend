@@ -880,10 +880,12 @@ class PrescriptionApi extends Controller
                     $Invoice->prescription_id = $prescription->id;
                     $Invoice->items = json_encode($billingCreation['items']);
                     $totalPrice = 0;
+                    
                     foreach ($billingCreation['items'] as $item) {
                         $totalPrice += $item['amount'];
                     }
-                    $Invoice->balanced_amount = $billingCreation['total_price'] - $billingCreation['paid_amount'];
+                    $Invoice->total_tax = $billingCreation['total_tax'];
+                    $Invoice->total_discount = $billingCreation['total_discount'];
                     $billingSave = $Invoice->save();
 
                     $billingData = $Invoice;
