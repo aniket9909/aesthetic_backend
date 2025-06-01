@@ -44,19 +44,20 @@ class ServiceMasterController extends Controller
 
         // Default empty arrays
         $workingSessions = [];
-        $billingData=null;
+        $billingData = null;
 
         if ($serviceTransaction) {
             foreach ($serviceTransaction->serviceTransactionItems as $item) {
-            if ($item->remaining_sessions > 0) {
-                $workingSessions = $serviceTransaction->serviceTransactionItems;
-                break;
+                if ($item->remaining_sessions > 0) {
+                    $workingSessions = $serviceTransaction->serviceTransactionItems;
+                    break;
+                }
             }
-            }
+            $billingData = BillingModel::where('transaction_id', $serviceTransaction->id)
+                ->where('balanced_amount', ">", 0)
+                ->first();
         }
-        $billingData = BillingModel::where('transaction_id',$serviceTransaction->id)
-        ->where('balanced_amount',">",0)
-        ->first();
+
 
         return response()->json([
             'success' => true,
@@ -65,7 +66,7 @@ class ServiceMasterController extends Controller
                 'services' => $services,
                 'packages' => $packages,
                 'workingSessions' => $workingSessions,
-                "billingData"=>$billingData
+                "billingData" => $billingData
             ]
         ]);
     }
