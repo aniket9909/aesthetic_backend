@@ -54,7 +54,9 @@ class ServiceMasterController extends Controller
             }
             }
         }
-        $billingData = BillingModel::where('transaction_id',$serviceTransaction->id)->first();
+        $billingData = BillingModel::where('transaction_id',$serviceTransaction->id)
+        ->where('balanced_amount',">",0)
+        ->first();
 
         return response()->json([
             'success' => true,

@@ -685,7 +685,6 @@ class PrescriptionApi extends Controller
             // }
 
             Log::info(['dataaaaaaaaaaaaaaa' => $data]);
-            // throw new Exception("wde");
 
             $vitals = $data['vitals'];
             $prescription = new PrescriptionData();
@@ -882,7 +881,7 @@ class PrescriptionApi extends Controller
                     $Invoice->items = json_encode($billingCreation['items']);
                     $totalPrice = 0;
                     foreach ($billingCreation['items'] as $item) {
-                        $totalPrice += $item['total'];
+                        $totalPrice += $item['amount'];
                     }
                     $Invoice->balanced_amount = $billingCreation['total_price'] - $billingCreation['paid_amount'];
                     $billingSave = $Invoice->save();
@@ -3025,7 +3024,7 @@ class PrescriptionApi extends Controller
 
 
                 $row->systemic_examination = Systemic_examination::where('prescription_id', $row->id)->first();
-                $row->perscription_url = URL::to('/v1/generatepdf/' . $row->id);
+                $row->perscription_url = url('/v1/generatepdf/' . $row->id);
                 $row->vaccination_deatails = VaccinationDetailModel::where('prescription_id', $row->id)->get();
                 $row->vaccination_due = VaccinationDetailModel::where('prescription_id', $row->id)->where('flag', 2)
                     ->where('deleted_by', 0)
