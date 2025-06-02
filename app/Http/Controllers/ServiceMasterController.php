@@ -54,7 +54,7 @@ class ServiceMasterController extends Controller
                 }
             }
             $billingData = BillingModel::where('transaction_id', $serviceTransaction->id)
-                ->where('balanced_amount', ">", 0)
+                // ->where('balanced_amount', ">", 0)
                 ->first();
         }
 

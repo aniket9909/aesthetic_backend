@@ -905,10 +905,10 @@ class PrescriptionApi extends Controller
                     Log::info(['billingsave' => $billingSave]);
                 }
             }
+
             Log::info("===================================================================================");
             Log::info($billingData);
             Log::info("===================================================================================");
-
 
             $vitals = $data['vitals'];
             Log::info(['vitalssssss' => $vitals]);
@@ -1111,7 +1111,6 @@ class PrescriptionApi extends Controller
                                 $serviceTransactionItems[] = $serviceItem;
                                 $todaySession = isset($service['todays_sessions']) ? (int)$service['todays_sessions'] : 0;
 
-                                // Step 1: Create session logs and collect their IDs
                                 $sessionLogs = [];
                                 for ($i = 0; $i < $todaySession; $i++) {
                                     $sessionLog = ServiceSessionLog::create([
