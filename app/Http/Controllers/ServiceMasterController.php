@@ -74,12 +74,10 @@ class ServiceMasterController extends Controller
         ]);
     }
 
-
     public function store(Request $request)
     {
         try {
-            //code...
-
+            
             $data = $request->all();
 
             // Manual validation

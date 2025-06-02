@@ -1136,7 +1136,7 @@ class PrescriptionApi extends Controller
                                         ConsumableUsageLog::create([
                                             'enrollment_transaction_id' => $serviceTransaction->id,
                                             'enrollment_item_id' => $serviceItem->id,
-                                            'consumable_id' => $consumable['id'] ?? null,
+                                            'consumable_id' => $consumable['consumable_id'] ?? null,
                                             'used_quantity' => $perSessionQty,
                                             'used_unit' => $consumable['unit'] ?? null,
                                             'used_by_doctor_id' => $esteblishmentusermapID,
