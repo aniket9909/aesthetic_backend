@@ -48,7 +48,7 @@ class ServiceMasterController extends Controller
         $billingData = null;
 
         if ($serviceTransaction) {
-            foreach ($serviceTransaction->serviceTransactionItems as $item) {
+            foreach($serviceTransaction->serviceTransactionItems as $item) {
                 if ($item->remaining_sessions > 0) {
                     $groupInfo[] =$serviceTransaction->groupInfo ?? [];
                     $workingSessions = $serviceTransaction->serviceTransactionItems;
@@ -67,6 +67,7 @@ class ServiceMasterController extends Controller
             'data' => [
                 'services' => $services,
                 'packages' => $packages,
+                "groupInfo"=>$groupInfo,
                 'workingSessions' => $workingSessions,
                 "billingData" => $billingData
             ]
