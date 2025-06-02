@@ -44,11 +44,13 @@ class ServiceMasterController extends Controller
 
         // Default empty arrays
         $workingSessions = [];
+        $groupInfo = [];
         $billingData = null;
 
         if ($serviceTransaction) {
             foreach ($serviceTransaction->serviceTransactionItems as $item) {
                 if ($item->remaining_sessions > 0) {
+                    $groupInfo[] =$serviceTransaction->groupInfo ?? [];
                     $workingSessions = $serviceTransaction->serviceTransactionItems;
                     break;
                 }
