@@ -687,6 +687,10 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
     $router->get('search/investigation', 'PrescriptionApi@getinvestigationMasterwrtousermapSearch');
     $router->post('uploadImageFromDoc', 'ApiController@uploadImageFromDoc');
     $router->get('getUploadedImages/{doctorId}/{patientNumber}', 'ApiController@getUploadedImages');
+    $router->post('uploadMarkedImageFromDoc', 'ApiController@uploadMarkedImageFromDoc');
+
+
+
 });
 
 $router->group(['prefix' => 'api/v4/symptoms'], function () use ($router) {

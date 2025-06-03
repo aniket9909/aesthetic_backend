@@ -1423,7 +1423,126 @@ Please upload a photo if you would like to have your skin analyzed.
           $chat->media_sha256 = null;
           $chat->media_id = $filename;
           $chat->whatsapp_message_id = null;
-          $chat->is_visible = 1;
+          $chat->is_visible = 0;
+          $chat->date = Carbon::now()->toDateTimeString();
+          $chat->save();
+        }
+      }
+
+      // Get images from chat
+      $images = Chats::where(function ($query) use ($patientNumber, $doctor) {
+        $query->where('sender_id', $doctor->mobile_no)
+          ->where('message_type', 'image')
+
+          ->where('receiver_id', $patientNumber);
+      })
+        ->orWhere(function ($query) use ($patientNumber, $doctor) {
+          $query->where('sender_id', $patientNumber)
+            ->where('message_type', 'image')
+
+            ->where('receiver_id', $doctor->mobile_no);
+        })
+        ->orderBy('date', 'desc')
+        ->get();
+
+
+      // Transform the images to match the Dart model
+      $imageList = $images->map(function ($chat) {
+        return [
+          'file_name' => $chat->media_id,
+          'url' => url($chat->media_url), // Generate full URL
+          'uploaded_date' => Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
+          // 'file_size' => $this->getFileSize($chat->media_url) // Add helper method to get file size
+        ];
+      });
+
+      // Return response matching the Dart model structure
+      return response()->json([
+        'status' => true,
+        'message' => 'Image uploaded successfully',
+        'data' => [
+          'uploaded_files' => $imageList
+        ]
+      ]);
+
+    } catch (\Exception $e) {
+      \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+      return response()->json([
+        'status' => false,
+        'message' => 'Server Error: ' . $e->getMessage(),
+        'data' => null
+      ], 500);
+    }
+  }
+
+
+
+
+
+  public function uploadMarkedImageFromDoc(Request $request)
+  {
+    try {
+      $doctorId = $request->input('doctor_id');
+      $patientNumber = $request->input(key: 'patient_number');
+      $isMarked = $request->input(key: 'ismarked');
+
+
+      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
+        ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+        ->select('docexa_doctor_master.mobile_no')
+        ->first();
+
+      if ($doctor == null) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Doctor not found',
+        ], 404);
+      }
+
+      if (!$request->hasFile('images')) {
+        return response()->json([
+          'status' => false,
+          'message' => 'No images found in the request.'
+        ], 400);
+      }
+
+      $uploadedFiles = [];
+
+      $files = is_array($request->file('images'))
+        ? $request->file('images')
+        : [$request->file('images')];
+
+      foreach ($files as $file) {
+        if ($file && $file->isValid()) {
+          $path = $file->store('public/patient_images');
+          $filename = basename($path);
+
+          // ✅ Save only the relative path or filename in DB
+          $relativePath = Storage::url($path); // e.g., /storage/patient_images/filename.jpg
+
+          // ✅ Append full URL for API response only
+          //$ip = 'https://aestheticai.globalspace.in/aesthetic_backend/public/'; // Change to your server IP or domain
+          $publicUrl = url($relativePath);
+
+          // ✅ Add to response array
+          $uploadedFiles[] = [
+            'file_name' => $filename,
+            'url' => $publicUrl,
+          ];
+
+          // ✅ Save only relative data to DB
+          $chat = new Chats();
+          $chat->sender_id = $doctor->mobile_no;
+          $chat->receiver_id = $request->input('patient_number');
+          $chat->message_type = 'image';
+          $chat->media_url = $relativePath; // Save only path
+          $chat->media_mime_type = null;
+          $chat->media_sha256 = null;
+          $chat->media_id = $filename;
+          $chat->whatsapp_message_id = null;
+          $chat->is_visible = 0;
+          $chat->is_marked = $isMarked;
           $chat->date = Carbon::now()->toDateTimeString();
           $chat->save();
         }
