@@ -48,16 +48,30 @@ class ServiceMasterController extends Controller
         $billingData = null;
 
         if ($serviceTransaction) {
-            foreach($serviceTransaction->serviceTransactionItems as $item) {
+            foreach ($serviceTransaction->serviceTransactionItems as $item) {
                 if ($item->remaining_sessions > 0) {
-                    $groupInfo[] =$serviceTransaction->groupInfo ?? [];
+                    $groupInfo[] = $serviceTransaction->groupInfo ?? [];
                     $workingSessions = $serviceTransaction->serviceTransactionItems;
                     break;
                 }
             }
             $billingData = BillingModel::where('transaction_id', $serviceTransaction->id)
                 // ->where('balanced_amount', ">", 0)
-                ->first();
+                ->get();
+            $pendingAmount = 0;
+            $latestBilling = null;
+
+            foreach ($billingData as $value) {
+                $sum = $value->billingLog->sum('balanced_amount');
+                $pendingAmount += $sum;
+
+                // Keep updating with the latest model (assuming created_at is used to determine "latest")
+                if (!$latestBilling || $value->created_at > $latestBilling->created_at) {
+                    $latestBilling = $value;
+                }
+            }
+            $latestBilling->pending_amount = $pendingAmount;
+
         }
 
 
@@ -67,9 +81,9 @@ class ServiceMasterController extends Controller
             'data' => [
                 'services' => $services,
                 'packages' => $packages,
-                "groupInfo"=>$groupInfo,
+                "groupInfo" => $groupInfo,
                 'workingSessions' => $workingSessions,
-                "billingData" => $billingData
+                "billingData" => $latestBilling
             ]
         ]);
     }
@@ -77,7 +91,7 @@ class ServiceMasterController extends Controller
     public function store(Request $request)
     {
         try {
-            
+
             $data = $request->all();
 
             // Manual validation
