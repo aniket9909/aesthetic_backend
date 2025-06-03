@@ -62,8 +62,10 @@ class ServiceMasterController extends Controller
             $latestBilling = null;
 
             foreach ($billingData as $value) {
-                $sum = $value->billingLog->sum('balanced_amount');
-                $pendingAmount += $sum;
+
+                if ($value->billingLog) {
+                    $pendingAmount += $value->billingLog->sum('balanced_amount');
+                }
 
                 // Keep updating with the latest model (assuming created_at is used to determine "latest")
                 if (!$latestBilling || $value->created_at > $latestBilling->created_at) {
@@ -71,7 +73,6 @@ class ServiceMasterController extends Controller
                 }
             }
             $latestBilling->pending_amount = $pendingAmount;
-
         }
 
 
