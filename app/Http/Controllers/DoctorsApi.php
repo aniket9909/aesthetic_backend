@@ -4087,7 +4087,82 @@ from
         // 
     }
 
+    public function getCalendarAppointments(Request $request)
+    {
+        // Optional date range filter
+        $startDate = $request->query('start_date'); // e.g., 2025-06-01
+        $endDate = $request->query('end_date');
+        $doctor_id = $request->query('doctor_id');
 
+        $query = DB::table('docexa_patient_booking_details as booking')
+            ->join('docexa_appointment_sku_details', 'booking.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
+            ->leftJoin('consult_type_master as consult', 'booking.consult_type_id', '=', 'consult.id')
+            ->select(
+                'booking.booking_id',
+                'booking.date',
+                'docexa_appointment_sku_details.start_booking_time',
+                'docexa_appointment_sku_details.end_booking_time',
+                
+                'booking.patient_name',
+
+                'booking.doctor_id',
+                'consult.name as consult_type',
+                DB::raw("TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes")
+            )
+            ->where('docexa_appointment_sku_details.esteblishment_user_map_sku_id', $doctor_id)
+            ->orderBy('booking.date')
+            ->orderBy('booking.start_time');
+
+        if ($startDate && $endDate) {
+            $query->where(DB::raw('booking.date'), $startDate);
+        }
+
+        // dd(vsprintf(str_replace('?', "'%s'", $query->toSql()), $query->getBindings()));
+        $appointments = $query->get();
+
+        $cosultType = DB::table('consult_type_master')->select('id', 'name')->get();
+
+        return response()->json([
+            "success" => true,
+            "data" => [
+                'times' => $this->getSlots($doctor_id),
+                'consult_types' => $cosultType,
+                'appointments' => $appointments
+            ],
+        ], 200);
+    }
+
+    public function getSlots($mapId)
+    {
+
+        $slot = DB::table('docexa_slot_master')->where('user_map_id', $mapId)->first();
+
+        if (!$slot) {
+            return [];
+        }
+
+        $start = Carbon::createFromFormat('H:i:s', $slot->start_time);
+        $end = Carbon::createFromFormat('H:i:s', $slot->end_time);
+        $interval = 30; // 30 minutes
+        $slots = [];
+
+        while ($start->lt($end)) {
+            $slotStart = $start->format('H:i');
+            $slotEnd = $start->copy()->addMinutes($interval);
+
+            if ($slotEnd->gt($end)) {
+                break;
+            }
+
+            $slots[] = [
+                'from' => $slotStart,
+                'to' => $slotEnd->format('H:i')
+            ];
+
+            $start->addMinutes($interval);
+        }
+        return $slots;
+    }
 
     public function uploadReceipe(Request $request)
     {

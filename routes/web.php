@@ -823,6 +823,11 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->get('/service-categories', 'ServiceCategoryController@index');
     $router->post('/service-categories', 'ServiceCategoryController@store');
+    $router->get('/service-categories', 'ServiceCategoryController@store');
+
+    $router->get('/appointments-calendar', 'DoctorsApi@getCalendarAppointments');
+
+
 
     $router->get('/sesssion-by-patient/{esteblishmentusermapID}/{patientId}', 'ServiceSessionController@getSessionsByPatientId');
 });
