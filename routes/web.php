@@ -6,6 +6,11 @@ use App\Patientmaster;
 use Illuminate\Http\Request;
 
 
+
+$router->options('{any:.*}', function () {
+    return response('', 200);
+});
+
 $router->get('/images/{filename}', function ($filename) {
     $path = base_path('skin_images/' . $filename); // Make sure the path is correct
     if (!file_exists($path)) {
@@ -118,7 +123,7 @@ $router->group(['prefix' => 'api/v4'], function () use ($router) {
     $router->post('establishments/users/prescritpion/save/{usermapId}', 'DocexaGenieApis@saveDocexaGeniePrescriptionImage');
 });
 
-$router->group(['prefix' => 'api/v3',], function () use ($router): void {
+$router->group(['prefix' => 'api/v3','middleware' => ['cors']], function () use ($router): void {
     $router->post('establishments/users/cot/save/{usermapId}', 'DocexaGenieApis@saveDocexaGeniePrescriptionImage');
 
     // $router->get('slotdetails/{id}','ClinicApi@getslotdetails');

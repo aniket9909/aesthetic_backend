@@ -80,7 +80,8 @@ $app->middleware([
 ]);
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
-    'log' => App\Http\Middleware\LogRoute::class
+    'log' => App\Http\Middleware\LogRoute::class,
+    'cors' => App\Http\Middleware\CorsMiddleware::class
 ]);
 
 
@@ -99,7 +100,7 @@ $app->routeMiddleware([
 $app->register(\SwaggerLume\ServiceProvider::class);
 $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 $app->register(Illuminate\Redis\RedisServiceProvider::class);
-$app->register(App\Http\Middleware\CorsMiddleware::class);
+// $app->register(App\Http\Middleware\CorsMiddleware::class);
 
 $app->register(PulkitJalan\Google\GoogleServiceProvider::class);
 
