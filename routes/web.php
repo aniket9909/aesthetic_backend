@@ -123,7 +123,7 @@ $router->group(['prefix' => 'api/v4'], function () use ($router) {
     $router->post('establishments/users/prescritpion/save/{usermapId}', 'DocexaGenieApis@saveDocexaGeniePrescriptionImage');
 });
 
-$router->group(['prefix' => 'api/v3','middleware' => ['cors']], function () use ($router): void {
+$router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use ($router): void {
     $router->post('establishments/users/cot/save/{usermapId}', 'DocexaGenieApis@saveDocexaGeniePrescriptionImage');
 
     // $router->get('slotdetails/{id}','ClinicApi@getslotdetails');
@@ -856,6 +856,13 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
 
     $router->get('/sesssion-by-patient/{esteblishmentusermapID}/{patientId}', 'ServiceSessionController@getSessionsByPatientId');
+    $router->group(['prefix' => 'consult-types'], function () use ($router) {
+        $router->get('/', 'ConsultTypeController@index');       // GET all
+        $router->get('{id}', 'ConsultTypeController@show');     // GET one
+        $router->post('/', 'ConsultTypeController@store');      // POST create
+        $router->put('{id}', 'ConsultTypeController@update');   // PUT update
+        $router->delete('{id}', 'ConsultTypeController@destroy'); // DELETE
+    });
 });
 
 
