@@ -29,6 +29,30 @@ $router->get('/images/{filename}', function ($filename) {
 });
 
 
+$router->get('checkerpapi', function () {
+    $client = new \GuzzleHttp\Client();
+    $response = $client->post("http://localhost:8001/api/service-sales", [
+        'json' => [
+            'services' => [],
+            'consumables' => [],
+            'transaction_id' => '1234567890',
+            'prescription_id' => '1234567890',
+            'patient_id' => '1234567890',
+            'doctor_id' => '1234567890',
+        ],
+        'timeout' => 10,
+    ]);
+    $body = $response->getBody()->getContents();
+    $data = json_decode($body, true);
+
+    if ($response->getStatusCode() !== 200 || !isset($data['status']) || $data['status'] != 'success') {
+        return response()->json(['status' => 'error', 'message' => $data['msg'] ?? 'CheckerP API is not working'], 500);
+    }
+
+    return response()->json(['status' => 'success', 'message' => 'CheckerP API is working']);
+});
+
+
 
 $router->get('admin/log', [
     'middleware' => 'log'
@@ -688,9 +712,6 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
     $router->post('uploadImageFromDoc', 'ApiController@uploadImageFromDoc');
     $router->get('getUploadedImages/{doctorId}/{patientNumber}', 'ApiController@getUploadedImages');
     $router->post('uploadMarkedImageFromDoc', 'ApiController@uploadMarkedImageFromDoc');
-
-
-
 });
 
 $router->group(['prefix' => 'api/v4/symptoms'], function () use ($router) {
