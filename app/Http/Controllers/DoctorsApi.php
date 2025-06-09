@@ -3261,7 +3261,7 @@ from
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
-            return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
+            return response()->json(['status' => false, 'errorMessage'=>$th->getMessage(),'message' => 'Internal server error'], 500);
         }
     }
     public function getTodaysApppointmentsv2(Request $request)
@@ -3284,7 +3284,7 @@ from
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
-            return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
+            return response()->json(['status' => false, 'errorMessage'=>$th->getMessage(),'message' => 'Internal server error'], 500);
         }
     }
 
@@ -4096,6 +4096,7 @@ from
 
         $query = DB::table('docexa_patient_booking_details as booking')
             ->join('docexa_appointment_sku_details', 'booking.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
+            ->join('docexa_doctor_master', 'booking.doctor_id', '=', 'docexa_doctor_master.pharmaclient_id')
             ->leftJoin('consult_type_master as consult', 'booking.consult_type_id', '=', 'consult.id')
             ->select(
                 'booking.booking_id',
@@ -4104,8 +4105,10 @@ from
                 'docexa_appointment_sku_details.end_booking_time',
                 
                 'booking.patient_name',
+                'docexa_doctor_master.pharmaclient_name',
 
                 'booking.doctor_id',
+                'booking.patient_id',
                 'consult.name as consult_type',
                 DB::raw("TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes")
             )
