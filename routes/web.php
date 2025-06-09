@@ -118,8 +118,8 @@ $router->group(['prefix' => 'api/v4'], function () use ($router) {
     $router->post('establishments/users/prescritpion/save/{usermapId}', 'DocexaGenieApis@saveDocexaGeniePrescriptionImage');
 });
 
-$router->group(['prefix' => 'api/v3'], function () use ($router): void {
-    $router->post('establishments/users/prescritpion/save/{usermapId}', 'DocexaGenieApis@saveDocexaGeniePrescriptionImage');
+$router->group(['prefix' => 'api/v3',], function () use ($router): void {
+    $router->post('establishments/users/cot/save/{usermapId}', 'DocexaGenieApis@saveDocexaGeniePrescriptionImage');
 
     // $router->get('slotdetails/{id}','ClinicApi@getslotdetails');
 

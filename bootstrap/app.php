@@ -99,6 +99,7 @@ $app->routeMiddleware([
 $app->register(\SwaggerLume\ServiceProvider::class);
 $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 $app->register(Illuminate\Redis\RedisServiceProvider::class);
+$app->register(App\Http\Middleware\CorsMiddleware::class);
 
 $app->register(PulkitJalan\Google\GoogleServiceProvider::class);
 
