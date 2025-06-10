@@ -3261,7 +3261,7 @@ from
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
-            return response()->json(['status' => false, 'errorMessage'=>$th->getMessage(),'message' => 'Internal server error'], 500);
+            return response()->json(['status' => false, 'errorMessage' => $th->getMessage(), 'message' => 'Internal server error'], 500);
         }
     }
     public function getTodaysApppointmentsv2(Request $request)
@@ -3284,7 +3284,7 @@ from
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
-            return response()->json(['status' => false, 'errorMessage'=>$th->getMessage(),'message' => 'Internal server error'], 500);
+            return response()->json(['status' => false, 'errorMessage' => $th->getMessage(), 'message' => 'Internal server error'], 500);
         }
     }
 
@@ -4118,9 +4118,9 @@ from
             ->orderBy('booking.date')
             ->orderBy('booking.start_time');
 
-        if ($startDate && $endDate) {
-            $query->where(DB::raw('booking.date'), $startDate);
-        }
+
+        $query->where(DB::raw('booking.date'), $startDate);
+
 
         // dd(vsprintf(str_replace('?', "'%s'", $query->toSql()), $query->getBindings()));
         $appointments = $query->get();
