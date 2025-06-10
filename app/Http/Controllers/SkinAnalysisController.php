@@ -180,7 +180,7 @@ class SkinAnalysisController extends Controller
             // $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/chatbot.py $escapedQuestion 2>&1");
             // Log::info("Chatbot output: $output");
             $groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
-            $bearerToken = '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'; // Replace with your actual token
+            $bearerToken = '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'; // Replace with your actual token
 
             $groqBody = [
                 "model" => "llama-3.3-70b-versatile",

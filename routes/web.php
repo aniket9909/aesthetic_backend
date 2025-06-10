@@ -717,6 +717,15 @@ $router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use
     $router->post('uploadImageFromDoc', 'ApiController@uploadImageFromDoc');
     $router->get('getUploadedImages/{doctorId}/{patientNumber}', 'ApiController@getUploadedImages');
     $router->post('uploadMarkedImageFromDoc', 'ApiController@uploadMarkedImageFromDoc');
+    $router->post('deletePatientImage', 'ApiController@deletePatientImage');
+    $router->post('register', 'ApiController@register');
+
+
+
+
+
+
+
 });
 
 $router->group(['prefix' => 'api/v4/symptoms'], function () use ($router) {
