@@ -61,7 +61,7 @@ class SkinAnalysisController extends Controller
         file_put_contents(base_path('skin_images/' . $mediaId . '.png'), $binary);
         $imagePath = base_path('skin_images/' . $mediaId . '.png');
 
-        $command = "/usr/bin/python3 /var/www/html/aesthetic_backend/image_analysis.py " . escapeshellarg($imagePath) . " 2>&1";
+        $command = "/usr/bin/python3 /var/www/html/dev/aesthetic_backend/image_analysis.py " . escapeshellarg($imagePath) . " 2>&1";
         Log::info("Command executed: $command");
 
         $output = shell_exec($command);
@@ -266,7 +266,7 @@ class SkinAnalysisController extends Controller
             $pythonPath = 'python3'; // Adjust if your system uses another path
 
             // $output = shell_exec("$pythonPath $scriptPath $question");
-            $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/greeting_chatbot.py $escapedQuestion 2>&1");
+            $output = shell_exec("/usr/bin/python3 /var/www/html/dev/aesthetic_backend/greeting_chatbot.py $escapedQuestion 2>&1");
             Log::info("Chatbot output: $output");
 
             if (!$output) {
@@ -320,7 +320,7 @@ class SkinAnalysisController extends Controller
             $pythonPath = 'python3'; // Adjust if your system uses another path
 
             // $output = shell_exec("$pythonPath $scriptPath $question");
-            $output = shell_exec("python3 /var/`www`/html/aesthetic_backend/afterImage.py $escapedQuestion 2>&1");
+            $output = shell_exec("python3 /var/`www`/html/dev/aesthetic_backend/afterImage.py $escapedQuestion 2>&1");
             // $output = shell_exec("python3 ~/var/docexa/afterImage.py $escapedQuestion 2>&1");
             Log::info("image analysis output: $output");
 

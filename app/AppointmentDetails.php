@@ -156,6 +156,8 @@ class AppointmentDetails extends Model
     }
     public function getappointment($request, $bookingID = 0)
     {
+
+
         //var_dump($bookingID,$bookingID != 0);die;
         if ($bookingID != 0 || $request == null) {
             DB::statement("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'");

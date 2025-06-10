@@ -852,6 +852,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('/service-categories', 'ServiceCategoryController@store');
 
     $router->get('/appointments-calendar', 'DoctorsApi@getCalendarAppointments');
+    
+    $router->get('/appointments-details', 'DoctorsApi@getCalenderAppointmentDetails');
+    
 
 
 
@@ -861,7 +864,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('{id}', 'ConsultTypeController@show');     // GET one
         $router->post('/', 'ConsultTypeController@store');      // POST create
         $router->put('{id}', 'ConsultTypeController@update');   // PUT update
-        $router->delete('{id}', 'ConsultTypeController@destroy'); // DELETE
+        $router->delete('{id}', 'ConsultTypeController@destroy'); //    
     });
 });
 
