@@ -688,6 +688,12 @@ $router->group(['prefix' => 'api/v3'], function () use ($router): void {
     $router->post('uploadImageFromDoc', 'ApiController@uploadImageFromDoc');
     $router->get('getUploadedImages/{doctorId}/{patientNumber}', 'ApiController@getUploadedImages');
     $router->post('uploadMarkedImageFromDoc', 'ApiController@uploadMarkedImageFromDoc');
+    $router->post('deletePatientImage', 'ApiController@deletePatientImage');
+    $router->post('register', 'ApiController@register');
+
+
+
+
 
 
 

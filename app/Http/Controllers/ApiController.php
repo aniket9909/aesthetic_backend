@@ -1464,7 +1464,6 @@ Please upload a photo if you would like to have your skin analyzed.
           'uploaded_files' => $imageList
         ]
       ]);
-
     } catch (\Exception $e) {
       \Log::error('Error in getUploadedImages: ' . $e->getMessage());
       return response()->json([
@@ -1583,7 +1582,6 @@ Please upload a photo if you would like to have your skin analyzed.
           'uploaded_files' => $imageList
         ]
       ]);
-
     } catch (\Exception $e) {
       \Log::error('Error in getUploadedImages: ' . $e->getMessage());
       return response()->json([
@@ -1660,7 +1658,6 @@ Please upload a photo if you would like to have your skin analyzed.
           'uploaded_files' => $imageList
         ]
       ]);
-
     } catch (\Exception $e) {
       \Log::error('Error in getUploadedImages: ' . $e->getMessage());
       return response()->json([
@@ -1674,30 +1671,127 @@ Please upload a photo if you would like to have your skin analyzed.
   /**
    * Helper method to get file size
    */
-  private function getFileSize($filePath)
+
+
+
+  public function deletePatientImage(Request $request)
   {
     try {
-      $fullPath = public_path($filePath);
-      if (file_exists($fullPath)) {
-        $bytes = filesize($fullPath);
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      $doctorId = $request->input('doctor_id');
+      $patientNumber = $request->input('patient_number');
+      $filename = $request->input('file_name');
 
-        $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-
-        $bytes /= pow(1024, $pow);
-
-        return round($bytes, 2) . ' ' . $units[$pow];
+      // Validate input
+      if (!$doctorId || !$patientNumber || !$filename) {
+        return response()->json([
+          'status' => false,
+          'message' => 'Doctor ID, Patient Number, and File Name are required.',
+          'data' => null
+        ], 400);
       }
-      return null;
+
+      // Fetch doctor mobile number
+      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
+        ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+        ->select('docexa_doctor_master.mobile_no')
+        ->first();
+
+      if (!$doctor) {
+        return response()->json([
+          'status' => false,
+          'message' => 'Doctor not found.',
+          'data' => null
+        ], 404);
+      }
+
+      // Find the image by media_id
+      $image = Chats::where('media_id', $filename)
+        ->where('message_type', 'image')
+        ->where(function ($query) use ($patientNumber, $doctor) {
+          $query->where('sender_id', $doctor->mobile_no)
+            ->where('receiver_id', $patientNumber);
+        })
+        ->orWhere(function ($query) use ($patientNumber, $doctor, $filename) {
+          $query->where('media_id', $filename)
+            ->where('message_type', 'image')
+            ->where('sender_id', $patientNumber)
+            ->where('receiver_id', $doctor->mobile_no);
+        })
+        ->first();
+
+      if (!$image) {
+        return response()->json([
+          'status' => false,
+          'message' => 'Image not found.',
+          'data' => null
+        ], 404);
+      }
+
+      // Delete image file
+      // $filePath = public_path($image->media_url);
+      $filePath = base_path('public/' . $image->media_url);
+      if (file_exists($filePath)) {
+        unlink($filePath);
+      }
+
+      // Delete record
+      $image->delete();
+
+      // Fetch remaining images
+      $remainingImages = Chats::where('message_type', 'image')
+        ->where(function ($query) use ($patientNumber, $doctor) {
+          $query->where('sender_id', $doctor->mobile_no)
+            ->where('receiver_id', $patientNumber);
+        })
+        ->orWhere(function ($query) use ($patientNumber, $doctor) {
+          $query->where('sender_id', $patientNumber)
+            ->where('receiver_id', $doctor->mobile_no);
+        })
+        ->orderBy('date', 'desc')
+        ->get();
+
+      // Transform to Dart model format
+      $imageList = $remainingImages->map(function ($chat) {
+        return [
+          'file_name' => $chat->media_id,
+          'url' => url($chat->media_url),
+          'uploaded_date' => \Carbon\Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
+        ];
+      });
+
+      return response()->json([
+        'status' => true,
+        'message' => 'Image list fetched successfully',
+        'data' => [
+          'uploaded_files' => $imageList
+        ]
+      ]);
     } catch (\Exception $e) {
-      \Log::warning('Error getting file size: ' . $e->getMessage());
-      return null;
+      \Log::error('Error in deletePatientImage: ' . $e->getMessage());
+      return response()->json([
+        'status' => false,
+        'message' => 'Server Error: ' . $e->getMessage(),
+        'data' => null
+      ], 500);
     }
+  }
+
+
+  public function register(Request $request)
+  {
+    return response()->json([
+      'status' => true,
+      'message' => 'Your verification is under process',
+      'data' => null
+    ], 200);
   }
 
 
 
 
+
+  /**
+   * Helper method to get file size
+   */
 }
