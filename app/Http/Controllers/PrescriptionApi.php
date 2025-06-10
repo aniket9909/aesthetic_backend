@@ -1146,37 +1146,38 @@ class PrescriptionApi extends Controller
                                             'remarks' => $consumable['remarks'] ?? null,
                                             'session_log_id' => $sessionLog->id,
                                         ]);
-                                        $apiConsumablesName[] = $consumable['name'] ?? null;
-                                    }
-                                }
-
-                                if (isset($service['api_url']) && !empty($service['api_url'])) {
-                                    try {
-                                        $client = new \GuzzleHttp\Client();
-                                        $response = $client->post("http://localhost:8001/api/service-sales", [
-                                            'json' => [
-                                                'services' => $apiServiceNames,
-                                                'consumables' => $apiConsumablesName,
-                                                'transaction_id' => $serviceTransaction->id,
-                                                'prescription_id' => $prescription->id,
-                                                'patient_id' => $data['patient_id'],
-                                                'doctor_id' => $esteblishmentusermapID,
-                                            ],
-                                            'timeout' => 10,
-                                        ]);
-                                        $body = $response->getBody()->getContents();
-                                        $data = json_decode($body, true);
-
-                                        if ($response->getStatusCode() !== 200 || !isset($data['status']) || $data['status'] != 'success') {
-                                            return response()->json(['status' => 'error', 'message' => $data['msg'] ?? 'CheckerP API is not working'], 500);
-                                        }
-                                        Log::info(['service_api_call_response' => (string)$response->getBody()]);
-                                    } catch (\Throwable $e) {
-                                        Log::error(['service_api_call_error' => $e->getMessage()]);
+                                        $apiConsumablesName[] = $consumable ?? null;
                                     }
                                 }
                             } else {
                                 throw new \Exception("Failed to save service transaction item");
+                            }
+                        }
+
+                        if (isset($service['api_url']) && !empty($service['api_url'])) {
+                            try {
+                                $client = new \GuzzleHttp\Client();
+                                $response = $client->post("https://aestheticai.globalspace.in/dev/aesthetic_erp/public/api/service", [
+                                    'json' => [
+                                        'services' => $data['services'],
+                                        'billingData' => $billingData,
+                                        'consumables' => $apiConsumablesName,
+                                        'transaction_id' => $serviceTransaction->id,
+                                        'prescription_id' => $prescription->id,
+                                        'patient_id' => $data['patient_id'],
+                                        'doctor_id' => $esteblishmentusermapID,
+                                    ],
+                                    'timeout' => 10,
+                                ]);
+                                $body = $response->getBody()->getContents();
+                                $data = json_decode($body, true);
+
+                                if ($response->getStatusCode() !== 200 || !isset($data['status']) || $data['status'] != 'success') {
+                                    return response()->json(['status' => 'error', 'message' => $data['msg'] ?? 'CheckerP API is not working'], 500);
+                                }
+                                Log::info(['service_api_call_response' => (string)$response->getBody()]);
+                            } catch (\Throwable $e) {
+                                Log::error(['service_api_call_error' => $e->getMessage()]);
                             }
                         }
                     } else {

@@ -46,6 +46,8 @@ class ServiceMasterController extends Controller
         $workingSessions = [];
         $groupInfo = [];
         $billingData = null;
+        $latestBilling = null;
+
 
         if ($serviceTransaction) {
             foreach ($serviceTransaction->serviceTransactionItems as $item) {
@@ -59,7 +61,6 @@ class ServiceMasterController extends Controller
                 // ->where('balanced_amount', ">", 0)
                 ->get();
             $pendingAmount = 0;
-            $latestBilling = null;
 
             foreach ($billingData as $value) {
 

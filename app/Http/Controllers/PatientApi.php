@@ -647,7 +647,7 @@ class PatientApi extends Controller
     public function getPatientById($patientid)
     {
         try {
-
+            // dd($patientid);
             $PatientDetails = DB::table('docexa_patient_details')->where('patient_id', $patientid)->first();
             if ($PatientDetails) {
                 return response()->json(['status' => true, 'message' => "data retrived successfully", 'data' => $PatientDetails], 200);

@@ -4107,6 +4107,7 @@ from
                 'docexa_appointment_sku_details.start_booking_time',
                 'docexa_appointment_sku_details.end_booking_time',
                 'booking.patient_name',
+                'booking.status',
                 'docexa_doctor_master.pharmaclient_name',
 
                 'booking.doctor_id',
@@ -4119,7 +4120,7 @@ from
             ->orderBy('booking.start_time');
 
 
-        $query->where(DB::raw('booking.date'), $startDate);
+        $query->where(DB::raw('date(booking.date)'), $startDate);
 
 
         // dd(vsprintf(str_replace('?', "'%s'", $query->toSql()), $query->getBindings()));
@@ -4139,16 +4140,20 @@ from
     public function getCalenderAppointmentDetails(Request $request)
     {
         try {
+
             $input = $request->all();
 
-            $appoinmentDetails = new AppointmentDetails();
-            $bookingID  = $request->header('booking_id');
-            $patientId  = $request->header('patient_id');
-            $doctorID   = $request->header('doctor_id');
-            $userMapID  = $request->header('user_map_id');
+            $bookingID  = $request->query('booking_id');
+            $patientId  = $request->query('patient_id');
+            $doctorID   = $request->query('doctor_id');
 
-            $patientApi = new PatientApi();
+
+            // dd($bookingID, $patientId, $doctorID, $userMapID);
+            if (!$bookingID || !$patientId || !$doctorID ) {
+                return response()->json(['status' => false, 'message' => 'Missing required headers'], 400);
+            }
             $patientDate = null;
+            $patientApi = new PatientApi();
             $response = $patientApi->getPatientById($patientId);
             $data = $response->getData();
 
@@ -4157,26 +4162,29 @@ from
             } else {
                 $patientDate = [];
             }
-
+            // dd($patientDate);
             $query = DB::table('docexa_patient_booking_details as booking')
                 ->join('docexa_appointment_sku_details', 'booking.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
                 ->leftJoin('consult_type_master as consult', 'booking.consult_type_id', '=', 'consult.id')
+                ->leftJoin('staff as staff', 'staff.id', '=', 'consult.staff_id')
+                ->leftJoin('docexa_appointment_status_master as statusmaster', 'statusmaster.id', '=', 'booking.status')
                 ->select(
                     'booking.booking_id',
                     'booking.bookingidmd5',
                     'booking.date',
+                    'booking.status',
                     'docexa_appointment_sku_details.start_booking_time',
                     'docexa_appointment_sku_details.end_booking_time',
                     'booking.patient_name',
                     'booking.doctor_id',
                     'consult.name as consult_type',
+                    'statusmaster.status_text as status_name',
+                    'staff.staff_name as staff_name',
                     DB::raw("TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes")
                 )
                 ->where('booking.bookingidmd5', $bookingID);
+                // dd($query->toSql(), $query->getBindings());
             $appointment = $query->first();
-            if (!$appointment) {
-                return response()->json(['status' => false, 'message' => 'Appointment not found'], 404);
-            }
             return response()->json(['status' => false, 'message' => 'Appointment  found', 'data' => [
                 'appointment' => $appointment,
                 'patient' => $patientDate,
