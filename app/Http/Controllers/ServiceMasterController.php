@@ -38,43 +38,102 @@ class ServiceMasterController extends Controller
         // Fetch the latest service transaction
         $serviceTransaction = ServiceTransaction::where('patient_id', $patient->patient_id)
             ->where('doctor_id', $doctor->id)
-            ->latest()
-            ->first();
+            // ->latest()
+            ->get();
 
 
-        // Default empty arrays
+        // // Default empty arrays
+        // $workingSessions = [];
+        // $groupInfo = [];
+        // $billingData = null;
+        // $latestBilling = null;
+        // $pendingTrasaction = [];
+        // $latestTransaction = $serviceTransaction->sortByDesc('created_at')->first();
+        // // dd($latestTransaction);
+        // if ($latestTransaction) {
+        //     foreach ($latestTransaction->serviceTransactionItems as $item) {
+        //         if ($item->remaining_sessions > 0) {
+        //             $groupInfo[] = $serviceTransaction['groupInfo'] ?? [];
+        //             $workingSessions = $serviceTransaction['serviceTransactionItems'] ?? [];
+        //             break;
+        //         }
+
+        //         //Method Illuminate\Database\Eloquent\Collection::plunk does not exist.            }
+
+
+        //         $billingData = BillingModel::whereIn('transaction_id', $serviceTransaction->pluck('id'))
+        //             ->where('balanced_amount', '>', 0)
+        //             ->get();
+
+
+        //             $disctinTrasanction = $billingData->unique('id');
+        //             dd($disctinTrasanction);
+
+
+
+        //         $pendingAmount = 0;
+
+        //         foreach ($disctinTrasanction as $value) {
+
+        //             if ($value->balanced_amount > 0) {
+        //                 $pendingTrasaction[] = $value;
+        //                 $pendingAmount += $value->balanced_amount;
+        //                 // dump($pendingAmount);
+        //             }
+
+        //             // Keep updating with the latest model (assuming created_at is used to determine "latest")
+        //             if (!$latestBilling || $value->created_at > $latestBilling->created_at) {
+        //                 $latestBilling = $value;
+        //             }
+        //         }
+        //         $latestBilling->pending_amount = $pendingAmount;
+        //     }
+        $latestTransaction = $serviceTransaction->sortByDesc('created_at')->first();
+
         $workingSessions = [];
         $groupInfo = [];
         $billingData = null;
         $latestBilling = null;
+        $pendingTrasaction = [];
+        $pendingAmount = 0;
 
-
-        if ($serviceTransaction) {
-            foreach ($serviceTransaction->serviceTransactionItems as $item) {
+        if ($latestTransaction) {
+            foreach ($latestTransaction->serviceTransactionItems as $item) {
                 if ($item->remaining_sessions > 0) {
-                    $groupInfo[] = $serviceTransaction->groupInfo ?? [];
-                    $workingSessions = $serviceTransaction->serviceTransactionItems;
+                    $groupInfo[] = $latestTransaction->groupInfo ?? [];
+                    $workingSessions = $latestTransaction->serviceTransactionItems ?? [];
                     break;
                 }
             }
-            $billingData = BillingModel::where('transaction_id', $serviceTransaction->id)
-                // ->where('balanced_amount', ">", 0)
+
+            // 1. Billing data for all related transactions
+            $billingDataAll = BillingModel::whereIn('transaction_id', $serviceTransaction->pluck('id'))
+                ->where('balanced_amount', '>', 0)
                 ->get();
-            $pendingAmount = 0;
 
-            foreach ($billingData as $value) {
+            // 2. Split billing data into:
+            // a. Latest billing data for the latest transaction
+            $latestBilling = $billingDataAll
+                ->where('transaction_id', $latestTransaction->id)
+                ->sortByDesc('created_at')
+                ->first();
 
-                if ($value->billingLog) {
-                    $pendingAmount += $value->billingLog->sum('balanced_amount');
-                }
+            // b. Pending previous transactions (excluding latest one)
+            $previousTransactions = $billingDataAll
+                ->where('transaction_id', '!=', $latestTransaction->id)
+                ->unique('transaction_id'); // Ensure distinct transactions
 
-                // Keep updating with the latest model (assuming created_at is used to determine "latest")
-                if (!$latestBilling || $value->created_at > $latestBilling->created_at) {
-                    $latestBilling = $value;
-                }
+            foreach ($previousTransactions as $value) {
+                $pendingTrasaction[] = $value;
+                $pendingAmount += $value->balanced_amount;
             }
-            $latestBilling->pending_amount = $pendingAmount;
+
+            if ($latestBilling) {
+                $latestBilling->pending_amount = $pendingAmount;
+            }
         }
+
+
 
 
         return response()->json([
@@ -85,10 +144,12 @@ class ServiceMasterController extends Controller
                 'packages' => $packages,
                 "groupInfo" => $groupInfo,
                 'workingSessions' => $workingSessions,
-                "billingData" => $latestBilling
+                "billingData" => $latestBilling,
+                'pendingTransactions' => $pendingTrasaction
             ]
         ]);
     }
+
 
     public function store(Request $request)
     {

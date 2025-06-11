@@ -3283,7 +3283,9 @@ from
                 return response()->json(['status' => false, 'message' => 'Doctor not found with this Id'], 401);
             }
         } catch (\Throwable $th) {
+            
             Log::error(['error' => $th]);
+            return response()->json(['status' => false, "errorMessage"=>$th->getMessage(),'message' => 'Internal server error'], 500);
             return response()->json(['status' => false, 'errorMessage' => $th->getMessage(), 'message' => 'Internal server error'], 500);
         }
     }
