@@ -12,9 +12,10 @@ class ConsultTypeMaster extends Model
         'name',
         'parent_id',
         'description',
-        'is_active'
+        'is_active',
+        'staff_id'
     ];
-    protected $with = ['staff', ];
+    protected $with = ['staff' ];
     public function staff()
     {
         return $this->belongsTo(Staff::class, 'staff_id');
