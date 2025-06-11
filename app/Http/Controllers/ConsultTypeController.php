@@ -27,12 +27,7 @@ class ConsultTypeController extends Controller
     // Create new consult type
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|integer',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->all();
 
         $type = ConsultTypeMaster::create($validated);
         return response()->json($type, 201);
@@ -46,12 +41,7 @@ class ConsultTypeController extends Controller
             return response()->json(['message' => 'Not Found'], 404);
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|integer',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->all();
 
         $type->update($validated);
         return response()->json($type);

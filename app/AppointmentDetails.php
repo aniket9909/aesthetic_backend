@@ -1950,7 +1950,9 @@ class AppointmentDetails extends Model
         }
         // Log::info($data['gender']);
 
-        $medicaldata = Medicalestablishmentsmedicalusermap::find($data['user_map_id'])->get()->first();
+        $medicaldata = Medicalestablishmentsmedicalusermap::find($data['user_map_id']);
+        // return $medicaldata->toSql();
+        // return ["medicaldata" => $medicaldata,'request' => $data,'db'=>env('DB_DATABASE')];
 
         $skuobj = new Skumaster();
         // Log::Info(['skuid', $data['sku_id']]);
@@ -2002,7 +2004,7 @@ class AppointmentDetails extends Model
         } else {
             $source = 'NA';
         }
-
+        // return $medicaldata->medical_user_id;
         $id = DB::table('docexa_patient_booking_details')->insertGetId([
             'source' => $source,
             'gender' => $data['gender'],
