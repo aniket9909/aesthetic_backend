@@ -841,6 +841,47 @@ class PrescriptionApi extends Controller
                 Log::info(["amount", $paymentAmount]);
                 Log::info(["mode", $modeOfPayment]);
 
+                $pendingBillings = BillingModel::where('usermap_id', $serviceTransaction->doctor_id)
+                    ->where('patient_id', $serviceTransaction->patient_id)
+                    ->where('id', '!=', $billing->id)
+                    ->where('balanced_amount', '>', 0)
+                    ->orderBy('created_at') // optional, prioritize oldest bills
+                    ->get();
+
+                foreach ($pendingBillings as $pending) {
+                    $pendingDue = $pending->balanced_amount;
+
+                    if ($paymentAmount >= $pendingDue) {
+                        // Pay full due for this bill
+                        $pending->paid_amount += $pendingDue;
+                        $paymentAmount -= $pendingDue;
+                    } else {
+                        // Pay partial
+                        $pending->paid_amount += $paymentAmount;
+                        $paymentAmount = 0;
+                    }
+
+                    $pending->balanced_amount = $pending->balanced_amount - $pendingDue;
+                    $pending->save();
+
+                    // Insert into billing logs
+                    BillingLogModel::insert([
+                        'billing_id' => $pending->id,
+                        'paid_amount' => min($pendingDue, $paymentAmount + $pendingDue),
+                        'payment_date' => Carbon::now(),
+                        'mode_of_payment' => $modeOfPayment,
+                        'balanced_amount' => $pending->balanced_amount,
+                        'remarks' => 'Auto-adjusted payment for previous due',
+                        'created_at' => Carbon::now()
+                    ]);
+
+                    Log::info(['adjusted_billing_id' => $pending->id]);
+
+                    if ($paymentAmount <= 0) {
+                        break;
+                    }
+                }
+
                 if ($billing != null &&  $paymentAmount > 0) {
                     $billing->paid_amount += $paymentAmount;
                     $billing->balanced_amount = $billing->total_price - $billing->paid_amount;
@@ -866,6 +907,51 @@ class PrescriptionApi extends Controller
                 $billingCreation = isset($data['billing_data']) ? $data['billing_data'] : null;
                 Log::info(['billingCreation', $billingCreation]);
                 if ($billingCreation) {
+                    $paymentAmount = $billingCreation['paid_amount'] ?? 0;
+                    $modeOfPayment = $data['billing_data']['mode_of_payment'] ?? null;
+
+                    $pendingBillings = BillingModel::where('usermap_id', $esteblishmentusermapID)
+                        ->where('patient_id', $data['patient_id'])
+
+                        ->where('balanced_amount', '>', 0)
+                        ->orderBy('created_at') // optional, prioritize oldest bills
+                        ->get();
+
+                    foreach ($pendingBillings as $pending) {
+                        $pendingDue = $pending->balanced_amount;
+
+                        if ($paymentAmount >= $pendingDue) {
+                            // Pay full due for this bill
+                            $pending->paid_amount += $pendingDue;
+                            $paymentAmount -= $pendingDue;
+                        } else {
+                            // Pay partial
+                            $pending->paid_amount += $paymentAmount;
+                            $paymentAmount = 0;
+                        }
+
+                        $pending->balanced_amount = $pending->balanced_amount - $pendingDue;
+                        $pending->save();
+
+                        // Insert into billing logs
+                        BillingLogModel::insert([
+                            'billing_id' => $pending->id,
+                            'paid_amount' => min($pendingDue, $paymentAmount + $pendingDue),
+                            'payment_date' => Carbon::now(),
+                            'mode_of_payment' => $modeOfPayment,
+                            'balanced_amount' => $pending->balanced_amount,
+                            'remarks' => 'Auto-adjusted payment for previous due',
+                            'created_at' => Carbon::now()
+                        ]);
+
+                        Log::info(['adjusted_billing_id' => $pending->id]);
+
+                        if ($paymentAmount <= 0) {
+                            break;
+                        }
+                    }
+                    $billingCreation['paid_amount'] = $paymentAmount;
+                    
                     $Invoice = new BillingModel();
 
                     $Invoice->clinic_id = isset($billingCreation['clinic_id']) ? $billingCreation['clinic_id'] : null;

@@ -42,6 +42,8 @@ class ServiceMasterController extends Controller
             ->get();
 
 
+
+
         // // Default empty arrays
         // $workingSessions = [];
         // $groupInfo = [];
@@ -89,40 +91,49 @@ class ServiceMasterController extends Controller
         //         $latestBilling->pending_amount = $pendingAmount;
         //     }
         $latestTransaction = $serviceTransaction->sortByDesc('created_at')->first();
-
         $workingSessions = [];
         $groupInfo = [];
         $billingData = null;
-        $latestBilling = null;
+        $latestBilling = [];
         $pendingTrasaction = [];
         $pendingAmount = 0;
-
+        $billingDataAll = BillingModel::whereIn('transaction_id', $serviceTransaction->pluck('id'))
+            // ->where('balanced_amount', '>', 0)
+            ->get();
+        // dd($billingDataAll);
         if ($latestTransaction) {
             foreach ($latestTransaction->serviceTransactionItems as $item) {
                 if ($item->remaining_sessions > 0) {
                     $groupInfo[] = $latestTransaction->groupInfo ?? [];
                     $workingSessions = $latestTransaction->serviceTransactionItems ?? [];
+                    $latestBilling = $billingDataAll
+                        ->where('transaction_id', $latestTransaction->id)
+                        ->sortByDesc('created_at')
+                        ->first();
                     break;
                 }
             }
-
-            // 1. Billing data for all related transactions
-            $billingDataAll = BillingModel::whereIn('transaction_id', $serviceTransaction->pluck('id'))
-                ->where('balanced_amount', '>', 0)
-                ->get();
-
-            // 2. Split billing data into:
-            // a. Latest billing data for the latest transaction
-            $latestBilling = $billingDataAll
-                ->where('transaction_id', $latestTransaction->id)
-                ->sortByDesc('created_at')
-                ->first();
-
             // b. Pending previous transactions (excluding latest one)
-            $previousTransactions = $billingDataAll
-                ->where('transaction_id', '!=', $latestTransaction->id)
-                ->unique('transaction_id'); // Ensure distinct transactions
+            if (
+                count($billingDataAll) > 1
+            ) {
 
+                $previousTransactions = $billingDataAll
+                    ->where('transaction_id', '!=', $latestTransaction->id)
+                    ->where('balanced_amount', '>', 0)
+
+                    ->unique('transaction_id');
+            } else {
+                $previousTransactions = $billingDataAll
+                    // ->where('transaction_id', '!=', $latestTransaction->id)
+                    ->where('balanced_amount', '>', 0)
+
+                    ->unique('transaction_id');
+            }
+            // $previousTransactions = $billingDataAll
+            //         // ->where('transaction_id', '!=', $latestTransaction->id)
+            //         ->unique('transaction_id');
+            // dd($previousTransactions);
             foreach ($previousTransactions as $value) {
                 $pendingTrasaction[] = $value;
                 $pendingAmount += $value->balanced_amount;
@@ -133,9 +144,6 @@ class ServiceMasterController extends Controller
             }
         }
 
-
-
-
         return response()->json([
             'success' => true,
             'message' => 'Session and service/package data fetched',
@@ -145,6 +153,7 @@ class ServiceMasterController extends Controller
                 "groupInfo" => $groupInfo,
                 'workingSessions' => $workingSessions,
                 "billingData" => $latestBilling,
+                "outstandingAmount" => $pendingAmount,
                 'pendingTransactions' => $pendingTrasaction
             ]
         ]);

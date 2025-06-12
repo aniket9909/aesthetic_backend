@@ -1050,7 +1050,10 @@ class AppointmentDetails extends Model
             'cost' => $fee,
             'patient_id' => $patientdata->patient_id,
             'doctor_id' => $medicaldata->medical_user_id,
-            'clinic_id' => $data['clinic_id']
+            'clinic_id' => $data['clinic_id'],
+            'consult_type_id' => $data['consult_type_id'],
+            'consult_type' => $data['consult_type']
+
 
         ]);
         //  Log::info(['id', DB::table('docexa_patient_booking_details')->where('id', $iudy)])

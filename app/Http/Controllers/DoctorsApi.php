@@ -4086,7 +4086,7 @@ from
     {
         $res = new AppointmentDetails();
         $data = $res->createappointmentV4($request);
-        return $data;
+        // return $data;
         return response()->json(['status' => 'success', 'data' => $data], 200);
         // 
     }
