@@ -82,14 +82,6 @@ class SkinAnalysisController extends Controller
             $mainCondition = $message[1];
             $otherIssues = str_replace('\n', "\n", $message[2]);
 
-            // Create the formatted message
-            // $formatMessage = "My skin type is {$skinType}\n";
-            // $formatMessage .= "Condition is {$mainCondition}\n";
-            // $formatMessage .= "Other probabilities are:\n{$otherIssues}\n\n";
-            // $formatMessage .= "Give me  treatment/solution in short. within 1000 words \n";
-            // $formatMessage = "Patient Skin Type: {$skinType}\n";
-            // $formatMessage .= "Primary Dermatological Condition: {$mainCondition}\n";
-            // $formatMessage .= "Differential Diagnoses / Other Probable Conditions:\n{$otherIssues}\n\n";
             $formatMessage = "You are an expert dermatologist AI assistant.\n\n";
             $formatMessage .= "Patient Details:\n";
             $formatMessage .= "• Skin Type: {$skinType}\n";
@@ -103,27 +95,7 @@ class SkinAnalysisController extends Controller
             $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
             $formatMessage .= "- Treatment notes (application instructions, any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
             $formatMessage .= "Return the response in under 1000 words in this format:\n\n";
-            // $formatMessage .= "🔍 Clinical Summary:\n";
-            // $formatMessage .= "- Presenting symptoms consistent with {$mainCondition}.\n";
-            // $formatMessage .= "- Skin type indicates potential reactivity to specific agents or treatments.\n";
-            // $formatMessage .= "- Consider ruling out: {$otherIssues}.\n\n";
-
-            // $formatMessage .= "🩺 Recommended First-Line Treatment (within 400 words):\n";
-            // $formatMessage .= "Please provide a short, evidence-based treatment or solution tailored to the patient's skin type and diagnosed condition. This includes preferred topical/systemic agents, lifestyle advice, and diagnostic steps if necessary. Ensure language is suitable for professional dermatological reference.\n";
-
-            // $formatMessage = "You are an expert dermatologist AI assistant.\n\n";
-            // $formatMessage .= "Patient Details:\n";
-            // $formatMessage .= "• Skin Type: {$skinType}\n";
-            // $formatMessage .= "• Primary Skin Condition: {$mainCondition}\n";
-            // $formatMessage .= "• Possible Other Conditions: {$otherIssues}\n\n";
-
-            // $formatMessage .= "Based on this information, generate a short diagnosis-based treatment plan for a dermatologist to review.\n";
-            // $formatMessage .= "Include the following:\n";
-            // $formatMessage .= "- Confirmed Diagnosis\n";
-            // $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
-            // $formatMessage .= "- Treatment notes (application instructions, any test advice, or skin-type considerations)\n\n";
-            // $formatMessage .= "Return the response in under 400 words in this format:\n\n";
-
+          
             $chatbotResponse = $this->chatbot(new Request(['question' => $formatMessage]))->getData(true);
 
 

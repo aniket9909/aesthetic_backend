@@ -118,6 +118,8 @@ Dusterio\LumenPassport\LumenPassport::routes($app->router, ['prefix' => 'api/v4/
 // $app->register(App\Providers\AuthServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
 
+
+
 /*
 |--------------------------------------------------------------------------
 | Load The Application Routes
