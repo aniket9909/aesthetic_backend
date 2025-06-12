@@ -853,11 +853,11 @@ class PrescriptionApi extends Controller
 
                     if ($paymentAmount >= $pendingDue) {
                         // Pay full due for this bill
-                        $pending->paid_amount += $pendingDue;
-                        $paymentAmount -= $pendingDue;
+                        $pending->paid_amount = $pending->paid_amount + $pendingDue;
+                        $paymentAmount = $paymentAmount - $pendingDue;
                     } else {
                         // Pay partial
-                        $pending->paid_amount += $paymentAmount;
+                        $pending->paid_amount = $pending->paid_amount + $paymentAmount;
                         $paymentAmount = 0;
                     }
 
@@ -883,7 +883,7 @@ class PrescriptionApi extends Controller
                 }
 
                 if ($billing != null &&  $paymentAmount > 0) {
-                    $billing->paid_amount += $paymentAmount;
+                    $billing->paid_amount = $billing->paid_amount + $paymentAmount;
                     $billing->balanced_amount = $billing->total_price - $billing->paid_amount;
                     $billing->save();
 
@@ -922,11 +922,11 @@ class PrescriptionApi extends Controller
 
                         if ($paymentAmount >= $pendingDue) {
                             // Pay full due for this bill
-                            $pending->paid_amount += $pendingDue;
+                            $pending->paid_amount = $pending->paid_amount + $pendingDue;
                             $paymentAmount -= $pendingDue;
                         } else {
                             // Pay partial
-                            $pending->paid_amount += $paymentAmount;
+                            $pending->paid_amount = $pending->paid_amount + $paymentAmount;
                             $paymentAmount = 0;
                         }
 
@@ -951,7 +951,7 @@ class PrescriptionApi extends Controller
                         }
                     }
                     $billingCreation['paid_amount'] = $paymentAmount;
-                    
+
                     $Invoice = new BillingModel();
 
                     $Invoice->clinic_id = isset($billingCreation['clinic_id']) ? $billingCreation['clinic_id'] : null;
@@ -961,8 +961,10 @@ class PrescriptionApi extends Controller
                     $Invoice->mode_of_payment = isset($billingCreation['mode_of_payment']) ? $billingCreation['mode_of_payment'] : null;
                     $Invoice->paid_amount = isset($billingCreation['paid_amount']) ? $billingCreation['paid_amount'] : null;
                     $Invoice->total_price = isset($billingCreation['total_price']) ? $billingCreation['total_price'] : null;
-                    $Invoice->bill_no = isset($billingCreation['bill_no']) ? $billingCreation['bill_no'] : null;
-                    $Invoice->receipt_no = isset($billingCreation['receipt_no']) ? $billingCreation['receipt_no'] : null;;
+                    // Generate a random bill number if not provided
+                    $Invoice->bill_no = 'BILL' . strtoupper(bin2hex(random_bytes(1)));
+                    // Generate a random receipt number if not provided
+                    $Invoice->receipt_no = 'REC' . strtoupper(bin2hex(random_bytes(1)));
                     $Invoice->prescription_id = $prescription->id;
                     $Invoice->items = json_encode($billingCreation['items']);
                     $totalPrice = 0;

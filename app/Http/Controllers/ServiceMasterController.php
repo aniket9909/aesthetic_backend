@@ -44,7 +44,7 @@ class ServiceMasterController extends Controller
 
 
 
-        // // Default empty arrays
+        // Default empty arrays
         // $workingSessions = [];
         // $groupInfo = [];
         // $billingData = null;
@@ -90,71 +90,252 @@ class ServiceMasterController extends Controller
         //         }
         //         $latestBilling->pending_amount = $pendingAmount;
         //     }
-        $latestTransaction = $serviceTransaction->sortByDesc('created_at')->first();
-        $workingSessions = [];
-        $groupInfo = [];
-        $billingData = null;
-        $latestBilling = [];
-        $pendingTrasaction = [];
+
+
+
+
+
+        // $latestTransaction = $serviceTransaction->sortByDesc('created_at')->first();
+        // $workingSessions = [];
+        // $groupInfo = [];
+        // $billingData = null;
+        // $latestBilling = [];
+        // $pendingTrasaction = [];
+        // $pendingAmount = 0;
+        // $billingDataAll = BillingModel::whereIn('transaction_id', $serviceTransaction->pluck('id'))
+        //     // ->where('balanced_amount', '>', 0)
+        //     ->get();
+        //     dd($billingDataAll);
+
+        // if ($latestTransaction) {
+        //     foreach ($latestTransaction->serviceTransactionItems as $item) {
+        //         if ($item->remaining_sessions > 0) {
+        //             $groupInfo[] = $latestTransaction->groupInfo ?? [];
+        //             $workingSessions = $latestTransaction->serviceTransactionItems ?? [];
+        //             $latestBilling = $billingDataAll
+        //                 ->where('transaction_id', $latestTransaction->id)
+        //                 ->sortByDesc('created_at')
+        //                 ->first();
+        //             break;
+        //         }
+        //     }
+        //     // b. Pending previous transactions (excluding latest one)
+        //     if (
+        //         count($billingDataAll) > 1
+        //     ) {
+
+        //         $previousTransactions = $billingDataAll
+        //             ->where('transaction_id', '!=', $latestTransaction->id)
+        //             ->where('balanced_amount', '>', 0)
+
+        //             ->unique('transaction_id');
+        //     } else {
+        //         $previousTransactions = $billingDataAll
+        //             // ->where('transaction_id', '!=', $latestTransaction->id)
+        //             ->where('balanced_amount', '>', 0)
+
+        //             ->unique('transaction_id');
+        //     }
+        //     // $previousTransactions = $billingDataAll
+        //     //         // ->where('transaction_id', '!=', $latestTransaction->id)
+        //     //         ->unique('transaction_id');
+        //     // dd($previousTransactions);
+        //     foreach ($previousTransactions as $value) {
+        //         $pendingTrasaction[] = $value;
+        //         $pendingAmount += $value->balanced_amount;
+        //     }
+
+        //     if ($latestBilling) {
+        //         $latestBilling->pending_amount = $pendingAmount;
+        //     }
+        // }
+
+        // $latestTransaction = $serviceTransaction->sortByDesc('created_at')->first();
+
+        // $workingSessions = [];
+        // $groupInfo = [];
+        // $billingData = null;
+        // $latestBilling = null;
+        // $pendingTrasaction = [];
+        // $pendingAmount = 0;
+
+        // $transactionIDs = $serviceTransaction->pluck('id');
+        // $billingDataAll = BillingModel::whereIn('transaction_id', $transactionIDs)->get();
+
+        // if ($latestTransaction) {
+        //     // 1. Check if latest transaction has any remaining sessions
+        //     $hasRemainingSessions = false;
+        //     foreach ($latestTransaction->serviceTransactionItems as $item) {
+        //         if ($item->remaining_sessions > 0) {
+        //             $hasRemainingSessions = true;
+        //             break;
+        //         }
+        //     }
+
+        //     // 2. Fetch latest billing for latest transaction
+        //     $latestBilling = $billingDataAll
+        //         ->where('transaction_id', $latestTransaction->id)
+        //         ->sortByDesc('created_at')
+        //         ->first();
+
+        //     // Set working sessions and group info if remaining sessions exist
+        //     if ($hasRemainingSessions) {
+        //         $groupInfo[] = $latestTransaction->groupInfo ?? [];
+        //         $workingSessions = $latestTransaction->serviceTransactionItems ?? [];
+        //         $billingData = $latestBilling;
+        //     }
+
+        //     // 3. Process pending transactions
+
+        //     if ($billingDataAll->count() === 1) {
+        //         if ($latestBilling && $latestBilling->balanced_amount > 0) {
+        //             // Check if any service item still has remaining sessions
+        //             $hasRemainingSessions = false;
+        //             foreach ($latestTransaction->serviceTransactionItems as $item) {
+        //                 if ($item->remaining_sessions > 0) {
+        //                     $hasRemainingSessions = true;
+        //                     break;
+        //                 }
+        //             }
+
+        //             if ($hasRemainingSessions) {
+        //                 // Not complete → treat as active billing
+        //                 $billingData = $latestBilling;
+        //             } else {
+        //                 // Complete but pending → treat as pending transaction
+        //                 $pendingTrasaction[] = $latestBilling;
+        //                 $pendingAmount += $latestBilling->balanced_amount;
+        //             }
+        //         }
+        //     } else {
+
+        //         // Multiple transactions: check all except latest
+        //         // $previousTransactions = $billingDataAll
+        //         //     ->where('transaction_id', '!=', $latestTransaction->id)
+        //         //     // ->where('balanced_amount', '>', 0)
+        //         //     ->unique('transaction_id');
+        //         //     dd($previousTransactions);
+
+        //         // foreach ($previousTransactions as $value) {
+        //         //     $pendingTrasaction[] = $value;
+        //         //     $pendingAmount += $value->balanced_amount;
+        //         // }
+
+        //         // // If latest billing exists, attach the total pending amount
+        //         // if ($latestBilling) {
+        //         //     $latestBilling->pending_amount = $pendingAmount;
+        //         // }
+        //         $previousTransactions = $billingDataAll
+        //             ->where('transaction_id', '!=', $latestTransaction->id)
+        //             ->unique('transaction_id');
+
+        //         // Default assumption: no billingData yet
+        //         $billingData = null;
+
+        //         foreach ($previousTransactions as $billing) {
+        //             $transactionId = $billing->transaction_id;
+
+        //             // Find the transaction for this billing
+        //             $transaction = $serviceTransaction->firstWhere('id', $transactionId);
+
+        //             if (!$transaction) {
+        //                 continue;
+        //             }
+
+        //             // Check if any item in this transaction has remaining sessions
+        //             $hasRemainingSessions = false;
+        //             foreach ($transaction->serviceTransactionItems as $item) {
+        //                 if ($item->remaining_sessions > 0) {
+        //                     $hasRemainingSessions = true;
+        //                     break;
+        //                 }
+        //             }
+
+        //             if ($hasRemainingSessions) {
+        //                 // If no billingData assigned yet, assign this one
+        //                 if (!$billingData) {
+        //                     $billingData = $billing;
+        //                 }
+        //             } elseif ($billing->balanced_amount > 0) {
+        //                 // Otherwise it's a completed billing with pending amount
+        //                 $pendingTrasaction[] = $billing;
+        //                 $pendingAmount += $billing->balanced_amount;
+        //             }
+        //         }
+
+        //         // Attach total pending to latest billing if available
+        //         if ($latestBilling) {
+        //             $latestBilling->pending_amount = $pendingAmount;
+        //         }
+        //     }
+        // }  
+
+
+        $billingData = [];
+        $groupInfoList = [];
+        $workingSessionsList = [];
+        $pendingTransactions = [];
         $pendingAmount = 0;
-        $billingDataAll = BillingModel::whereIn('transaction_id', $serviceTransaction->pluck('id'))
-            // ->where('balanced_amount', '>', 0)
-            ->get();
-        // dd($billingDataAll);
+
+        $billingDataAll = BillingModel::whereIn('transaction_id', $serviceTransaction->pluck('id'))->get();
+
+        // Keep track of transaction_ids added to billingData
+        $activeTransactionIds = [];
+        $latestTransaction = $serviceTransaction->sortByDesc('created_at')->first();
+
         if ($latestTransaction) {
-            foreach ($latestTransaction->serviceTransactionItems as $item) {
-                if ($item->remaining_sessions > 0) {
-                    $groupInfo[] = $latestTransaction->groupInfo ?? [];
-                    $workingSessions = $latestTransaction->serviceTransactionItems ?? [];
-                    $latestBilling = $billingDataAll
-                        ->where('transaction_id', $latestTransaction->id)
-                        ->sortByDesc('created_at')
-                        ->first();
-                    break;
+            $transactionId = $latestTransaction->id;
+
+            $hasRemainingSession = $latestTransaction->serviceTransactionItems->contains(function ($item) {
+                return $item->remaining_sessions > 0;
+            });
+
+            if ($hasRemainingSession) {
+                // Add to activeTransactionIds
+                $activeTransactionIds[] = $transactionId;
+
+                // Collect group info & sessions
+                $groupInfoList = $latestTransaction->groupInfo ?? [];
+                $workingSessionsList = $latestTransaction->serviceTransactionItems;
+
+                // Get billing for this transaction
+                $billing = $billingDataAll
+                    ->where('transaction_id', $transactionId)
+                    ->sortByDesc('created_at')
+                    ->first();
+
+                if ($billing) {
+                    $billingData[] = $billing;
                 }
-            }
-            // b. Pending previous transactions (excluding latest one)
-            if (
-                count($billingDataAll) > 1
-            ) {
-
-                $previousTransactions = $billingDataAll
-                    ->where('transaction_id', '!=', $latestTransaction->id)
-                    ->where('balanced_amount', '>', 0)
-
-                    ->unique('transaction_id');
-            } else {
-                $previousTransactions = $billingDataAll
-                    // ->where('transaction_id', '!=', $latestTransaction->id)
-                    ->where('balanced_amount', '>', 0)
-
-                    ->unique('transaction_id');
-            }
-            // $previousTransactions = $billingDataAll
-            //         // ->where('transaction_id', '!=', $latestTransaction->id)
-            //         ->unique('transaction_id');
-            // dd($previousTransactions);
-            foreach ($previousTransactions as $value) {
-                $pendingTrasaction[] = $value;
-                $pendingAmount += $value->balanced_amount;
-            }
-
-            if ($latestBilling) {
-                $latestBilling->pending_amount = $pendingAmount;
             }
         }
 
+        // Now build pendingTransactions: only those NOT in activeTransactionIds
+        foreach ($billingDataAll as $billing) {
+            if (
+                !in_array($billing->transaction_id, $activeTransactionIds) &&
+                $billing->balanced_amount > 0
+            ) {
+                $pendingTransactions[] = $billing;
+                $pendingAmount += $billing->balanced_amount;
+            }
+        }
+
+        // Optionally attach pending amount to each active billing
+        foreach ($billingData as $bill) {
+            $bill->pending_amount = $pendingAmount;
+        }
         return response()->json([
             'success' => true,
             'message' => 'Session and service/package data fetched',
             'data' => [
                 'services' => $services,
                 'packages' => $packages,
-                "groupInfo" => $groupInfo,
-                'workingSessions' => $workingSessions,
-                "billingData" => $latestBilling,
+                "groupInfo" => $groupInfoList,
+                'workingSessions' => $workingSessionsList,
+                "billingData" => $billingData,
                 "outstandingAmount" => $pendingAmount,
-                'pendingTransactions' => $pendingTrasaction
+                'pendingTransactions' => $pendingTransactions
             ]
         ]);
     }
