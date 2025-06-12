@@ -6,23 +6,20 @@ use App\Doctor;
 use App\Jobs\CheckPatient;
 use App\Jobs\StoreChatMessage;
 use App\Jobs\StoreWebhookJson;
-use App\Models\Appointments;
-use App\Models\AppointmentSlot;
 use App\Models\Chats;
 use App\Models\ConverstionState;
-use App\Models\Patient;
-use App\Models\User;
+
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\WebhookInputJson;
-use App\Models\WorkingHour;
 use App\Patientmaster;
 use Carbon\Carbon;
-use DateTime;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManager;
 
 class ApiController extends Controller
 {
@@ -1053,7 +1050,10 @@ Please upload a photo if you would like to have your skin analyzed.
         'success' => true,
         'error' => false,
         'message' => 'Analysis fetched successfully.',
-        'chats' => $messages,
+        // Only include chats where is_visible is true or null (not 0)
+        'chats' => $messages->filter(function ($chat) {
+            return $chat->is_visible === null || $chat->is_visible == 1;
+        })->values(),
         'imageAnalysis' => $imageAnalysis,
         'patient' => $patientInfo,
       ], 200);
@@ -1131,8 +1131,8 @@ Please upload a photo if you would like to have your skin analyzed.
       $afterImages = [];
       if ($images->after_image != null) {
         $afterImages = [
-          "before_image" => url('images/' . $images->media_id . '.png'),
-          "after_image" => url('images/after_' . $images->media_id . '.png'),
+          "before_image" => url('skin_images/' . $images->media_id . '.png'),
+          "after_image" => url('skin_images/after_' . $images->media_id . '.png'),
         ];
       } else {
         $chabotResponse = new SkinAnalysisController();
@@ -1146,8 +1146,8 @@ Please upload a photo if you would like to have your skin analyzed.
           $images->save();
         }
         $afterImages = [
-          "before_image" => url('images/' . $images->media_id . '.png'),
-          "after_image" => url('images/after_' . $images->media_id . '.png'),
+          "before_image" => url('skin_images/' . $images->media_id . '.png'),
+          "after_image" => url('skin_images/after_' . $images->media_id . '.png'),
         ];
       }
 
@@ -1363,6 +1363,118 @@ Please upload a photo if you would like to have your skin analyzed.
   }
 
 
+  // public function uploadImageFromDoc(Request $request)
+  // {
+  //   try {
+  //     $doctorId = $request->input('doctor_id');
+  //     $patientNumber = $request->input('patient_number');
+
+  //     $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
+  //       ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
+  //       ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+  //       ->select('docexa_doctor_master.mobile_no')
+  //       ->first();
+
+  //     if ($doctor == null) {
+  //       return response()->json([
+  //         'success' => false,
+  //         'message' => 'Doctor not found',
+  //       ], 404);
+  //     }
+
+  //     if (!$request->hasFile('images')) {
+  //       return response()->json([
+  //         'status' => false,
+  //         'message' => 'No images found in the request.'
+  //       ], 400);
+  //     }
+
+  //     $uploadedFiles = [];
+
+  //     $files = is_array($request->file('images'))
+  //       ? $request->file('images')
+  //       : [$request->file('images')];
+
+  //     foreach ($files as $file) {
+  //       if ($file && $file->isValid()) {
+  //         $path = $file->store('public/patient_images');
+  //         $filename = basename($path);
+
+  //         // ✅ Save only the relative path or filename in DB
+  //         $relativePath = Storage::url($path); // e.g., /storage/patient_images/filename.jpg
+
+  //         // ✅ Append full URL for API response only
+  //         //$ip = 'https://aestheticai.globalspace.in/aesthetic_backend/public/'; // Change to your server IP or domain
+  //         $publicUrl = url($relativePath);
+
+  //         // ✅ Add to response array
+  //         $uploadedFiles[] = [
+  //           'file_name' => $filename,
+  //           'url' => $publicUrl,
+  //         ];
+
+  //         // ✅ Save only relative data to DB
+  //         $chat = new Chats();
+  //         $chat->sender_id = $doctor->mobile_no;
+  //         $chat->receiver_id = $request->input('patient_number');
+  //         $chat->message_type = 'image';
+  //         $chat->media_url = $relativePath; // Save only path
+  //         $chat->media_mime_type = null;
+  //         $chat->media_sha256 = null;
+  //         $chat->media_id = $filename;
+  //         $chat->whatsapp_message_id = null;
+  //         $chat->is_visible = 0;
+  //         $chat->date = Carbon::now()->toDateTimeString();
+  //         $chat->save();
+  //       }
+  //     }
+
+  //     // Get images from chat
+  //     $images = Chats::where(function ($query) use ($patientNumber, $doctor) {
+  //       $query->where('sender_id', $doctor->mobile_no)
+  //         ->where('message_type', 'image')
+
+  //         ->where('receiver_id', $patientNumber);
+  //     })
+  //       ->orWhere(function ($query) use ($patientNumber, $doctor) {
+  //         $query->where('sender_id', $patientNumber)
+  //           ->where('message_type', 'image')
+
+  //           ->where('receiver_id', $doctor->mobile_no);
+  //       })
+  //       ->orderBy('date', 'desc')
+  //       ->get();
+
+
+  //     // Transform the images to match the Dart model
+  //     $imageList = $images->map(function ($chat) {
+  //       return [
+  //         'file_name' => $chat->media_id,
+  //         'url' => url($chat->media_url), // Generate full URL
+  //         'uploaded_date' => Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
+  //         // 'file_size' => $this->getFileSize($chat->media_url) // Add helper method to get file size
+  //       ];
+  //     });
+
+  //     // Return response matching the Dart model structure
+  //     return response()->json([
+  //       'status' => true,
+  //       'message' => 'Image uploaded successfully',
+  //       'data' => [
+  //         'uploaded_files' => $imageList
+  //       ]
+  //     ]);
+  //   } catch (\Exception $e) {
+  //     \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+  //     return response()->json([
+  //       'status' => false,
+  //       'message' => 'Server Error: ' . $e->getMessage(),
+  //       'data' => null
+  //     ], 500);
+  //   }
+  // }
+
+
   public function uploadImageFromDoc(Request $request)
   {
     try {
@@ -1388,6 +1500,7 @@ Please upload a photo if you would like to have your skin analyzed.
           'message' => 'No images found in the request.'
         ], 400);
       }
+      // $manager = new ImageManager(['driver' => 'gd']); // or 'imagick'
 
       $uploadedFiles = [];
 
@@ -1397,35 +1510,105 @@ Please upload a photo if you would like to have your skin analyzed.
 
       foreach ($files as $file) {
         if ($file && $file->isValid()) {
-          $path = $file->store('public/patient_images');
-          $filename = basename($path);
+          $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.png';
+          $fullPath = base_path('skin_images/' . $filename);
+          // Ensure destination directory exists
+          if (!file_exists(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0755, true);
+          }
 
-          // ✅ Save only the relative path or filename in DB
-          $relativePath = Storage::url($path); // e.g., /storage/patient_images/filename.jpg
+          // Create image resource based on MIME type
+          $mimeType = $file->getMimeType();
+          $image = null;
 
-          // ✅ Append full URL for API response only
-          //$ip = 'https://aestheticai.globalspace.in/aesthetic_backend/public/'; // Change to your server IP or domain
-          $publicUrl = url($relativePath);
+          switch ($mimeType) {
+            case 'image/jpeg':
+              $image = @imagecreatefromjpeg($file->getRealPath());
+              break;
+            case 'image/png':
+              $image = @imagecreatefrompng($file->getRealPath());
+              break;
+            case 'image/gif':
+              $image = @imagecreatefromgif($file->getRealPath());
+              break;
+            default:
+              Log::error("Unsupported image type: $mimeType");
+              continue 2; // skip this file
+          }
 
-          // ✅ Add to response array
-          $uploadedFiles[] = [
-            'file_name' => $filename,
-            'url' => $publicUrl,
-          ];
+          if (!$image) {
+            Log::error("Failed to create image resource for: " . $file->getClientOriginalName());
+            continue;
+          }
 
-          // ✅ Save only relative data to DB
-          $chat = new Chats();
-          $chat->sender_id = $doctor->mobile_no;
-          $chat->receiver_id = $request->input('patient_number');
-          $chat->message_type = 'image';
-          $chat->media_url = $relativePath; // Save only path
-          $chat->media_mime_type = null;
-          $chat->media_sha256 = null;
-          $chat->media_id = $filename;
-          $chat->whatsapp_message_id = null;
-          $chat->is_visible = 0;
-          $chat->date = Carbon::now()->toDateTimeString();
-          $chat->save();
+          // Save image as PNG
+          $saved = imagepng($image, $fullPath);
+          imagedestroy($image); // free memory
+
+          if ($saved) {
+            Log::info("Image saved as PNG: $filename");
+          } else {
+            Log::error("Failed to save image: $fullPath");
+          }
+
+          $command = "/usr/bin/python3 /var/www/html/aesthetic_backend/image_analysis.py " . escapeshellarg($fullPath) . " 2>&1";
+          Log::info("Command executed: $command");
+
+          $output = shell_exec($command);
+          // Step 2: Clean the output
+          // Remove the 'Loaded as API' line and any unwanted text
+          $output = preg_replace('/^Loaded as API: .*/', '', $output); // Remove the first line
+          $output = trim($output); // Trim any extra spaces/newlines at the beginning/end
+
+          // Step 3: Decode the JSON output from the Python script
+          $result = json_decode($output, true);
+
+          if ($result['success'] === true) {
+            // Step 4: Extract and store the result in a clean format
+            $message = $result['message'];
+            Log::info(json_encode($message));
+
+
+            $skinType = $message[0];
+            $mainCondition = $message[1];
+            $otherIssues = str_replace('\n', "\n", $message[2]);
+
+            $formatMessage = "You are an expert dermatologist AI assistant.\n\n";
+            $formatMessage .= "Patient Details:\n";
+            $formatMessage .= "• Skin Type: {$skinType}\n";
+            $formatMessage .= "• Primary Skin Condition: {$mainCondition}\n";
+            $formatMessage .= "• Possible Other Conditions: {$otherIssues}\n\n";
+
+            $formatMessage .= "Based on this information, generate a short diagnosis-based treatment plan for a dermatologist to review.\n";
+            $formatMessage .= "Include both medicinal and aesthetic procedure suggestions (e.g., Botox, fillers, chemical peels, laser treatments, etc) where clinically appropriate.\n";
+            $formatMessage .= "Include the following:\n";
+            $formatMessage .= "- Confirmed Diagnosis\n";
+            $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
+            $formatMessage .= "- Treatment notes (application instructions, any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
+            $formatMessage .= "Return the response in under 1000 words in this format:\n\n";
+            $skinAnalysis = new SkinAnalysisController();
+            $chatbotResponse = $skinAnalysis->chatbot(new Request(['question' => $formatMessage]))->getData(true);
+            Log::info("Chatbot Response: " . json_encode($chatbotResponse));
+
+            // ✅ Save only relative data to DB
+            $chat = new Chats();
+            $chat->sender_id = $doctor->mobile_no;
+            $chat->receiver_id = $request->input('patient_number');
+            $chat->message_type = 'image';
+            $chat->media_url = $fullPath; 
+            $chat->media_mime_type = null;
+            $chat->media_sha256 = null;
+            $chat->output = $chatbotResponse['chatbot_response'] ?? 'No response';
+            $chat->analysis  = json_encode($message);
+            // Remove .jpg, .jpeg, .png, .gif, .bmp, .webp extensions from filename for media_id
+            $chat->media_id = preg_replace('/\.(jp[e]?g|png|gif|bmp|webp)$/i', '', $filename);
+            $chat->whatsapp_message_id = null;
+            $chat->is_visible = 0;
+            $chat->date = Carbon::now()->toDateTimeString();
+            $chat->save();
+          }
+
+          Log::info("Uploaded and converted to PNG: " . $filename);
         }
       }
 
@@ -1450,7 +1633,7 @@ Please upload a photo if you would like to have your skin analyzed.
       $imageList = $images->map(function ($chat) {
         return [
           'file_name' => $chat->media_id,
-          'url' => url($chat->media_url), // Generate full URL
+          'url' => url('skin_images/' . $chat->media_id . '.png'),
           'uploaded_date' => Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
           // 'file_size' => $this->getFileSize($chat->media_url) // Add helper method to get file size
         ];
@@ -1473,9 +1656,6 @@ Please upload a photo if you would like to have your skin analyzed.
       ], 500);
     }
   }
-
-
-
 
 
   public function uploadMarkedImageFromDoc(Request $request)
@@ -1605,11 +1785,6 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
 
-
-
-
-
-
       $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
         ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
         ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
@@ -1644,7 +1819,8 @@ Please upload a photo if you would like to have your skin analyzed.
       $imageList = $images->map(function ($chat) {
         return [
           'file_name' => $chat->media_id,
-          'url' => url($chat->media_url), // Generate full URL
+          // 'url' => url($chat->media_url), // Generate full URL
+          'url' => url('skin_images/' . $chat->media_id . '.png'), // Use skin_images path
           'uploaded_date' => Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
           // 'file_size' => $this->getFileSize($chat->media_url) // Add helper method to get file size
         ];
@@ -1680,6 +1856,7 @@ Please upload a photo if you would like to have your skin analyzed.
       $doctorId = $request->input('doctor_id');
       $patientNumber = $request->input('patient_number');
       $filename = $request->input('file_name');
+      Log::info("Doctor ID: $doctorId, Patient Number: $patientNumber, File Name: $filename");
 
       // Validate input
       if (!$doctorId || !$patientNumber || !$filename) {
@@ -1730,7 +1907,7 @@ Please upload a photo if you would like to have your skin analyzed.
 
       // Delete image file
       // $filePath = public_path($image->media_url);
-      $filePath = base_path('public/' . $image->media_url);
+      $filePath = $image->media_url;
       if (file_exists($filePath)) {
         unlink($filePath);
       }
@@ -1755,7 +1932,7 @@ Please upload a photo if you would like to have your skin analyzed.
       $imageList = $remainingImages->map(function ($chat) {
         return [
           'file_name' => $chat->media_id,
-          'url' => url($chat->media_url),
+          'url' => base_path('skin_images/' . $chat->media_id . '.png'), // Use skin_images path
           'uploaded_date' => \Carbon\Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
         ];
       });

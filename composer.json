@@ -17,6 +17,7 @@
         "google/apiclient": "^2.0",
         "guzzlehttp/guzzle": "6.5.x-dev",
         "illuminate/redis": "^8.35",
+        "intervention/image": "^3.11",
         "laravel/lumen-framework": "^8.0",
         "laravel/ui": "^3.2",
         "laravelista/lumen-vendor-publish": "^8.0",
