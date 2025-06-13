@@ -337,7 +337,7 @@ class User extends Model
                 'esteblishment_id' => $tabdata->medical_establishment_id,
                 'esteblishment_user_map_id' => $tabdata->id,
                 'medical_user_id' => $tabdata->medical_user_id,
-                'handle' => $_ENV['APP_HANDLE'] . $tabdata->handle,
+                'handle' => env('APP_HANDLE') . $tabdata->handle,
                 'first_name' => $tabdata->pharmaclient_name,
                 'last_name' => $tabdata->last_name,
                 'mobile_no' => $tabdata->mobile_no,
