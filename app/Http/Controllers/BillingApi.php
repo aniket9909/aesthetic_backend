@@ -831,7 +831,7 @@ class BillingApi extends Controller
 
                     BillingLogModel::insert([
                         'billing_id' => $id,
-                        'paid_amount' => $billing->paid_amount,
+                        'paid_amount' => $paidAmount,
                         'payment_date' => Carbon::now(),
                         'mode_of_payment' => $billing->mode_of_payment,
                         'balanced_amount' => $billing->balanced_amount,

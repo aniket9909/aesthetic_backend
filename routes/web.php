@@ -696,7 +696,7 @@ $router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use
     $router->post('retrive/pricedetails/{user_map_id}', 'BillingApi@getPricedetailsv3');
     $router->post('summary/transcation/{user_map_id}/{page}/{limit}', 'BillingApi@getSummaryOfTranscation');
 
-    $router->put('update/billing/{id}', 'BillingApi@updateBillingDetails');
+    $router->post('update/billing/{id}', 'BillingApi@updateBillingDetails');
 
     $router->post('add/certificateTemplate/{user_map_id}', 'BillingApi@addCertificateTemplate');
     $router->get('retrive/certificateTemplate/{user_map_id}/{clinic_id}', 'BillingApi@getCertificateTemplate');
