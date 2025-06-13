@@ -2028,7 +2028,7 @@ class AppointmentDetails extends Model
             'doctor_id' => $medicaldata->medical_user_id,
             'clinic_id' => $data['clinic_id'],
             "consult_type" => $data['consult_type'] ?? null,
-            "consult_type_id"=> $data['consult_type_id'] ?? null,
+            "consult_type_id" => $data['consult_type_id'] ?? null,
 
             // 'flag' =>  array_key_exists('flag', $data) ?( $data['flag'] ?  $data['flag'] : null) :null
         ]);
@@ -2430,7 +2430,7 @@ class AppointmentDetails extends Model
 
     public function getappointmentupdated($request, $bookingID = 0)
     {
-        //var_dump($bookingID,$bookingID != 0);die;
+
         if ($bookingID != 0 || $request == null) {
             $a = DB::table('docexa_patient_booking_details')
                 ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
@@ -2518,31 +2518,60 @@ class AppointmentDetails extends Model
             return $response;
         } else {
             $data = $request->input();
-            $a = DB::table('docexa_patient_booking_details')
-                ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
-                ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
-                ->Join('docexa_esteblishment_user_map_hospital_sku_details', 'docexa_esteblishment_user_map_hospital_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
-                ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
-                ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
-                ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_hospital_sku_details.title', 'docexa_esteblishment_user_map_hospital_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
-                ->selectRaw('+91 as country_code')
-                ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
-                ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
-                ->where('docexa_patient_booking_details.date', null)
-                ->whereIn('docexa_patient_booking_details.status', [1])
-                ->where(function ($query) {
-                    $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
-                })
-                ->latest('docexa_patient_booking_details.created_date');
+
+
+            // $a = DB::table('docexa_patient_booking_details')
+            //     ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
+            //     ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
+            //     ->Join('docexa_esteblishment_user_map_hospital_sku_details', 'docexa_esteblishment_user_map_hospital_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
+            //     ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
+            //     ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
+            //     ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_hospital_sku_details.title', 'docexa_esteblishment_user_map_hospital_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
+            //     ->selectRaw('+91 as country_code')
+            //     ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
+            //     ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
+            //     ->where('docexa_patient_booking_details.date', null)
+            //     ->whereIn('docexa_patient_booking_details.status', [1])
+            //     ->where(function ($query) {
+            //         $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
+            //         $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
+            //         $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
+            //     })
+            //     ->latest('docexa_patient_booking_details.created_date');
+
+
             $unscheduletabdata = DB::table('docexa_patient_booking_details')
                 ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
                 ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
                 ->Join('docexa_esteblishment_user_map_sku_details', 'docexa_esteblishment_user_map_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
                 ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
                 ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
-                ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_sku_details.title', 'docexa_esteblishment_user_map_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
+                ->select(
+                    'docexa_patient_booking_details.age',
+                    'docexa_patient_booking_details.gender',
+                    'docexa_patient_booking_details.booking_id as appt_id',
+                    'docexa_patient_booking_details.patient_id',
+                    'docexa_patient_booking_details.payment_mode',
+                    'docexa_patient_booking_details.cancellation_reason as reason',
+                    'docexa_patient_booking_details.status',
+                    'docexa_appointment_status_master.status_text',
+                    'docexa_patient_booking_details.schedule_remark',
+                    'docexa_appointment_sku_details.booking_type',
+                    'docexa_esteblishment_user_map_sku_details.title',
+                    'docexa_esteblishment_user_map_sku_details.description',
+                    'docexa_patient_booking_details.bookingidmd5 as booking_id',
+                    'docexa_patient_booking_details.created_date',
+                    'docexa_patient_booking_details.date',
+                    'docexa_patient_booking_details.start_time',
+                    'docexa_patient_booking_details.patient_name',
+                    'docexa_patient_booking_details.mobile_no',
+                    'docexa_patient_booking_details.email_id as email',
+                    'docexa_patient_booking_details.cost',
+                    'docexa_patient_booking_details.clinic_id',
+                    'docexa_patient_booking_details.consult_type',
+                    'docexa_patient_booking_details.consult_type_id'
+
+                )
                 ->selectRaw('+91 as country_code')
                 ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
                 ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
@@ -2556,25 +2585,25 @@ class AppointmentDetails extends Model
                 ->latest('docexa_patient_booking_details.created_date')
                 //->union($a) 
                 ->get();
-            $b = DB::table('docexa_patient_booking_details')
-                ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
-                ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
-                ->Join('docexa_esteblishment_user_map_hospital_sku_details', 'docexa_esteblishment_user_map_hospital_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
-                ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
-                ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
-                ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.status', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_hospital_sku_details.title', 'docexa_esteblishment_user_map_hospital_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
-                ->selectRaw('+91 as country_code')
-                ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
-                ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
-                ->where('docexa_patient_booking_details.date', '=', date('Y-m-d'))
-                ->where('docexa_patient_booking_details.status', '!=', 3)
-                ->where('docexa_patient_booking_details.status', '!=', 6)
-                ->where('docexa_patient_booking_details.status', '!=', 4)
-                ->where(function ($query) {
-                    $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
-                })->latest('docexa_patient_booking_details.created_date');
+            // $b = DB::table('docexa_patient_booking_details')
+            //     ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
+            //     ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
+            //     ->Join('docexa_esteblishment_user_map_hospital_sku_details', 'docexa_esteblishment_user_map_hospital_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
+            //     ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
+            //     ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
+            //     ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.status', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_hospital_sku_details.title', 'docexa_esteblishment_user_map_hospital_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
+            //     ->selectRaw('+91 as country_code')
+            //     ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
+            //     ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
+            //     ->where('docexa_patient_booking_details.date', '=', date('Y-m-d'))
+            //     ->where('docexa_patient_booking_details.status', '!=', 3)
+            //     ->where('docexa_patient_booking_details.status', '!=', 6)
+            //     ->where('docexa_patient_booking_details.status', '!=', 4)
+            //     ->where(function ($query) {
+            //         $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
+            //         $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
+            //         $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
+            //     })->latest('docexa_patient_booking_details.created_date');
 
             // $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $unscheduletabdata[0]->user_map_id)->where('id',$unscheduletabdata[0]->clinic_id)->first();
             // $unscheduletabdata[0]->clinic_name =  $clinicName ?$clinicName->clinic_name  :null;
@@ -2585,40 +2614,81 @@ class AppointmentDetails extends Model
                 ->Join('docexa_esteblishment_user_map_sku_details', 'docexa_esteblishment_user_map_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
                 ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
                 ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
-                ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.status', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_sku_details.title', 'docexa_esteblishment_user_map_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
+                ->select(
+                    'docexa_patient_booking_details.age',
+                    'docexa_patient_booking_details.gender',
+                    'docexa_patient_booking_details.booking_id as appt_id',
+                    'docexa_patient_booking_details.patient_id',
+                    'docexa_patient_booking_details.payment_mode',
+                    'docexa_patient_booking_details.cancellation_reason as reason',
+                    'docexa_patient_booking_details.status',
+                    'docexa_appointment_status_master.status_text',
+                    'docexa_patient_booking_details.status',
+                    'docexa_patient_booking_details.schedule_remark',
+                    'docexa_appointment_sku_details.booking_type',
+                    'docexa_esteblishment_user_map_sku_details.title',
+                    'docexa_esteblishment_user_map_sku_details.description',
+                    'docexa_patient_booking_details.bookingidmd5 as booking_id',
+                    'docexa_patient_booking_details.created_date',
+                    'docexa_patient_booking_details.date',
+                    'docexa_patient_booking_details.start_time',
+                    'docexa_patient_booking_details.patient_name',  
+                    'docexa_patient_booking_details.email_id as email',
+                    'docexa_patient_booking_details.mobile_no',
+                    'docexa_patient_booking_details.cost',
+                    'docexa_patient_booking_details.clinic_id',
+                    'docexa_patient_booking_details.consult_type',
+                    'docexa_patient_booking_details.consult_type_id'
+                )
                 ->selectRaw('+91 as country_code')
                 ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
                 ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
                 ->where('docexa_patient_booking_details.date', '=', date('Y-m-d'))
                 ->where('docexa_patient_booking_details.status', '!=', 3)
                 ->where('docexa_patient_booking_details.status', '!=', 6)
-                ->where('docexa_patient_booking_details.status', '!=', 4)
-                ->where(function ($query) {
-                    $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
-                })->latest('docexa_patient_booking_details.created_date')
+                ->where('docexa_patient_booking_details.status', '!=', 4)   
+                // ->where(function ($query) {
+                //     $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
+                //     $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
+                //     $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
+                // })
+                ->latest('docexa_patient_booking_details.created_date')
                 //->union($b) 
                 ->get();
 
+            // Output the SQL query and bindings for debugging
+            // Debug: Output the SQL query and its bindings separately
+            // Output the full SQL query with bindings replaced for debugging
+            // $sql = $todaystabdata->toSql();
+            // $bindings = $todaystabdata->getBindings();
 
-            $c = DB::table('docexa_patient_booking_details')
-                ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
-                ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
-                ->Join('docexa_esteblishment_user_map_hospital_sku_details', 'docexa_esteblishment_user_map_hospital_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
-                ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
-                ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
-                ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.status', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_hospital_sku_details.title', 'docexa_esteblishment_user_map_hospital_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
-                ->selectRaw('+91 as country_code')
-                ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
-                ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
-                // ->whereNotNull('docexa_patient_booking_details.date')
-                ->whereIn('docexa_patient_booking_details.status', [4, 3, 6])
-                ->where(function ($query) {
-                    $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
-                })->latest('docexa_patient_booking_details.created_date');
+            // // Replace placeholders with bindings for a readable query
+            // foreach ($bindings as $binding) {
+            //     // Quote strings, leave numbers as is
+            //     $binding = is_numeric($binding) ? $binding : "'" . addslashes($binding) . "'";
+            //     $sql = preg_replace('/\?/', $binding, $sql, 1);
+            // }
+            // dd(['full_query' => $sql]);
+
+
+
+            // $c = DB::table('docexa_patient_booking_details')
+            //     ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
+            //     ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
+            //     ->Join('docexa_esteblishment_user_map_hospital_sku_details', 'docexa_esteblishment_user_map_hospital_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
+            //     ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
+            //     ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
+            //     ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.status', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_hospital_sku_details.title', 'docexa_esteblishment_user_map_hospital_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
+            //     ->selectRaw('+91 as country_code')
+            //     ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
+            //     ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
+            //     // ->whereNotNull('docexa_patient_booking_details.date')
+            //     ->whereIn('docexa_patient_booking_details.status', [4, 3, 6])
+            //     ->where(function ($query) {
+            //         $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
+            //         $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
+            //         $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
+            //     })->latest('docexa_patient_booking_details.created_date');
 
             // $clinicName = DB::table('docexa_clinic_user_map')->where('user_map_id', $todaystabdata[0]->user_map_id)->where('id',$todaystabdata[0]->clinic_id)->first();
             // $todaystabdata[0]->clinic_name =  $clinicName ?$clinicName->clinic_name  :null;
@@ -2629,36 +2699,63 @@ class AppointmentDetails extends Model
                 ->Join('docexa_esteblishment_user_map_sku_details', 'docexa_esteblishment_user_map_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
                 ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
                 ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
-                ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.status', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_sku_details.title', 'docexa_esteblishment_user_map_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
+                ->select(
+                    'docexa_patient_booking_details.age',
+                    'docexa_patient_booking_details.gender',
+                    'docexa_patient_booking_details.booking_id as appt_id',
+                    'docexa_patient_booking_details.patient_id',
+                    'docexa_patient_booking_details.payment_mode',
+                    'docexa_patient_booking_details.cancellation_reason as reason',
+                    'docexa_patient_booking_details.status',
+                    'docexa_appointment_status_master.status_text',
+                    'docexa_patient_booking_details.status',
+                    'docexa_patient_booking_details.schedule_remark',
+                    'docexa_appointment_sku_details.booking_type',
+                    'docexa_esteblishment_user_map_sku_details.title',
+                    'docexa_esteblishment_user_map_sku_details.description',
+                    'docexa_patient_booking_details.bookingidmd5 as booking_id',
+                    'docexa_patient_booking_details.created_date',
+                    'docexa_patient_booking_details.date',
+                    'docexa_patient_booking_details.start_time',
+                    'docexa_patient_booking_details.patient_name',
+                    'docexa_patient_booking_details.email_id as email',
+                    'docexa_patient_booking_details.mobile_no',
+                    'docexa_patient_booking_details.cost',
+                    'docexa_patient_booking_details.clinic_id',
+                    'docexa_patient_booking_details.consult_type',
+                    'docexa_patient_booking_details.consult_type_id'
+
+                )
                 ->selectRaw('+91 as country_code')
                 ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
                 ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
                 // ->whereNotNull('docexa_patient_booking_details.date')
-                ->whereIn('docexa_patient_booking_details.status', [4, 3, 6])
-                ->where(function ($query) {
-                    $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
-                })->latest('docexa_patient_booking_details.created_date')
+                // ->whereIn('docexa_patient_booking_details.status', [4, 3, 6])
+                // ->where(function ($query) {
+                //     $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
+                //     $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
+                //     $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
+                // })
+                ->latest('docexa_patient_booking_details.created_date')
                 //->union($c) 
                 ->get();
-            $d = DB::table('docexa_patient_booking_details')
-                ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
-                ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
-                ->Join('docexa_esteblishment_user_map_hospital_sku_details', 'docexa_esteblishment_user_map_hospital_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
-                ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
-                ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
-                ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.status', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_hospital_sku_details.title', 'docexa_esteblishment_user_map_hospital_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
-                ->selectRaw('+91 as country_code')
-                ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
-                ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
-                ->whereNotNull('docexa_patient_booking_details.date')
-                ->whereIn('docexa_patient_booking_details.status', [2, 5])
-                ->where(function ($query) {
-                    $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
-                })->latest('docexa_patient_booking_details.created_date');
+            // $d = DB::table('docexa_patient_booking_details')
+            //     ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
+            //     ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
+            //     ->Join('docexa_esteblishment_user_map_hospital_sku_details', 'docexa_esteblishment_user_map_hospital_sku_details.id', '=', 'docexa_appointment_sku_details.esteblishment_user_map_sku_id')
+            //     ->Join('docexa_appointment_status_master', 'docexa_appointment_status_master.id', '=', 'docexa_patient_booking_details.status')
+            //     ->Join('docexa_medical_establishments_medical_user_map', 'docexa_patient_booking_details.user_map_id', '=', 'docexa_medical_establishments_medical_user_map.id')
+            //     ->select('docexa_patient_booking_details.age', 'docexa_patient_booking_details.gender', 'docexa_patient_booking_details.booking_id as appt_id', 'docexa_patient_booking_details.patient_id', 'docexa_patient_booking_details.payment_mode', 'docexa_patient_booking_details.cancellation_reason as reason', 'docexa_patient_booking_details.status', 'docexa_appointment_status_master.status_text', 'docexa_patient_booking_details.status', 'docexa_patient_booking_details.schedule_remark', 'docexa_appointment_sku_details.booking_type', 'docexa_esteblishment_user_map_hospital_sku_details.title', 'docexa_esteblishment_user_map_hospital_sku_details.description', 'docexa_patient_booking_details.bookingidmd5 as booking_id', 'docexa_patient_booking_details.created_date', 'docexa_patient_booking_details.date', 'docexa_patient_booking_details.start_time', 'docexa_patient_booking_details.patient_name', 'docexa_patient_booking_details.email_id as email', 'docexa_patient_booking_details.mobile_no', 'docexa_patient_booking_details.cost', 'docexa_patient_booking_details.clinic_id')
+            //     ->selectRaw('+91 as country_code')
+            //     ->selectRaw("concat('" . $_ENV['APP_HANDLE'] . "',docexa_medical_establishments_medical_user_map.handle) as handle")
+            //     ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
+            //     ->whereNotNull('docexa_patient_booking_details.date')
+            //     ->whereIn('docexa_patient_booking_details.status', [2, 5])
+            //     ->where(function ($query) {
+            //         $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
+            //         $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
+            //         $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
+            //     })->latest('docexa_patient_booking_details.created_date');
             $upcomingtabdata = DB::table('docexa_patient_booking_details')
                 ->Join('docexa_appointment_sku_details', 'docexa_patient_booking_details.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
                 ->Join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'docexa_patient_booking_details.patient_id')
@@ -2671,11 +2768,12 @@ class AppointmentDetails extends Model
                 ->where('docexa_patient_booking_details.user_map_id', $data['user_map_id'])
                 ->whereDate('docexa_patient_booking_details.date', '>=', Carbon::parse(date('Y-m-d'))->startOfDay())
                 ->whereIn('docexa_patient_booking_details.status', [1, 2, 5])
-                ->where(function ($query) {
-                    $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
-                    $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
-                })->latest('docexa_patient_booking_details.created_date')
+                // ->where(function ($query) {
+                //     $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
+                //     $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');
+                //     $query->orWhere('docexa_patient_booking_details.payment_mode', 'direct');
+                // })
+                ->latest('docexa_patient_booking_details.created_date')
                 // ->union($d) 
                 ->get();
 
@@ -2736,7 +2834,7 @@ class AppointmentDetails extends Model
     public function getTodaysAppointmentv2($request)
     {
         $input = $request->all();
-        
+
         $paymemtFlag = DB::table('docexa_doctor_precription_data')->where('user_map_id', $input['user_map_id'])->first()->payment_flag;
         if ($paymemtFlag == 1 || $paymemtFlag == 3) {
             $todaystabdata = DB::table('docexa_patient_booking_details')

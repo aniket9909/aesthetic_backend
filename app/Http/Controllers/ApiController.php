@@ -961,6 +961,7 @@ Please upload a photo if you would like to have your skin analyzed.
       //code...
 
 
+
       if (!$request->has('doctor_id') || !$request->has('patient_number')) {
         return response()->json([
           'success' => true,
@@ -972,7 +973,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
       // $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
-      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if (!$doctor) {
         return response()->json([
           'success' => true,
@@ -1086,7 +1087,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
       // $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
-      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if (!$doctor) {
         return response()->json([
           'success' => false,
@@ -1299,6 +1300,7 @@ Please upload a photo if you would like to have your skin analyzed.
     $response = Http::withHeaders($header)->post(self::WHATSAPP_API_URL, $body);
 
     if ($response->successful()) {
+      Log::info($response->json());
       Log::info('WhatsApp document sent successfully.');
       return response()->json(['success' => true, 'reponse' => $response, 'message' => 'WhatsApp document sent successfully.'], 200);
     } else {
@@ -1323,7 +1325,7 @@ Please upload a photo if you would like to have your skin analyzed.
 
         ], 404);
       }
-      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')->where('id', $doctorId)->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')->where('id', $doctorId)->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if ($doctor == null) {
         return response()->json([
           'success' => false,
@@ -1369,9 +1371,9 @@ Please upload a photo if you would like to have your skin analyzed.
   //     $doctorId = $request->input('doctor_id');
   //     $patientNumber = $request->input('patient_number');
 
-  //     $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
-  //       ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
-  //       ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+  //     $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
+  //       ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
+  //       ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
   //       ->select('docexa_doctor_master.mobile_no')
   //       ->first();
 
@@ -1481,9 +1483,9 @@ Please upload a photo if you would like to have your skin analyzed.
       $doctorId = $request->input('doctor_id');
       $patientNumber = $request->input('patient_number');
 
-      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
-        ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
-        ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
         ->select('docexa_doctor_master.mobile_no')
         ->first();
 
@@ -1666,9 +1668,9 @@ Please upload a photo if you would like to have your skin analyzed.
       $isMarked = $request->input(key: 'ismarked');
 
 
-      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
-        ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
-        ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
         ->select('docexa_doctor_master.mobile_no')
         ->first();
 
@@ -1785,9 +1787,9 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
 
-      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
-        ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
-        ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
         ->select('docexa_doctor_master.mobile_no')
         ->first();
 
@@ -1868,9 +1870,9 @@ Please upload a photo if you would like to have your skin analyzed.
       }
 
       // Fetch doctor mobile number
-      $doctor = DB::table('staging.docexa_medical_establishments_medical_user_map')
-        ->where('staging.docexa_medical_establishments_medical_user_map.id', $doctorId)
-        ->join('staging.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', 'staging.docexa_medical_establishments_medical_user_map.medical_user_id')
+      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
         ->select('docexa_doctor_master.mobile_no')
         ->first();
 

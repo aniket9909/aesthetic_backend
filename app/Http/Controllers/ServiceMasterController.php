@@ -271,7 +271,7 @@ class ServiceMasterController extends Controller
         // }  
 
 
-        $billingData = [];
+        $billingData = null;
         $groupInfoList = [];
         $workingSessionsList = [];
         $pendingTransactions = [];
@@ -305,7 +305,7 @@ class ServiceMasterController extends Controller
                     ->first();
 
                 if ($billing) {
-                    $billingData[] = $billing;
+                    $billingData = $billing;
                 }
             }
         }
@@ -322,9 +322,9 @@ class ServiceMasterController extends Controller
         }
 
         // Optionally attach pending amount to each active billing
-        foreach ($billingData as $bill) {
-            $bill->pending_amount = $pendingAmount;
-        }
+        // foreach ($billingData as $bill) {
+        //     $bill->pending_amount = $pendingAmount;
+        // }
         return response()->json([
             'success' => true,
             'message' => 'Session and service/package data fetched',
