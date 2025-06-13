@@ -11,6 +11,7 @@ use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use DB;
 use App\Doctor;
+use App\Models\BillingLogModel;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
@@ -24,9 +25,7 @@ class BillingApi extends Controller
     /**
      * Constructor
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function addBill(Request $request)
     {
@@ -71,7 +70,6 @@ class BillingApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Bill not found', 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -169,7 +167,6 @@ class BillingApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'No data found', 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -204,8 +201,8 @@ class BillingApi extends Controller
             }
 
 
-            $billMaster = $billMasterQuery->orderBy('created_at','desc')
-            ->offset($offset)->limit($limit)->get();
+            $billMaster = $billMasterQuery->orderBy('created_at', 'desc')
+                ->offset($offset)->limit($limit)->get();
 
             $dataByPagination = BillMasterModel::where('usermap_id', $usermap_id)
                 ->where('clinic_id', $clinic_id)->offset($offset)->limit($limit)->get();
@@ -227,7 +224,6 @@ class BillingApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'No data found', 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -305,8 +301,7 @@ class BillingApi extends Controller
             }
             // $Invoice->total_price = (float) $totalPrice;
 
-            $Invoice->balanced_amount = $input['total_price'] - $input['paid_amount'];
-            ;
+            $Invoice->balanced_amount = $input['total_price'] - $input['paid_amount'];;
 
             $save = $Invoice->save();
             if ($save) {
@@ -443,7 +438,6 @@ class BillingApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'No data found', 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -504,12 +498,10 @@ class BillingApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage(), 'code' => 500], 500);
         }
-
     }
 
     public function getPatientInvoiceByPagination($usermap_id, $clinic_id, $patient_id, $page, $limit): mixed
@@ -588,7 +580,6 @@ class BillingApi extends Controller
                 return response()->json(['status' => true, 'message' => 'data retrived successfully', 'items' => $data, 'total_price' => $total_price, 'code' => 200], 200);
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'code' => 200], 200);
-
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
@@ -681,26 +672,26 @@ class BillingApi extends Controller
 
             $totalquery
                 = DB::table('billing')
-                    ->select(
-                        'billing.id',
-                        'billing.patient_id',
-                        'docexa_patient_details.patient_name',
-                        'docexa_patient_details.dob',
-                        'docexa_patient_details.age',
-                        'docexa_patient_details.gender',
-                        'billing.mode_of_payment',
-                        'billing.total_price'
-                        // DB::raw('SUM(billing.total_price) as total')
-                    )
-                    ->join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'billing.patient_id')
-                    ->whereIn('billing.mode_of_payment', $paymentModes)
-                    ->where('billing.usermap_id', $user_map_id)
-                    ->whereBetween('billing.created_at', [
-                        $startDate,
-                        $endDate
-                    ])
-                    ->groupBy('billing.patient_id', 'billing.mode_of_payment', 'docexa_patient_details.patient_name', 'docexa_patient_details.age', 'docexa_patient_details.gender', 'docexa_patient_details.dob')
-                    ->orderBy('billing.created_at', 'desc');
+                ->select(
+                    'billing.id',
+                    'billing.patient_id',
+                    'docexa_patient_details.patient_name',
+                    'docexa_patient_details.dob',
+                    'docexa_patient_details.age',
+                    'docexa_patient_details.gender',
+                    'billing.mode_of_payment',
+                    'billing.total_price'
+                    // DB::raw('SUM(billing.total_price) as total')
+                )
+                ->join('docexa_patient_details', 'docexa_patient_details.patient_id', '=', 'billing.patient_id')
+                ->whereIn('billing.mode_of_payment', $paymentModes)
+                ->where('billing.usermap_id', $user_map_id)
+                ->whereBetween('billing.created_at', [
+                    $startDate,
+                    $endDate
+                ])
+                ->groupBy('billing.patient_id', 'billing.mode_of_payment', 'docexa_patient_details.patient_name', 'docexa_patient_details.age', 'docexa_patient_details.gender', 'docexa_patient_details.dob')
+                ->orderBy('billing.created_at', 'desc');
 
             $totalItems = $totalquery->get()->count();
             $totals = $totalquery->offset($offset)->limit($limit)->get();
@@ -799,12 +790,10 @@ class BillingApi extends Controller
                 'patient_wise_data' => $totals,
                 'totalItems' => $totalItems
             ]);
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
         }
-
     }
     // {usermapid}/{patientId}/{clinicId}/{aptId}
     public function updateBillingDetails($id, Request $request)
@@ -812,36 +801,49 @@ class BillingApi extends Controller
         try {
             $input = $request->all();
             $billing = BillingModel::find($id);
+            $paidAmount = isset($input['paid_amount']) ? $input['paid_amount'] : 0;
             // $billing = BillingModel::where('usermap_id', $usermapid)->where('patient_id' ,$patientId)->where('clinic_id' ,$clinicId) ->where('appointment_id' , $aptId)->latest()
             // ->first();
             // id, clinic_id, patient_id, usermap_id, appointment_id, total_price, mode_of_payment, paid_amount, balanced_amount, created_at, updated_at, items, receipt_no, bill_no
             if ($billing) {
                 $billing->mode_of_payment = isset($input['mode_of_payment']) ? $input['mode_of_payment'] : $billing->mode_of_payment;
-                $billing->paid_amount = isset($input['paid_amount']) ? $input['paid_amount'] : $billing->paid_amount;
-                $billing->total_price = isset($input['total_price']) ? $input['total_price'] : $billing->total_price;
+                $billing->paid_amount = $billing->paid_amount + $paidAmount;
+                $billing->balanced_amount = $billing->total_price - $billing->paid_amount;
+
                 $billing->bill_no = isset($input['bill_no']) ? $input['bill_no'] : $billing->bill_no;
                 $billing->receipt_no = isset($input['receipt_no']) ? $input['receipt_no'] : $billing->receipt_no;
 
-                if (isset($input['items'])) {
-                    $billing->items = json_encode($input['items']);
-                    $totalPrice = 0;
-                    foreach ($input['items'] as $item) {
-                        $totalPrice += $item['item_price'];
-                    }
-                    // $billing->total_price = (float) $totalPrice;
-                    $billing->balanced_amount = $input['total_price'] - $input['paid_amount'];
-                } else {
-                    $billing->items = $billing->items;
-                }
+                // if (isset($input['items'])) {
+                //     $billing->items = json_encode($input['items']);
+                //     $totalPrice = 0;
+                //     foreach ($input['items'] as $item) {
+                //         $totalPrice += $item['item_price'];
+                //     }
+                //     // $billing->total_price = (float) $totalPrice;
+                //     $billing->balanced_amount = $input['total_price'] - $input['paid_amount'];
+                // } else {
+                //     $billing->items = $billing->items;
+                // }
 
                 $save = $billing->save();
 
                 if ($save) {
+
+                    BillingLogModel::insert([
+                        'billing_id' => $id,
+                        'paid_amount' => $billing->paid_amount,
+                        'payment_date' => Carbon::now(),
+                        'mode_of_payment' => $billing->mode_of_payment,
+                        'balanced_amount' => $billing->balanced_amount,
+                        'remarks' => 'Upadate the billing details',
+                        'created_at' => Carbon::now()
+                    ]);
+
+
                     return response()->json(['status' => true, 'message' => 'Data update successfully', 'code' => 200], 200);
                 } else {
                     return response()->json(['status' => false, 'message' => 'Data update failed', 'code' => 400], 400);
                 }
-
             } else {
                 return response()->json(['status' => false, 'message' => 'Billing not found', 'code' => 200], 200);
             }
@@ -860,7 +862,6 @@ class BillingApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'data' => [], 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -891,7 +892,6 @@ class BillingApi extends Controller
                 } else {
                     return response()->json(['status' => false, 'message' => 'Data update failed', 'code' => 200], 200);
                 }
-
             } else {
                 $data = new MedicalCertificateTemplateModel();
                 $data->font_family = $input['font_family'];
@@ -911,7 +911,6 @@ class BillingApi extends Controller
                     return response()->json(['status' => false, 'message' => 'Data update failed', 'code' => 200], 200);
                 }
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -927,7 +926,6 @@ class BillingApi extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'data' => [], 'code' => 200], 200);
             }
-
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
@@ -976,7 +974,7 @@ class BillingApi extends Controller
                                     'item_name' => $brandName,
                                     'item_price' => round((float) $vaccine_price->price)
                                 ];
-                                
+
                                 $total_price += round((float) $vaccine_price->price);
                                 $processedBrands[] = $brandName;
                             }
@@ -1006,12 +1004,10 @@ class BillingApi extends Controller
                 return response()->json(['status' => true, 'message' => 'data retrived successfully', 'items' => $data, 'total_price' => $total_price, 'code' => 200], 200);
             } else {
                 return response()->json(['status' => false, 'message' => 'data not found', 'code' => 200], 200);
-
             }
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
         }
     }
-
 }
