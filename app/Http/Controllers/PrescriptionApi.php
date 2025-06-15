@@ -861,13 +861,13 @@ class PrescriptionApi extends Controller
                         $paymentAmount = 0;
                     }
 
-                    $pending->balanced_amount = $pending->balanced_amount - $pendingDue;
+                    $pending->balanced_amount = $pending->total_price - $pending->paid_amount;
                     $pending->save();
 
                     // Insert into billing logs
                     BillingLogModel::insert([
                         'billing_id' => $pending->id,
-                        'paid_amount' => min($pendingDue, $paymentAmount + $pendingDue),
+                        'paid_amount' => $pending->total_price - $pending->balanced_amount,
                         'payment_date' => Carbon::now(),
                         'mode_of_payment' => $modeOfPayment,
                         'balanced_amount' => $pending->balanced_amount,
@@ -914,7 +914,7 @@ class PrescriptionApi extends Controller
                         ->where('patient_id', $data['patient_id'])
 
                         ->where('balanced_amount', '>', 0)
-                        ->orderBy('created_at') // optional, prioritize oldest bills
+                        ->orderBy('created_at')
                         ->get();
 
                     foreach ($pendingBillings as $pending) {
@@ -930,13 +930,16 @@ class PrescriptionApi extends Controller
                             $paymentAmount = 0;
                         }
 
-                        $pending->balanced_amount = $pending->balanced_amount - $pendingDue;
+                        $pending->balanced_amount = $pending->total_price - $pending->paid_amount;
+
                         $pending->save();
 
                         // Insert into billing logs
                         BillingLogModel::insert([
                             'billing_id' => $pending->id,
-                            'paid_amount' => min($pendingDue, $paymentAmount + $pendingDue),
+                            // 'paid_amount' => min($pendingDue, $paymentAmount + $pendingDue),
+                            'paid_amount' => $pending->total_price - $pending->balanced_amount,
+
                             'payment_date' => Carbon::now(),
                             'mode_of_payment' => $modeOfPayment,
                             'balanced_amount' => $pending->balanced_amount,
