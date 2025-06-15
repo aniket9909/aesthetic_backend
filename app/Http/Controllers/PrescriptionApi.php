@@ -1244,32 +1244,32 @@ class PrescriptionApi extends Controller
                                 throw new \Exception("Failed to save service transaction item");
                             }
                         }
+                        try {
+                            $client = new \GuzzleHttp\Client();
+                            $response = $client->post(env('APP_ERP_URL') . "/api/service-sales", [
+                                'form_params' => [
+                                    'services' => $data['services'],
+                                    'billingData' => $billingData,
+                                    'consumables' => $apiConsumablesName,
+                                    'transaction_id' => $serviceTransaction->id,
+                                    'prescription_id' => $prescription->id,
+                                    'patient_id' => $data['patient_id'],
+                                    'doctor_id' => $esteblishmentusermapID,
+                                ],
+                                'timeout' => 10,
+                            ]);
+                            
+                            dd($response);
+                            $body = $response->getBody()->getContents();
+                            $data = json_decode($body, true);
 
-                        if (isset($service['api_url']) && !empty($service['api_url'])) {
-                            try {
-                                $client = new \GuzzleHttp\Client();
-                                $response = $client->post("https://aestheticai.globalspace.in/dev/aesthetic_erp/public/api/service", [
-                                    'json' => [
-                                        'services' => $data['services'],
-                                        'billingData' => $billingData,
-                                        'consumables' => $apiConsumablesName,
-                                        'transaction_id' => $serviceTransaction->id,
-                                        'prescription_id' => $prescription->id,
-                                        'patient_id' => $data['patient_id'],
-                                        'doctor_id' => $esteblishmentusermapID,
-                                    ],
-                                    'timeout' => 10,
-                                ]);
-                                $body = $response->getBody()->getContents();
-                                $data = json_decode($body, true);
-
-                                if ($response->getStatusCode() !== 200 || !isset($data['status']) || $data['status'] != 'success') {
-                                    return response()->json(['status' => 'error', 'message' => $data['msg'] ?? 'CheckerP API is not working'], 500);
-                                }
-                                Log::info(['service_api_call_response' => (string)$response->getBody()]);
-                            } catch (\Throwable $e) {
-                                Log::error(['service_api_call_error' => $e->getMessage()]);
+                            if ($response->getStatusCode() !== 200 || !isset($data['status']) || $data['status'] != 'success') {
+                                return response()->json(['status' => 'error', 'message' => $data['msg'] ?? 'CheckerP API is not working'], 500);
                             }
+                            Log::info(['service_api_call_response' => (string)$response->getBody()]);
+                        } catch (\Throwable $e) {
+                            dd($e);
+                            Log::error(['service_api_call_error' => $e->getMessage()]);
                         }
                     } else {
                         throw new \Exception("Failed to save service transaction");
@@ -1279,8 +1279,8 @@ class PrescriptionApi extends Controller
                 throw new \Exception("Failed to save service transaction, no services provided");
             }
 
-            DB::commit();
-
+            DB::rollBack();
+            return $prescriptionSave;
             if ($prescriptionSave) {
                 return $this->getPrescription($esteblishmentusermapID, $prescription->id);
             } else {
@@ -1288,6 +1288,7 @@ class PrescriptionApi extends Controller
             }
         } catch (\Throwable $th) {
             DB::rollBack();
+            dd($th);
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
         }
