@@ -94,7 +94,7 @@ class Controller extends BaseController {
     }
 
     public static function sendSms($num, $msg) {
-        $fullApi = "http://enterprise.smsgupshup.com/GatewayAPI/rest?method=SendMessage&send_to={num}&msg={msg}&msg_type=TEXT&userid=2000153330&auth_scheme=plain&password=nbm0jALBl&v=1.1&format=text&mask=GSTDOC";
+        $fullApi = "https://enterprise.smsgupshup.com/GatewayAPI/rest?method=SendMessage&send_to={num}&msg={msg}&msg_type=TEXT&userid=2000153330&auth_scheme=plain&password=nbm0jALBl&v=1.1&format=text&mask=GSTDOC";
         $msg = urlencode($msg);
 
         if ($fullApi) {

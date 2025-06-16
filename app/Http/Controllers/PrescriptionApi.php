@@ -1259,7 +1259,6 @@ class PrescriptionApi extends Controller
                                 'timeout' => 10,
                             ]);
                             
-                            dd($response);
                             $body = $response->getBody()->getContents();
                             $data = json_decode($body, true);
 
@@ -1268,7 +1267,6 @@ class PrescriptionApi extends Controller
                             }
                             Log::info(['service_api_call_response' => (string)$response->getBody()]);
                         } catch (\Throwable $e) {
-                            dd($e);
                             Log::error(['service_api_call_error' => $e->getMessage()]);
                         }
                     } else {
@@ -1279,8 +1277,7 @@ class PrescriptionApi extends Controller
                 throw new \Exception("Failed to save service transaction, no services provided");
             }
 
-            DB::rollBack();
-            return $prescriptionSave;
+            DB::commit();
             if ($prescriptionSave) {
                 return $this->getPrescription($esteblishmentusermapID, $prescription->id);
             } else {
@@ -1288,7 +1285,7 @@ class PrescriptionApi extends Controller
             }
         } catch (\Throwable $th) {
             DB::rollBack();
-            dd($th);
+            // dd($th);
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
         }
