@@ -425,6 +425,7 @@ class AppointmentApi extends Controller
             ->where(DB::raw('date(booking.date)'), $date);
 
         $bookedSlots = $query->get();
+        $finalSlots = [];
 
         foreach ($bookedSlots as $booked) {
             $start = \Carbon\Carbon::parse($booked->start_booking_time);
@@ -442,7 +443,7 @@ class AppointmentApi extends Controller
             });
 
             // Convert each slot to the requested format: ['slot' => '10:00', 'tag' => 'past', 'count' => 0]
-            $all_slots = array_map(function ($slot) {
+            $finalSlots = array_map(function ($slot) {
                 return [
                     'slot' => $slot['from'],
                     'tag' => isset($slot['tag']) ? $slot['tag'] : '',
@@ -456,8 +457,8 @@ class AppointmentApi extends Controller
 
         // $all_slots now only contains available (non-overlapping) time slots
 
-        // dd($all_slots);
-        if (count($data) > 0) {
+        // dd($finalSlots);
+        if (count($all_slots) > 0) {
             return response()->json(['status' => "success", 'data' => $all_slots], 200);
         } else {
             return response()->json(['status' => "fail", 'msg' => 'No slots available'], 404);
