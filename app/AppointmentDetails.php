@@ -2029,7 +2029,9 @@ class AppointmentDetails extends Model
             'clinic_id' => $data['clinic_id'],
             "consult_type" => $data['consult_type'] ?? null,
             "consult_type_id" => $data['consult_type_id'] ?? null,
-
+            "staff_id"=>$data['staff_id'] ?? null,
+            "duration"=>$data['duration'] ?? null,
+            "partial_services"=> json_encode($data['partial_services']) ?? null,
             // 'flag' =>  array_key_exists('flag', $data) ?( $data['flag'] ?  $data['flag'] : null) :null
         ]);
         //  Log::info(['id', DB::table('docexa_patient_booking_details')->where('id', $iudy)])
