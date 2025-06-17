@@ -4112,11 +4112,12 @@ from
                     'booking.patient_name',
                     'booking.status',
                     'docexa_doctor_master.pharmaclient_name',
-
                     'booking.doctor_id',
                     'booking.patient_id',
                     'consult.name as consult_type',
-                    DB::raw("TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes")
+                    // DB::raw("TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes"),
+                    DB::raw("ELT(FLOOR(1 + (RAND() * 4)), 15, 30, 60, 180) as duration_minutes"),
+
                 )
                 ->where('booking.user_map_id', $doctor_id)
                 ->orderBy('booking.date')
