@@ -98,7 +98,7 @@ class ApiController extends Controller
 
       $jsonData = $request->all();
       Log::info('Incoming JSON:', $jsonData);
-      
+
       // Handle message status updates
       if ($this->isStatusUpdate($jsonData)) {
         // Log::info('Message status update received. Skipping processing.');
@@ -974,7 +974,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
       // $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
-      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join(env('DB_DATABASE') . '.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if (!$doctor) {
         return response()->json([
           'success' => true,
@@ -1054,7 +1054,7 @@ Please upload a photo if you would like to have your skin analyzed.
         'message' => 'Analysis fetched successfully.',
         // Only include chats where is_visible is true or null (not 0)
         'chats' => $messages->filter(function ($chat) {
-            return $chat->is_visible === null || $chat->is_visible == 1;
+          return $chat->is_visible === null || $chat->is_visible == 1;
         })->values(),
         'imageAnalysis' => $imageAnalysis,
         'patient' => $patientInfo,
@@ -1088,7 +1088,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
       // $doctor = Doctor::where('pharmaclient_id', $request->doctor_id)->first();
-      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')->where('id', $request->doctor_id)->join(env('DB_DATABASE') . '.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if (!$doctor) {
         return response()->json([
           'success' => false,
@@ -1326,7 +1326,7 @@ Please upload a photo if you would like to have your skin analyzed.
 
         ], 404);
       }
-      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')->where('id', $doctorId)->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
+      $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')->where('id', $doctorId)->join(env('DB_DATABASE') . '.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.medical_user_id')->first();
       if ($doctor == null) {
         return response()->json([
           'success' => false,
@@ -1484,9 +1484,9 @@ Please upload a photo if you would like to have your skin analyzed.
       $doctorId = $request->input('doctor_id');
       $patientNumber = $request->input('patient_number');
 
-      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
-        ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
-        ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
+      $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE') . '.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.medical_user_id')
         ->select('docexa_doctor_master.mobile_no')
         ->first();
 
@@ -1598,7 +1598,7 @@ Please upload a photo if you would like to have your skin analyzed.
             $chat->sender_id = $doctor->mobile_no;
             $chat->receiver_id = $request->input('patient_number');
             $chat->message_type = 'image';
-            $chat->media_url = $fullPath; 
+            $chat->media_url = $fullPath;
             $chat->media_mime_type = null;
             $chat->media_sha256 = null;
             $chat->output = $chatbotResponse['chatbot_response'] ?? 'No response';
@@ -1661,21 +1661,134 @@ Please upload a photo if you would like to have your skin analyzed.
   }
 
 
+  // public function uploadMarkedImageFromDoc(Request $request)
+  // {
+  //   try {
+  //     $doctorId = $request->input('doctor_id');
+  //     $patientNumber = $request->input(key: 'patient_number');
+  //     $isMarked = $request->input(key: 'ismarked');
+
+
+  //     $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
+  //       ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
+  //       ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
+  //       ->select('docexa_doctor_master.mobile_no')
+  //       ->first();
+
+  //     if ($doctor == null) {
+  //       return response()->json([
+  //         'success' => false,
+  //         'message' => 'Doctor not found',
+  //       ], 404);
+  //     }
+
+  //     if (!$request->hasFile('images')) {
+  //       return response()->json([
+  //         'status' => false,
+  //         'message' => 'No images found in the request.'
+  //       ], 400);
+  //     }
+
+  //     $uploadedFiles = [];
+
+  //     $files = is_array($request->file('images'))
+  //       ? $request->file('images')
+  //       : [$request->file('images')];
+
+  //     foreach ($files as $file) {
+  //       if ($file && $file->isValid()) {
+  //         $path = $file->store('public/patient_images');
+  //         $filename = basename($path);
+
+  //         // ✅ Save only the relative path or filename in DB
+  //         $relativePath = Storage::url($path); // e.g., /storage/patient_images/filename.jpg
+
+  //         // ✅ Append full URL for API response only
+  //         //$ip = 'https://aestheticai.globalspace.in/aesthetic_backend/public/'; // Change to your server IP or domain
+  //         $publicUrl = url($relativePath);
+
+  //         // ✅ Add to response array
+  //         $uploadedFiles[] = [
+  //           'file_name' => $filename,
+  //           'url' => $publicUrl,
+  //         ];
+
+  //         // ✅ Save only relative data to DB
+  //         $chat = new Chats();
+  //         $chat->sender_id = $doctor->mobile_no;
+  //         $chat->receiver_id = $request->input('patient_number');
+  //         $chat->message_type = 'image';
+  //         $chat->media_url = $relativePath; // Save only path
+  //         $chat->media_mime_type = null;
+  //         $chat->media_sha256 = null;
+  //         $chat->media_id = $filename;
+  //         $chat->whatsapp_message_id = null;
+  //         $chat->is_visible = 0;
+  //         $chat->is_marked = $isMarked;
+  //         $chat->date = Carbon::now()->toDateTimeString();
+  //         $chat->save();
+  //       }
+  //     }
+
+  //     // Get images from chat
+  //     $images = Chats::where(function ($query) use ($patientNumber, $doctor) {
+  //       $query->where('sender_id', $doctor->mobile_no)
+  //         ->where('message_type', 'image')
+
+  //         ->where('receiver_id', $patientNumber);
+  //     })
+  //       ->orWhere(function ($query) use ($patientNumber, $doctor) {
+  //         $query->where('sender_id', $patientNumber)
+  //           ->where('message_type', 'image')
+
+  //           ->where('receiver_id', $doctor->mobile_no);
+  //       })
+  //       ->orderBy('date', 'desc')
+  //       ->get();
+
+
+  //     // Transform the images to match the Dart model
+  //     $imageList = $images->map(function ($chat) {
+  //       return [
+  //         'file_name' => $chat->media_id,
+  //         'url' => url($chat->media_url), // Generate full URL
+  //         'uploaded_date' => Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
+  //         // 'file_size' => $this->getFileSize($chat->media_url) // Add helper method to get file size
+  //       ];
+  //     });
+
+  //     // Return response matching the Dart model structure
+  //     return response()->json([
+  //       'status' => true,
+  //       'message' => 'Image uploaded successfully',
+  //       'data' => [
+  //         'uploaded_files' => $imageList
+  //       ]
+  //     ]);
+  //   } catch (\Exception $e) {
+  //     \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+  //     return response()->json([
+  //       'status' => false,
+  //       'message' => 'Server Error: ' . $e->getMessage(),
+  //       'data' => null
+  //     ], 500);
+  //   }
+  // }
+
   public function uploadMarkedImageFromDoc(Request $request)
   {
     try {
       $doctorId = $request->input('doctor_id');
-      $patientNumber = $request->input(key: 'patient_number');
-      $isMarked = $request->input(key: 'ismarked');
+      $patientNumber = $request->input('patient_number');
+      $isMarked = $request->input('ismarked');
 
-
-      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
-        ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
-        ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
+      $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE') . '.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.medical_user_id')
         ->select('docexa_doctor_master.mobile_no')
         ->first();
 
-      if ($doctor == null) {
+      if (!$doctor) {
         return response()->json([
           'success' => false,
           'message' => 'Doctor not found',
@@ -1690,83 +1803,96 @@ Please upload a photo if you would like to have your skin analyzed.
       }
 
       $uploadedFiles = [];
-
-      $files = is_array($request->file('images'))
-        ? $request->file('images')
-        : [$request->file('images')];
+      $files = is_array($request->file('images')) ? $request->file('images') : [$request->file('images')];
 
       foreach ($files as $file) {
         if ($file && $file->isValid()) {
-          $path = $file->store('public/patient_images');
-          $filename = basename($path);
+          $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.png';
+          $fullPath = base_path('skin_images/' . $filename);
 
-          // ✅ Save only the relative path or filename in DB
-          $relativePath = Storage::url($path); // e.g., /storage/patient_images/filename.jpg
+          if (!file_exists(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0755, true);
+          }
 
-          // ✅ Append full URL for API response only
-          //$ip = 'https://aestheticai.globalspace.in/aesthetic_backend/public/'; // Change to your server IP or domain
-          $publicUrl = url($relativePath);
+          $mimeType = $file->getMimeType();
+          $image = null;
+          switch ($mimeType) {
+            case 'image/jpeg':
+              $image = @imagecreatefromjpeg($file->getRealPath());
+              break;
+            case 'image/png':
+              $image = @imagecreatefrompng($file->getRealPath());
+              break;
+            case 'image/gif':
+              $image = @imagecreatefromgif($file->getRealPath());
+              break;
+            default:
+              Log::error("Unsupported image type: $mimeType");
+              continue 2;
+          }
 
-          // ✅ Add to response array
-          $uploadedFiles[] = [
-            'file_name' => $filename,
-            'url' => $publicUrl,
-          ];
+          if (!$image) {
+            Log::error("Failed to create image resource for: " . $file->getClientOriginalName());
+            continue;
+          }
 
-          // ✅ Save only relative data to DB
+          $saved = imagepng($image, $fullPath);
+          imagedestroy($image);
+
+          if (!$saved) {
+            Log::error("Failed to save image: $fullPath");
+            continue;
+          }
+
+        
+          // ✅ Save chat entry with all info
           $chat = new Chats();
           $chat->sender_id = $doctor->mobile_no;
-          $chat->receiver_id = $request->input('patient_number');
+          $chat->receiver_id = $patientNumber;
           $chat->message_type = 'image';
-          $chat->media_url = $relativePath; // Save only path
+          $chat->media_url = $fullPath;
           $chat->media_mime_type = null;
           $chat->media_sha256 = null;
-          $chat->media_id = $filename;
+          $chat->media_id = preg_replace('/\.(jp[e]?g|png|gif|bmp|webp)$/i', '', $filename);
           $chat->whatsapp_message_id = null;
           $chat->is_visible = 0;
           $chat->is_marked = $isMarked;
+          $chat->output = null;
+          $chat->analysis =null;
           $chat->date = Carbon::now()->toDateTimeString();
           $chat->save();
+
+          $uploadedFiles[] = [
+            'file_name' => $chat->media_id,
+            'url' => url('skin_images/' . $chat->media_id . '.png'),
+          ];
         }
       }
 
-      // Get images from chat
+      // Return uploaded + fetched images
       $images = Chats::where(function ($query) use ($patientNumber, $doctor) {
-        $query->where('sender_id', $doctor->mobile_no)
-          ->where('message_type', 'image')
+        $query->where('sender_id', $doctor->mobile_no)->where('message_type', 'image')->where('receiver_id', $patientNumber);
+      })->orWhere(function ($query) use ($patientNumber, $doctor) {
+        $query->where('sender_id', $patientNumber)->where('message_type', 'image')->where('receiver_id', $doctor->mobile_no);
+      })->orderBy('date', 'desc')->get();
 
-          ->where('receiver_id', $patientNumber);
-      })
-        ->orWhere(function ($query) use ($patientNumber, $doctor) {
-          $query->where('sender_id', $patientNumber)
-            ->where('message_type', 'image')
-
-            ->where('receiver_id', $doctor->mobile_no);
-        })
-        ->orderBy('date', 'desc')
-        ->get();
-
-
-      // Transform the images to match the Dart model
       $imageList = $images->map(function ($chat) {
         return [
           'file_name' => $chat->media_id,
-          'url' => url($chat->media_url), // Generate full URL
+          'url' => url('skin_images/' . $chat->media_id . '.png'),
           'uploaded_date' => Carbon::parse($chat->date)->format('Y-m-d H:i:s'),
-          // 'file_size' => $this->getFileSize($chat->media_url) // Add helper method to get file size
         ];
       });
 
-      // Return response matching the Dart model structure
       return response()->json([
         'status' => true,
-        'message' => 'Image uploaded successfully',
+        'message' => 'Image uploaded and analyzed successfully',
         'data' => [
           'uploaded_files' => $imageList
         ]
       ]);
     } catch (\Exception $e) {
-      \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+      \Log::error('Error in uploadMarkedImageFromDoc: ' . $e->getMessage());
       return response()->json([
         'status' => false,
         'message' => 'Server Error: ' . $e->getMessage(),
@@ -1774,6 +1900,7 @@ Please upload a photo if you would like to have your skin analyzed.
       ], 500);
     }
   }
+
 
 
   public function getUploadedImages($doctorId, $patientNumber)
@@ -1788,9 +1915,9 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
 
-      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
-        ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
-        ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
+      $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE') . '.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.medical_user_id')
         ->select('docexa_doctor_master.mobile_no')
         ->first();
 
@@ -1871,9 +1998,9 @@ Please upload a photo if you would like to have your skin analyzed.
       }
 
       // Fetch doctor mobile number
-      $doctor = DB::table(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map')
-        ->where(env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.id', $doctorId)
-        ->join(env('DB_DATABASE').'.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE').'.docexa_medical_establishments_medical_user_map.medical_user_id')
+      $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE') . '.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.medical_user_id')
         ->select('docexa_doctor_master.mobile_no')
         ->first();
 
