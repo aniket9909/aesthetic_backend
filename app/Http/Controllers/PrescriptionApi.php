@@ -827,6 +827,13 @@ class PrescriptionApi extends Controller
             }
 
             $billingData = null;
+            $billingErpUpdateTransaction = [
+                "patient_id" => $data['patient_id'],
+                "doctor_id" => $esteblishmentusermapID,
+                "prescription_id" => $prescription->id,
+                "transaction_id" => $serviceTransaction ? $serviceTransaction->id : null,
+                "billing_data"=>[]
+            ];
 
             if ($hasRemainingSessions) {
 
@@ -840,7 +847,7 @@ class PrescriptionApi extends Controller
 
                 Log::info(["amount", $paymentAmount]);
                 Log::info(["mode", $modeOfPayment]);
-                // If $billing is null, set $pendingBillings to empty collection
+
                 if ($billing == null) {
                     $pendingBillings = collect();
                 } else {
@@ -864,6 +871,7 @@ class PrescriptionApi extends Controller
                     //     $pending->paid_amount = $pending->paid_amount + $paymentAmount;
                     //     $paymentAmount = 0;
                     // }
+
                     $paidedAmount = 0;
 
                     if ($paymentAmount >= $pendingDue) {
@@ -883,6 +891,13 @@ class PrescriptionApi extends Controller
                     $pending->balanced_amount = $pending->total_price - $pending->paid_amount;
                     $pending->save();
 
+                    $billingErpUpdateTransaction["billing_data"][] = [
+                        'id' => $pending->id,
+                        'transaction_id' => $pending->transaction_id,
+                        'prescription_id' => $pending->prescription_id,
+                        'paid_amount' => $paidedAmount,
+                        'balanced_amount' => $pending->balanced_amount
+                    ];
                     // Insert into billing logs
                     BillingLogModel::insert([
                         'billing_id' => $pending->id,
@@ -910,6 +925,13 @@ class PrescriptionApi extends Controller
                     Log::info(["after billing amount", $billing]);
                     $billingData = $billing;
                     // Insert into payment logs
+                    $billingErpUpdateTransaction["billing_data"][] = [
+                        'id' => $billing->id,
+                        'transaction_id' => $billing->transaction_id,
+                        'prescription_id' => $billing->prescription_id,
+                        'paid_amount' => $paymentAmount,
+                        'balanced_amount' => $billing->balanced_amount
+                    ];
                     BillingLogModel::insert([
                         'billing_id' => $billing->id,
                         'paid_amount' => $paymentAmount,
@@ -954,7 +976,7 @@ class PrescriptionApi extends Controller
                         if ($paymentAmount >= $pendingDue) {
                             // Pay full due for this bill
                             // $pending->paid_amount = $pending->paid_amount + $pendingDue;
-                            $paidedAmount =$pendingDue ;
+                            $paidedAmount = $pendingDue;
                             $pending->paid_amount = $pending->paid_amount + $pendingDue;
                             $paymentAmount = $paymentAmount - $pendingDue;
                         } else {
@@ -970,12 +992,19 @@ class PrescriptionApi extends Controller
                         $pending->save();
 
                         // Insert into billing logs
+
+                        $billingErpUpdateTransaction["billing_data"][] = [
+                            'id' => $pending->id,
+                            'transaction_id' => $pending->transaction_id,
+                            'prescription_id' => $pending->prescription_id,
+                            'paid_amount' => $paidedAmount,
+                            'balanced_amount' => $pending->balanced_amount
+                        ];
+
                         BillingLogModel::insert([
                             'billing_id' => $pending->id,
                             // 'paid_amount' => min($pendingDue, $paymentAmount + $pendingDue),
                             'paid_amount' => $paidedAmount,
-
-                            
                             'payment_date' => Carbon::now(),
                             'mode_of_payment' => $modeOfPayment,
                             'balanced_amount' => $pending->balanced_amount,
@@ -1019,6 +1048,7 @@ class PrescriptionApi extends Controller
                     $billingData = $Invoice;
 
                     if ($billingSave) {
+
                         BillingLogModel::insert([
                             'billing_id' => $Invoice->id,
                             'paid_amount' => $Invoice->paid_amount,
@@ -1168,6 +1198,10 @@ class PrescriptionApi extends Controller
                             }
                         }
                     }
+                    foreach ($data['services'] as &$service) {
+                        $service['amount'] = 0;
+                    }
+                    unset($service);
                 } else {
                     $isPackageAdded = $data['isPackageAdded'] ?? false;
 
@@ -1282,16 +1316,19 @@ class PrescriptionApi extends Controller
                         }
                         try {
                             $client = new \GuzzleHttp\Client();
-                            $response = $client->post(env('APP_ERP_URL') . "api/service-sales", [
+                            $response = $client->post(env('APP_ERP_URL') . "api/orderservice-updatepayment", [
                                 'form_params' => [
-                                    'services' => $data['services'],
-                                    'billingDataCreated' => $billingData,
-                                    "billingData"=>$data['billing_data'],
-                                    'consumables' => $apiConsumablesName,
-                                    'transaction_id' => $serviceTransaction->id,
-                                    'prescription_id' => $prescription->id,
-                                    'patient_id' => $data['patient_id'],
-                                    'doctor_id' => $esteblishmentusermapID,
+                                    "services" => [
+                                        'services' => $data['services'],
+                                        'billingDataCreated' => $billingData,
+                                        "billingData" => $data['billing_data'],
+                                        'consumables' => $apiConsumablesName,
+                                        'transaction_id' => $serviceTransaction->id,
+                                        'prescription_id' => $prescription->id,
+                                        'patient_id' => $data['patient_id'],
+                                        'doctor_id' => $esteblishmentusermapID,
+                                    ],
+                                    "updateBilling"=> $billingErpUpdateTransaction,
                                 ],
                                 'timeout' => 30,
                             ]);
@@ -1306,8 +1343,6 @@ class PrescriptionApi extends Controller
                         } catch (\Throwable $e) {
                             Log::error(['service_api_call_error' => $e->getMessage()]);
                         }
-
-
                     } else {
                         throw new \Exception("Failed to save service transaction");
                     }
@@ -1315,10 +1350,9 @@ class PrescriptionApi extends Controller
             } else {
                 throw new \Exception("Failed to save service transaction, no services provided");
             }
-            // DB::rollBack
-            // ();
-            // return;
-            DB::commit();
+            DB::rollBack();
+            return response()->json(['status' => 'success', 'message' => 'Prescription saved successfully', 'code' => 200, 'data' => $this->getPrescription($esteblishmentusermapID, $prescription->id)], 200);
+            // DB::commit();
             if ($prescriptionSave) {
                 return $this->getPrescription($esteblishmentusermapID, $prescription->id);
             } else {
@@ -1326,7 +1360,7 @@ class PrescriptionApi extends Controller
             }
         } catch (\Throwable $th) {
             DB::rollBack();
-            // dd($th);
+            dd($th);
             Log::info(["error" => $th]);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th], 500);
         }
