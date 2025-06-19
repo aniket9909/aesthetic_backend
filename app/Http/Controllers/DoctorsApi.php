@@ -12,6 +12,7 @@
  */
 
 namespace App\Http\Controllers;
+date_default_timezone_set('America/Los_Angeles');
 
 //use Illuminate\Support\Facades\Request;
 use App\Clinic;
@@ -41,6 +42,7 @@ use App\VideoCall;
 use Storage;
 use Config;
 use DB;
+use App\Models\ServiceMaster;
 use Log;
 use App\Prescription;
 use App\Http\Controllers\SpreadsheetController;
@@ -64,7 +66,9 @@ class DoctorsApi extends Controller
     /**
      * Constructor
      */
-    public function __construct() {}
+    public function __construct() {
+
+    }
 
 
     public function isPharmaClientExist($isPharmaClientId)
@@ -4094,6 +4098,7 @@ from
     public function getCalendarAppointments(Request $request)
     {
         try {
+          
             // Optional date range filter
             $startDate = $request->query('start_date'); // e.g., 2025-06-01
             $endDate = $request->query('end_date');
@@ -4102,21 +4107,25 @@ from
             $query = DB::table('docexa_patient_booking_details as booking')
                 ->join('docexa_appointment_sku_details', 'booking.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
                 ->join('docexa_doctor_master', 'booking.doctor_id', '=', 'docexa_doctor_master.pharmaclient_id')
+                ->leftJoin('staff as staff', 'staff.id', '=', 'booking.staff_id')
+
                 ->leftJoin('consult_type_master as consult', 'booking.consult_type_id', '=', 'consult.id')
                 ->select(
                     'booking.booking_id',
                     'booking.bookingidmd5',
                     'booking.date',
-                    'docexa_appointment_sku_details.start_booking_time',
+                    // DB::raw("now()"),
+                    DB::raw("CAST(docexa_appointment_sku_details.start_booking_time AS CHAR) AS start_booking_time"),
                     'docexa_appointment_sku_details.end_booking_time',
                     'booking.patient_name',
                     'booking.status',
                     'docexa_doctor_master.pharmaclient_name',
                     'booking.doctor_id',
+                    'staff.staff_name as staff_name',
                     'booking.patient_id',
                     'consult.name as consult_type',
-                    // DB::raw("TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes"),
-                    DB::raw("ELT(FLOOR(1 + (RAND() * 4)), 15, 30, 60, 180) as duration_minutes"),
+                    DB::raw("IFNULL(booking.duration, TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time)) as duration_minutes"),
+                    // DB::raw("ELT(FLOOR(1 + (RAND() * 4)), 15, 30, 60, 180) as duration_minutes"),
 
                 )
                 ->where('booking.user_map_id', $doctor_id)
@@ -4135,7 +4144,7 @@ from
             return response()->json([
                 "success" => true,
                 "data" => [
-                    'times' => $this->getSlots($doctor_id, $clinicId,$startDate),
+                    'times' => $this->getSlots($doctor_id, $clinicId, $startDate),
                     'consult_types' => $cosultType,
                     'appointments' => $appointments
                 ],
@@ -4174,7 +4183,7 @@ from
             $query = DB::table('docexa_patient_booking_details as booking')
                 ->join('docexa_appointment_sku_details', 'booking.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
                 ->leftJoin('consult_type_master as consult', 'booking.consult_type_id', '=', 'consult.id')
-                ->leftJoin('staff as staff', 'staff.id', '=', 'consult.staff_id')
+                ->leftJoin('staff as staff', 'staff.id', '=', 'booking.staff_id')
                 ->leftJoin('docexa_appointment_status_master as statusmaster', 'statusmaster.id', '=', 'booking.status')
                 ->select(
                     'booking.booking_id',
@@ -4185,26 +4194,33 @@ from
                     'docexa_appointment_sku_details.end_booking_time',
                     'booking.patient_name',
                     'booking.doctor_id',
+                    'booking.partial_services',
                     'consult.name as consult_type',
                     'statusmaster.status_text as status_name',
                     'staff.staff_name as staff_name',
-                    DB::raw("TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes")
+                    DB::raw("IFNULL(booking.duration, TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time)) as duration_minutes"),
+
+                    // DB::raw("TIMESTAMPD/IFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes")
                 )
                 ->where('booking.bookingidmd5', $bookingID);
             // dd($query->toSql(), $query->getBindings());
             $appointment = $query->first();
+            $partialServices = $appointment->partial_services != null ? ServiceMaster::whereIn('id', json_decode($appointment->partial_services))
+                // ->where('status', 1)
+                ->get('name') : [];
+            $appointment->partial_services = $partialServices;
             return response()->json(['status' => false, 'message' => 'Appointment  found', 'data' => [
                 'appointment' => $appointment,
                 'patient' => $patientDate,
             ]], 200);
         } catch (\Throwable $th) {
             Log::error(['error' => $th]);
-            dd($th);
-            return response()->json(['status' => false, 'message' => 'Internal server error'], 500);
+
+            return response()->json(['status' => false, "errorMessage" => $th->getMessage(), 'message' => 'Internal server error'], 500);
         }
     }
 
-    public function getSlots($mapId, $clinicID,$startDate)
+    public function getSlots($mapId, $clinicID, $startDate)
     {
 
         // $slot = DB::table('docexa_slot_master')->where('user_map_id', $mapId)->first();
@@ -4214,7 +4230,7 @@ from
         } else {
             $dayId = Carbon::now()->isoWeekday();
         }
-        $slot = Slotmaster::where(array("user_map_id" => $mapId, 'clinicID' => $clinicID,'day_id'=>$dayId))->first();
+        $slot = Slotmaster::where(array("user_map_id" => $mapId, 'clinicID' => $clinicID, 'day_id' => $dayId))->first();
 
         // return $slot; 
         if (!$slot) {
@@ -4223,7 +4239,7 @@ from
 
         $start = Carbon::createFromFormat('H:i:s', $slot->start_time);
         $end = Carbon::createFromFormat('H:i:s', $slot->end_time);
-        $interval = $slot->slot_size; 
+        $interval = $slot->slot_size;
         $slots = [];
 
         while ($start->lt($end)) {

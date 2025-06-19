@@ -6,7 +6,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
     dirname(__DIR__)
 ))->bootstrap();
 
-date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Kolkata'));
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +59,8 @@ $app->singleton(
 */
 
 $app->configure('app');
+date_default_timezone_set('Asia/Kolkata');
+
 $app->configure('auth');
 /*
 |--------------------------------------------------------------------------

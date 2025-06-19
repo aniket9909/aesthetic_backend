@@ -419,47 +419,45 @@ class AppointmentApi extends Controller
                 'booking.doctor_id',
                 'consult.name as consult_type',
                 'statusmaster.status_text as status_name',
-                DB::raw("TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time) as duration_minutes")
+                DB::raw("IFNULL(booking.duration, TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time)) as duration_minutes"),
             )
             ->where('booking.user_map_id', $esteblishmentusermapID)
+            ->where('booking.consult_type_id', $roomId)
+
             ->where(DB::raw('date(booking.date)'), $date);
 
-        $bookedSlots = $query->get();
+        $bookedSlots = $query->get();   
+        // dump($bookedSlots);
         $finalSlots = [];
 
         foreach ($bookedSlots as $booked) {
             $start = \Carbon\Carbon::parse($booked->start_booking_time);
             $end = $start->copy()->addMinutes($booked->duration_minutes);
-            // dump($booked->start_booking_time);
-            // dump($start);
-            // Filter out overlapping slots
-            // Convert slot array to desired format and filter out overlapping slots
-            $all_slots = array_filter($all_slots, function ($slot) use ($start, $end, $date) {
+            // Remove overlapping slots
+            $temp = array_filter($all_slots, function ($slot) use ($start, $end, $date) {
                 $slotStart = \Carbon\Carbon::parse($date . ' ' . $slot['from']);
                 $slotEnd = \Carbon\Carbon::parse($date . ' ' . $slot['to']);
 
-                // Keep slots that DO NOT overlap
+                // Keep slots that DO NOT overlap   
                 return $slotEnd <= $start || $slotStart >= $end;
             });
 
-            // Convert each slot to the requested format: ['slot' => '10:00', 'tag' => 'past', 'count' => 0]
-            $finalSlots = array_map(function ($slot) {
-                return [
-                    'slot' => $slot['from'],
-                    'tag' => isset($slot['tag']) ? $slot['tag'] : '',
-                    'count' => isset($slot['count']) ? $slot['count'] : 0,
-                ];
-            }, $all_slots);
-
-            // Re-index the array
-            $all_slots = array_values($all_slots);
+            $all_slots = array_values($temp);
         }
 
-        // $all_slots now only contains available (non-overlapping) time slots
+
+        // Now convert the final filtered slots into desired format
+        $finalSlots = array_map(function ($slot) {
+            return [
+                'slot' => $slot['from'],
+                'tag' => isset($slot['tag']) ? $slot['tag'] : '',
+                'count' => isset($slot['count']) ? $slot['count'] : 0,
+            ];
+        }, $all_slots);
 
         // dd($finalSlots);
-        if (count($all_slots) > 0) {
-            return response()->json(['status' => "success", 'data' => $all_slots], 200);
+        if (count($finalSlots) > 0) {
+            return response()->json(['status' => "success", 'data' => $finalSlots], 200);
         } else {
             return response()->json(['status' => "fail", 'msg' => 'No slots available'], 404);
         }

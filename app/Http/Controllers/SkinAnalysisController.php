@@ -60,8 +60,10 @@ class SkinAnalysisController extends Controller
 
         file_put_contents(base_path('skin_images/' . $mediaId . '.png'), $binary);
         $imagePath = base_path('skin_images/' . $mediaId . '.png');
+        $scriptPath = base_path('aesthetic_backend/image_analysis.py');
 
-        $command = "/usr/bin/python3 /var/www/html/aesthetic_backend/image_analysis.py " . escapeshellarg($imagePath) . " 2>&1";
+        $command = "/usr/bin/python3 /var/www/html/dev/aesthetic_backend/image_analysis.py " . escapeshellarg($imagePath) . " 2>&1";
+        // $command = "/usr/bin/python3 $scriptPath " . escapeshellarg($imagePath) . " 2>&1";
         Log::info("Command executed: $command");
 
         $output = shell_exec($command);
@@ -95,7 +97,7 @@ class SkinAnalysisController extends Controller
             $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
             $formatMessage .= "- Treatment notes (application instructions, any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
             $formatMessage .= "Return the response in under 1000 words in this format:\n\n";
-          
+
             $chatbotResponse = $this->chatbot(new Request(['question' => $formatMessage]))->getData(true);
 
 
@@ -153,6 +155,7 @@ class SkinAnalysisController extends Controller
             // Log::info("Chatbot output: $output");
             $groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
             $bearerToken = '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'; // Replace with your actual token
+            $bearerToken = env('GROQ_KEY'); // Replace with your actual token
 
             $groqBody = [
                 "model" => "llama-3.3-70b-versatile",
@@ -238,7 +241,9 @@ class SkinAnalysisController extends Controller
             $pythonPath = 'python3'; // Adjust if your system uses another path
 
             // $output = shell_exec("$pythonPath $scriptPath $question");
-            $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/greeting_chatbot.py $escapedQuestion 2>&1");
+            $scriptPath = base_path('aesthetic_backend/greeting_chatbot.py');
+            $output = shell_exec("/usr/bin/python3 /var/www/html/dev/aesthetic_backend/greeting_chatbot.py $escapedQuestion 2>&1");
+            // $output = shell_exec("/usr/bin/python3 $scriptPath $escapedQuestion 2>&1");
             Log::info("Chatbot output: $output");
 
             if (!$output) {
@@ -292,7 +297,11 @@ class SkinAnalysisController extends Controller
             $pythonPath = 'python3'; // Adjust if your system uses another path
 
             // $output = shell_exec("$pythonPath $scriptPath $question");
-            $output = shell_exec("python3 /var/www/html/aesthetic_backend/afterImage.py $escapedQuestion 2>&1");
+            $scriptPath = base_path('aesthetic_backend/afterImage.py');
+
+            $output = shell_exec("python3 /var/www/html/dev/aesthetic_backend/afterImage.py $escapedQuestion 2>&1");
+            // $output = shell_exec("python3 $scriptPath $escapedQuestion 2>&1");
+
             // $output = shell_exec("python3 ~/var/docexa/afterImage.py $escapedQuestion 2>&1");
             Log::info("image analysis output: $output");
 
