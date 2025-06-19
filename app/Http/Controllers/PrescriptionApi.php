@@ -851,13 +851,28 @@ class PrescriptionApi extends Controller
                 foreach ($pendingBillings as $pending) {
                     $pendingDue = $pending->balanced_amount;
 
+                    // if ($paymentAmount >= $pendingDue) {
+                    //     // Pay full due for this bill
+                    //     $pending->paid_amount = $pending->paid_amount + $pendingDue;
+                    //     $paymentAmount = $paymentAmount - $pendingDue;
+                    // } else {
+                    //     // Pay partial
+                    //     $pending->paid_amount = $pending->paid_amount + $paymentAmount;
+                    //     $paymentAmount = 0;
+                    // }
+                    $paidedAmount = 0;
+
                     if ($paymentAmount >= $pendingDue) {
                         // Pay full due for this bill
+                        // $pending->paid_amount = $pending->paid_amount + $pendingDue;
+                        $paidedAmount = $pendingDue;
                         $pending->paid_amount = $pending->paid_amount + $pendingDue;
                         $paymentAmount = $paymentAmount - $pendingDue;
                     } else {
                         // Pay partial
+                        $paidedAmount = $paymentAmount;
                         $pending->paid_amount = $pending->paid_amount + $paymentAmount;
+                        // $pending->paid_amount = $pending->paid_amount + $paymentAmount;
                         $paymentAmount = 0;
                     }
 
@@ -867,7 +882,8 @@ class PrescriptionApi extends Controller
                     // Insert into billing logs
                     BillingLogModel::insert([
                         'billing_id' => $pending->id,
-                        'paid_amount' => $pending->total_price - $pending->balanced_amount,
+                        // 'paid_amount' => $pending->total_price - $pending->balanced_amount,
+                        'paid_amount' => $paidedAmount,
                         'payment_date' => Carbon::now(),
                         'mode_of_payment' => $modeOfPayment,
                         'balanced_amount' => $pending->balanced_amount,
@@ -920,13 +936,28 @@ class PrescriptionApi extends Controller
                     foreach ($pendingBillings as $pending) {
                         $pendingDue = $pending->balanced_amount;
 
+                        // if ($paymentAmount >= $pendingDue) {
+                        //     // Pay full due for this bill
+                        //     $pending->paid_amount = $pending->paid_amount + $pendingDue;
+                        //     $paymentAmount -= $pendingDue;
+                        // } else {
+                        //     // Pay partial
+                        //     $pending->paid_amount = $pending->paid_amount + $paymentAmount;
+                        //     $paymentAmount = 0;
+                        // }
+                        $paidedAmount = 0;
+
                         if ($paymentAmount >= $pendingDue) {
                             // Pay full due for this bill
+                            // $pending->paid_amount = $pending->paid_amount + $pendingDue;
+                            $paidedAmount =$pendingDue ;
                             $pending->paid_amount = $pending->paid_amount + $pendingDue;
-                            $paymentAmount -= $pendingDue;
+                            $paymentAmount = $paymentAmount - $pendingDue;
                         } else {
                             // Pay partial
+                            $paidedAmount = $paymentAmount;
                             $pending->paid_amount = $pending->paid_amount + $paymentAmount;
+                            // $pending->paid_amount = $pending->paid_amount + $paymentAmount;
                             $paymentAmount = 0;
                         }
 
@@ -938,8 +969,9 @@ class PrescriptionApi extends Controller
                         BillingLogModel::insert([
                             'billing_id' => $pending->id,
                             // 'paid_amount' => min($pendingDue, $paymentAmount + $pendingDue),
-                            'paid_amount' => $pending->total_price - $pending->balanced_amount,
+                            'paid_amount' => $paidedAmount,
 
+                            
                             'payment_date' => Carbon::now(),
                             'mode_of_payment' => $modeOfPayment,
                             'balanced_amount' => $pending->balanced_amount,
@@ -1258,7 +1290,7 @@ class PrescriptionApi extends Controller
                                 ],
                                 'timeout' => 10,
                             ]);
-                            
+
                             $body = $response->getBody()->getContents();
                             $data = json_decode($body, true);
 
