@@ -1,0 +1,11 @@
+--2025-06-18 18:42:21--  https://aestheticai.globalspace.in/dev/aesthetic_backend/public/api/appointments-calendar?start_date=2025-06-18
+Resolving aestheticai.globalspace.in (aestheticai.globalspace.in)... 135.235.51.140
+Connecting to aestheticai.globalspace.in (aestheticai.globalspace.in)|135.235.51.140|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [application/json]
+Saving to: ‘appointments-calendar?start_date=2025-06-18’
+
+          appointme     [<=>                 ]       0  --.-KB/s               appointments-calend     [ <=>                ]     493  --.-KB/s    in 0s      
+
+2025-06-18 18:42:22 (258 MB/s) - ‘appointments-calendar?start_date=2025-06-18’ saved [493]
+

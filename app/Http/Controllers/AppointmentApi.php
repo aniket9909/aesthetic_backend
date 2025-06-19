@@ -22,6 +22,7 @@ use App\Nursing;
 use App\MedicineCart;
 use DB;
 use Log;
+use Illuminate\Support\Str;
 
 class AppointmentApi extends Controller
 {
@@ -29,10 +30,8 @@ class AppointmentApi extends Controller
     /**
      * Constructor
      */
-    public function __construct()
-    {
-    }
-   
+    public function __construct() {}
+
     /**
      * @OA\Post(
      * path="/establishments/hospital/{hospitalID}/users/{esteblishmentusermapID}/oncall",
@@ -54,7 +53,7 @@ class AppointmentApi extends Controller
      *         example="65887",
      *         @OA\Schema(type="string")
      *     ),
-    * @OA\RequestBody(
+     * @OA\RequestBody(
      *  required=true,
      *  description="lead details",
      *  @OA\JsonContent(
@@ -83,14 +82,14 @@ class AppointmentApi extends Controller
      *     ),
      * )
      */
-    public function createoncallappointment($esteblishmentusermapID,$hospitalID, Request $request)
+    public function createoncallappointment($esteblishmentusermapID, $hospitalID, Request $request)
     {
         $data = $request->all();
         if (!isset($esteblishmentusermapID)) {
             return response()->json(['status' => 'fail', 'msg' => 'esteblishment User Map ID not found'], 400);
         }
         $oncall = new Oncall();
-        
+
         $oncall->hospital_id = $hospitalID;
         $oncall->patient_name = $data['patient_name'];
         $oncall->patient_age = $data['patient_age'];
@@ -102,12 +101,12 @@ class AppointmentApi extends Controller
         $oncall->save();
         $templatedata = [
             'template' => 'oncall_requested',
-            "booking_id"=>$oncall->id,
-            "type"=>'oncall'
+            "booking_id" => $oncall->id,
+            "type" => 'oncall'
         ];
         $c = new Controller();
         $c->sendNotificationBooking($templatedata);
-        $data = Oncall::where('hospital_id',$hospitalID)->get();
+        $data = Oncall::where('hospital_id', $hospitalID)->get();
         return response()->json(['status' => "success", 'data' => $data], 200);
     }
     /**
@@ -123,7 +122,7 @@ class AppointmentApi extends Controller
      *         example="65887",
      *         @OA\Schema(type="string")
      *     ),
-    * @OA\RequestBody(
+     * @OA\RequestBody(
      *  required=true,
      *  description="lead details",
      *  @OA\JsonContent(
@@ -161,7 +160,7 @@ class AppointmentApi extends Controller
             return response()->json(['status' => 'fail', 'msg' => 'esteblishment User Map ID not found'], 400);
         }
         $oncall = new MedicineCart();
-        
+
         $oncall->hospital_id = $hospitalID;
         $oncall->patient_name = $data['patient_name'];
         $oncall->patient_mobile_no = $data['patient_mobile_no'];
@@ -171,7 +170,7 @@ class AppointmentApi extends Controller
         $oncall->pincode = $data['pincode'];
         $oncall->is_call = $data['is_call'];
         $oncall->days_of_doses = $data['days_of_doses'];
-        
+
         $oncall->user_map_id = 0;
         $oncall->save();
         // $templatedata = [
@@ -181,10 +180,10 @@ class AppointmentApi extends Controller
         // ];
         // $c = new Controller();
         // $c->sendNotificationBooking($templatedata);
-        $data = MedicineCart::where('hospital_id',$hospitalID)->get();
+        $data = MedicineCart::where('hospital_id', $hospitalID)->get();
         return response()->json(['status' => "success", 'data' => $data], 200);
     }
-        /**
+    /**
      * @OA\Post(
      * path="/establishments/hospital/{hospitalID}/ambulance",
      * tags={"Appointment"},
@@ -197,7 +196,7 @@ class AppointmentApi extends Controller
      *         example="65887",
      *         @OA\Schema(type="string")
      *     ),
-    * @OA\RequestBody(
+     * @OA\RequestBody(
      *  required=true,
      *  description="lead details",
      *  @OA\JsonContent(
@@ -241,18 +240,18 @@ class AppointmentApi extends Controller
         $ambulance->pincode = $data['pincode'];
         $ambulance->message = $data['message'];
         $ambulance->save();
-        
+
         $templatedata = [
             'template' => 'ambulance_requested',
-            "booking_id"=>$ambulance->id,
-            "type"=>'ambulance'
+            "booking_id" => $ambulance->id,
+            "type" => 'ambulance'
         ];
         $c = new Controller();
         $c->sendNotificationBooking($templatedata);
-        $data = Ambulance::where('hospital_id',$hospitalID)->get();
+        $data = Ambulance::where('hospital_id', $hospitalID)->get();
         return response()->json(['status' => "success", 'data' => $data], 200);
     }
-       /**
+    /**
      * @OA\Post(
      * path="/establishments/hospital/{hospitalID}/pathlab",
      * tags={"Appointment"},
@@ -265,7 +264,7 @@ class AppointmentApi extends Controller
      *         example="65887",
      *         @OA\Schema(type="string")
      *     ),
-    * @OA\RequestBody(
+     * @OA\RequestBody(
      *  required=true,
      *  description="lead details",
      *  @OA\JsonContent(
@@ -311,12 +310,12 @@ class AppointmentApi extends Controller
         $pathlab->save();
         $templatedata = [
             'template' => 'pathlab_requested',
-            "booking_id"=>$pathlab->id,
-            "type"=>'pathlab'
+            "booking_id" => $pathlab->id,
+            "type" => 'pathlab'
         ];
         $c = new Controller();
         $c->sendNotificationBooking($templatedata);
-        $data = Pathlab::where('hospital_id',$hospitalID)->get();
+        $data = Pathlab::where('hospital_id', $hospitalID)->get();
         return response()->json(['status' => "success", 'data' => $data], 200);
     }
     /**
@@ -332,7 +331,7 @@ class AppointmentApi extends Controller
      *         example="65887",
      *         @OA\Schema(type="string")
      *     ),
-    * @OA\RequestBody(
+     * @OA\RequestBody(
      *  required=true,
      *  description="lead details",
      *  @OA\JsonContent(
@@ -378,16 +377,89 @@ class AppointmentApi extends Controller
         $nursing->save();
         $templatedata = [
             'template' => 'nursing_requested',
-            "booking_id"=>$nursing->id,
-            "type"=>'nursing'
+            "booking_id" => $nursing->id,
+            "type" => 'nursing'
         ];
         $c = new Controller();
         $c->sendNotificationBooking($templatedata);
-        $data = Nursing::where('hospital_id',$hospitalID)->get();
+        $data = Nursing::where('hospital_id', $hospitalID)->get();
         return response()->json(['status' => "success", 'data' => $data], 200);
     }
-    
 
 
-     
+    public function getAvaliableSlotsRooms($esteblishmentusermapID, $clinicId, $roomId, $date)
+    {
+        if (!isset($esteblishmentusermapID)) {
+            return response()->json(['status' => 'fail', 'msg' => 'esteblishment User Map ID not found'], 400);
+        }
+        if (!isset($clinicId)) {
+            return response()->json(['status' => 'fail', 'msg' => 'clinic ID not found'], 400);
+        }
+        if (!isset($roomId)) {
+            return response()->json(['status' => 'fail', 'msg' => 'room ID not found'], 400);
+        }
+        if (!isset($date)) {
+            return response()->json(['status' => 'fail', 'msg' => 'date not found'], 400);
+        }
+        $doctorsApi = new DoctorsApi();
+        $all_slots = $doctorsApi->getSlots($esteblishmentusermapID, $clinicId, $date);
+
+        $query = DB::table('docexa_patient_booking_details as booking')
+            ->join('docexa_appointment_sku_details', 'booking.booking_id', '=', 'docexa_appointment_sku_details.booking_id')
+            ->leftJoin('consult_type_master as consult', 'booking.consult_type_id', '=', 'consult.id')
+            ->leftJoin('docexa_appointment_status_master as statusmaster', 'statusmaster.id', '=', 'booking.status')
+            ->select(
+                'booking.booking_id',
+                'booking.bookingidmd5',
+                'booking.date',
+                'booking.status',
+                'docexa_appointment_sku_details.start_booking_time',
+                'docexa_appointment_sku_details.end_booking_time',
+                'booking.patient_name',
+                'booking.doctor_id',
+                'consult.name as consult_type',
+                'statusmaster.status_text as status_name',
+                DB::raw("IFNULL(booking.duration, TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time)) as duration_minutes"),
+            )
+            ->where('booking.user_map_id', $esteblishmentusermapID)
+            ->where('booking.consult_type_id', $roomId)
+
+            ->where(DB::raw('date(booking.date)'), $date);
+
+        $bookedSlots = $query->get();   
+        // dump($bookedSlots);
+        $finalSlots = [];
+
+        foreach ($bookedSlots as $booked) {
+            $start = \Carbon\Carbon::parse($booked->start_booking_time);
+            $end = $start->copy()->addMinutes($booked->duration_minutes);
+            // Remove overlapping slots
+            $temp = array_filter($all_slots, function ($slot) use ($start, $end, $date) {
+                $slotStart = \Carbon\Carbon::parse($date . ' ' . $slot['from']);
+                $slotEnd = \Carbon\Carbon::parse($date . ' ' . $slot['to']);
+
+                // Keep slots that DO NOT overlap   
+                return $slotEnd <= $start || $slotStart >= $end;
+            });
+
+            $all_slots = array_values($temp);
+        }
+
+
+        // Now convert the final filtered slots into desired format
+        $finalSlots = array_map(function ($slot) {
+            return [
+                'slot' => $slot['from'],
+                'tag' => isset($slot['tag']) ? $slot['tag'] : '',
+                'count' => isset($slot['count']) ? $slot['count'] : 0,
+            ];
+        }, $all_slots);
+
+        // dd($finalSlots);
+        if (count($finalSlots) > 0) {
+            return response()->json(['status' => "success", 'data' => $finalSlots], 200);
+        } else {
+            return response()->json(['status' => "fail", 'msg' => 'No slots available'], 404);
+        }
+    }
 }

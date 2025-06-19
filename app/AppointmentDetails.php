@@ -1051,10 +1051,11 @@ class AppointmentDetails extends Model
             'patient_id' => $patientdata->patient_id,
             'doctor_id' => $medicaldata->medical_user_id,
             'clinic_id' => $data['clinic_id'],
-            'consult_type_id' => $data['consult_type_id'],
-            'consult_type' => $data['consult_type']
-
-
+            "consult_type" => $data['consult_type'] ?? null,
+            "consult_type_id" => $data['consult_type_id'] ?? null,
+            "staff_id" => $data['staff_id'] ?? null,
+            "duration" => $data['duration'] ?? null,
+            "partial_services" => json_encode($data['partial_services']) ?? null,
         ]);
         //  Log::info(['id', DB::table('docexa_patient_booking_details')->where('id', $iudy)])
         Log::info(['idddddddddddd', $id]);
@@ -2029,7 +2030,9 @@ class AppointmentDetails extends Model
             'clinic_id' => $data['clinic_id'],
             "consult_type" => $data['consult_type'] ?? null,
             "consult_type_id" => $data['consult_type_id'] ?? null,
-
+            "staff_id" => $data['staff_id'] ?? null,
+            "duration" => $data['duration'] ?? null,
+            "partial_services" => json_encode($data['partial_services']) ?? null,
             // 'flag' =>  array_key_exists('flag', $data) ?( $data['flag'] ?  $data['flag'] : null) :null
         ]);
         //  Log::info(['id', DB::table('docexa_patient_booking_details')->where('id', $iudy)])
@@ -2632,7 +2635,7 @@ class AppointmentDetails extends Model
                     'docexa_patient_booking_details.created_date',
                     'docexa_patient_booking_details.date',
                     'docexa_patient_booking_details.start_time',
-                    'docexa_patient_booking_details.patient_name',  
+                    'docexa_patient_booking_details.patient_name',
                     'docexa_patient_booking_details.email_id as email',
                     'docexa_patient_booking_details.mobile_no',
                     'docexa_patient_booking_details.cost',
@@ -2646,7 +2649,7 @@ class AppointmentDetails extends Model
                 ->where('docexa_patient_booking_details.date', '=', date('Y-m-d'))
                 ->where('docexa_patient_booking_details.status', '!=', 3)
                 ->where('docexa_patient_booking_details.status', '!=', 6)
-                ->where('docexa_patient_booking_details.status', '!=', 4)   
+                ->where('docexa_patient_booking_details.status', '!=', 4)
                 // ->where(function ($query) {
                 //     $query->whereNotNull('docexa_patient_booking_details.credit_history_id');
                 //     $query->orWhere('docexa_patient_booking_details.payment_mode', 'free');

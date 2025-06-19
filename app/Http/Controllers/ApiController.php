@@ -97,7 +97,8 @@ class ApiController extends Controller
       }
 
       $jsonData = $request->all();
-      // Log::info('Incoming JSON:', $jsonData);
+      Log::info('Incoming JSON:', $jsonData);
+      
       // Handle message status updates
       if ($this->isStatusUpdate($jsonData)) {
         // Log::info('Message status update received. Skipping processing.');

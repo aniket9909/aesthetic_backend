@@ -722,7 +722,7 @@ $router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use
 
 
 
-
+    $router->get('getAvaliableSlotsByRooms/{esteblishmentusermapID}/{clinicId}/{roomId}/{date}', 'AppointmentApi@getAvaliableSlotsRooms');
 
 
 
