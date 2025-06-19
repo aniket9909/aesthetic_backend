@@ -45,6 +45,7 @@ class Controller extends BaseController {
 
 	 public function __construct()
 	 {
+		 date_default_timezone_set('Asia/Kolkata');
 		 error_log(print_r($_REQUEST,return: true));
 		Log::info([$_REQUEST]);
     }

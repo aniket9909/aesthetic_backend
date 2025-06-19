@@ -149,7 +149,7 @@ class GenerateAccessTokenController extends Controller
         $uid = 0;
         $role = RtcTokenBuilder::RoleAttendee;
         $expireTimeInSeconds = 3600;
-        $currentTimestamp = (new \DateTime("now", new \DateTimeZone('UTC')))->getTimestamp();
+        $currentTimestamp = (new \DateTime("now", new \DateTimeZone('Asia/Kolkata')))->getTimestamp();
         $privilegeExpiredTs = $currentTimestamp + $expireTimeInSeconds;
         $token = RtcTokenBuilder::buildTokenWithUid($appID, $appCertificate, $channelName, $uid, $role, $privilegeExpiredTs);
         return response()->json(['token'=>$token,'channelName'=>$channelName,'expire'=>$privilegeExpiredTs]);

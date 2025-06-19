@@ -9,7 +9,7 @@ class Message
     {
         $this->salt = rand(0, 100000);
 
-        $date = new \DateTime("now", new \DateTimeZone('UTC'));
+        $date = new \DateTime("now", new \DateTimeZone('Asia/Kolkata'));
         $this->ts = $date->getTimestamp() ;
         // $this->ts = $date->getTimestamp() + 24 * 3600;
 

@@ -26,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         DB::statement("SET time_zone = '+05:30'");
-	    $this->app->bindMethod([updateStatus::class, 'handle'], function ($job, $app) {
+        date_default_timezone_set('Asia/Kolkata');
+        $this->app->bindMethod([updateStatus::class, 'handle'], function ($job, $app) {
             return $job->handle();
         });
     }

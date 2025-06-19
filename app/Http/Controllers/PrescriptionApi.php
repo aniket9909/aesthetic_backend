@@ -840,13 +840,17 @@ class PrescriptionApi extends Controller
 
                 Log::info(["amount", $paymentAmount]);
                 Log::info(["mode", $modeOfPayment]);
-
-                $pendingBillings = BillingModel::where('usermap_id', $serviceTransaction->doctor_id)
-                    ->where('patient_id', $serviceTransaction->patient_id)
-                    ->where('id', '!=', $billing->id)
-                    ->where('balanced_amount', '>', 0)
-                    ->orderBy('created_at') // optional, prioritize oldest bills
-                    ->get();
+                // If $billing is null, set $pendingBillings to empty collection
+                if ($billing == null) {
+                    $pendingBillings = collect();
+                } else {
+                    $pendingBillings = BillingModel::where('usermap_id', $serviceTransaction->doctor_id)
+                        ->where('patient_id', $serviceTransaction->patient_id)
+                        ->where('id', '!=', $billing->id)
+                        ->where('balanced_amount', '>', 0)
+                        ->orderBy('created_at') // optional, prioritize oldest bills
+                        ->get();
+                }
 
                 foreach ($pendingBillings as $pending) {
                     $pendingDue = $pending->balanced_amount;
@@ -1324,7 +1328,7 @@ class PrescriptionApi extends Controller
             DB::rollBack();
             // dd($th);
             Log::info(["error" => $th]);
-            return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th->getMessage()], 500);
+            return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th], 500);
         }
     }
 

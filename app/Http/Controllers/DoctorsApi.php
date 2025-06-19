@@ -12,7 +12,7 @@
  */
 
 namespace App\Http\Controllers;
-date_default_timezone_set('America/Los_Angeles');
+
 
 //use Illuminate\Support\Facades\Request;
 use App\Clinic;
@@ -66,9 +66,7 @@ class DoctorsApi extends Controller
     /**
      * Constructor
      */
-    public function __construct() {
-
-    }
+    public function __construct() {}
 
 
     public function isPharmaClientExist($isPharmaClientId)
@@ -4089,6 +4087,7 @@ from
     public function createAppointmentV4(Request $request)
     {
         $res = new AppointmentDetails();
+
         $data = $res->createappointmentV4($request);
         // return $data;
         return response()->json(['status' => 'success', 'data' => $data], 200);
@@ -4098,7 +4097,14 @@ from
     public function getCalendarAppointments(Request $request)
     {
         try {
-          
+
+            // date_default_timezone_set('Asia/Kolkata');
+
+            // var_dump(Carbon::now()->format('Y-m-d H:i:s'));
+            // var_dump(date('Y-m-d H:i:s'));
+            // var_dump(date_default_timezone_get());
+
+            // die;
             // Optional date range filter
             $startDate = $request->query('start_date'); // e.g., 2025-06-01
             $endDate = $request->query('end_date');
