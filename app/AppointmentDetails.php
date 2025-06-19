@@ -2022,7 +2022,7 @@ class AppointmentDetails extends Model
             'created_by' => $created_by,
             'status' => $status,
             'schedule_remark' => $data['schedule_remark'],
-            'created_date' => date('Y-m-d H:i:s'),
+            'created_date' => Carbon::now()->format('Y-m-d H:i:s'),
             'user_map_id' => $data['user_map_id'],
             'cost' => $fee,
             'patient_id' => $data['patient_id'],
