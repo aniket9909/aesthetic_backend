@@ -832,8 +832,10 @@ class PrescriptionApi extends Controller
                 "doctor_id" => $esteblishmentusermapID,
                 "prescription_id" => $prescription->id,
                 "transaction_id" => $serviceTransaction ? $serviceTransaction->id : null,
-                "billing_data"=>[]
+                "whatever" => "you want to add here"
             ];
+            $billingTransaction = [];
+
 
             if ($hasRemainingSessions) {
 
@@ -841,7 +843,9 @@ class PrescriptionApi extends Controller
                 $billingCreation = isset($data['billing_data']) ? $data['billing_data'] : null;
 
                 Log::info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
                 Log::info(["billing", $billing]);
+
                 $paymentAmount = $billingCreation['paid_amount'];
                 $modeOfPayment = $data['billing_data']['mode_of_payment'] ?? null;
 
@@ -890,14 +894,15 @@ class PrescriptionApi extends Controller
 
                     $pending->balanced_amount = $pending->total_price - $pending->paid_amount;
                     $pending->save();
-
-                    $billingErpUpdateTransaction["billing_data"][] = [
+                    $array1 = [
                         'id' => $pending->id,
                         'transaction_id' => $pending->transaction_id,
                         'prescription_id' => $pending->prescription_id,
                         'paid_amount' => $paidedAmount,
                         'balanced_amount' => $pending->balanced_amount
                     ];
+                    array_push($billingTransaction, $array1);
+
                     // Insert into billing logs
                     BillingLogModel::insert([
                         'billing_id' => $pending->id,
@@ -925,13 +930,17 @@ class PrescriptionApi extends Controller
                     Log::info(["after billing amount", $billing]);
                     $billingData = $billing;
                     // Insert into payment logs
-                    $billingErpUpdateTransaction["billing_data"][] = [
+                    $array2 = [
                         'id' => $billing->id,
                         'transaction_id' => $billing->transaction_id,
                         'prescription_id' => $billing->prescription_id,
                         'paid_amount' => $paymentAmount,
                         'balanced_amount' => $billing->balanced_amount
                     ];
+                    Log::info(["billingTransaction", $array2]);
+                    array_push($billingTransaction, $array2);
+
+
                     BillingLogModel::insert([
                         'billing_id' => $billing->id,
                         'paid_amount' => $paymentAmount,
@@ -993,13 +1002,16 @@ class PrescriptionApi extends Controller
 
                         // Insert into billing logs
 
-                        $billingErpUpdateTransaction["billing_data"][] = [
+                        $array3 = [
                             'id' => $pending->id,
                             'transaction_id' => $pending->transaction_id,
                             'prescription_id' => $pending->prescription_id,
                             'paid_amount' => $paidedAmount,
                             'balanced_amount' => $pending->balanced_amount
                         ];
+
+                        array_push($billingTransaction, $array3);
+
 
                         BillingLogModel::insert([
                             'billing_id' => $pending->id,
@@ -1314,35 +1326,6 @@ class PrescriptionApi extends Controller
                                 throw new \Exception("Failed to save service transaction item");
                             }
                         }
-                        try {
-                            $client = new \GuzzleHttp\Client();
-                            $response = $client->post(env('APP_ERP_URL') . "api/orderservice-updatepayment", [
-                                'form_params' => [
-                                    "services" => [
-                                        'services' => $data['services'],
-                                        'billingDataCreated' => $billingData,
-                                        "billingData" => $data['billing_data'],
-                                        'consumables' => $apiConsumablesName,
-                                        'transaction_id' => $serviceTransaction->id,
-                                        'prescription_id' => $prescription->id,
-                                        'patient_id' => $data['patient_id'],
-                                        'doctor_id' => $esteblishmentusermapID,
-                                    ],
-                                    "updateBilling"=> $billingErpUpdateTransaction,
-                                ],
-                                'timeout' => 30,
-                            ]);
-
-                            $body = $response->getBody()->getContents();
-                            $data = json_decode($body, true);
-
-                            if ($response->getStatusCode() !== 200 || !isset($data['status']) || $data['status'] != 'success') {
-                                // return response()->json(['status' => 'error', 'message' => $data['msg'] ?? 'CheckerP API is not working'], 500);
-                            }
-                            Log::info(['service_api_call_response' => (string)$response->getBody()]);
-                        } catch (\Throwable $e) {
-                            Log::error(['service_api_call_error' => $e->getMessage()]);
-                        }
                     } else {
                         throw new \Exception("Failed to save service transaction");
                     }
@@ -1350,9 +1333,49 @@ class PrescriptionApi extends Controller
             } else {
                 throw new \Exception("Failed to save service transaction, no services provided");
             }
+            try {
+                Log::info(['service_api_call_request' => $billingTransaction]);
+                $billingErpUpdateTransaction['whatever'] = $billingTransaction;
+                Log::info(['billingErpUpdateTransaction' => $billingErpUpdateTransaction]);
+
+                $client = new \GuzzleHttp\Client();
+                $response = $client->post(env('APP_ERP_URL') . "api/orderservice-updatepayment", [
+                    'form_params' => [
+                        "services" => [
+                            'services' => $data['services'],
+                            'billingDataCreated' => $billingData,
+                            "billingData" => $data['billing_data'],
+                            'consumables' => $apiConsumablesName,
+                            // 'transaction_id' => $serviceTransaction->id,
+                            'prescription_id' => $prescription->id,
+                            'patient_id' => $data['patient_id'],
+                            'doctor_id' => $esteblishmentusermapID,
+                        ],
+                        "updateBilling" => [
+                            'billingTransaction' => $billingTransaction,
+                            'prescription_id' => $prescription->id,
+                            'patient_id' => $data['patient_id'],
+                            'doctor_id' => $esteblishmentusermapID,
+                            'billingErpUpdateTransaction' => $billingErpUpdateTransaction,
+                        ],
+                    ],
+                    'timeout' => 30,
+                ]);
+
+                $body = $response->getBody()->getContents();
+                $data = json_decode($body, true);
+
+                if ($response->getStatusCode() !== 200 || !isset($data['status']) || $data['status'] != 'success') {
+                    // return response()->json(['status' => 'error', 'message' => $data['msg'] ?? 'CheckerP API is not working'], 500);
+                }
+                Log::info(['service_api_call_response' => (string)$response->getBody()]);
+            } catch (\Throwable $e) {
+                Log::error(['service_api_call_error' => $e->getMessage()]);
+            }
             DB::rollBack();
-            return response()->json(['status' => 'success', 'message' => 'Prescription saved successfully', 'code' => 200, 'data' => $this->getPrescription($esteblishmentusermapID, $prescription->id)], 200);
-            // DB::commit();
+            return;
+            // return response()->json(['status' => 'success', 'message' => 'Prescription saved successfully', 'code' => 200, ], 200);
+            DB::commit();
             if ($prescriptionSave) {
                 return $this->getPrescription($esteblishmentusermapID, $prescription->id);
             } else {
@@ -1360,8 +1383,8 @@ class PrescriptionApi extends Controller
             }
         } catch (\Throwable $th) {
             DB::rollBack();
-            dd($th);
             Log::info(["error" => $th]);
+            dd($th);
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th], 500);
         }
     }
