@@ -14,6 +14,7 @@ class BillingLogModel extends Model
         'mode_of_payment',
         'balanced_amount',
         'remarks',
-        'created_at'
+        'created_at',
+        'settle_amount'
     ];
 }

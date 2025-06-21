@@ -1,13 +1,16 @@
 <?php
 
 namespace App\Http\Controllers;
+
 ini_set('memory_limit', '-1');
-error_log(print_r($_REQUEST,true));
+error_log(print_r($_REQUEST, true));
+
 use Laravel\Lumen\Routing\Controller as BaseController;
 use DB;
 use Log;
 use Carbon\Carbon;
 use Storage;
+
 /**
  * Class Controller
  * @package App\Http\Controllers
@@ -40,21 +43,23 @@ use Storage;
  * ),
  * )
  */
-class Controller extends BaseController {
+class Controller extends BaseController
+{
 
 
-	 public function __construct()
-	 {
-		 date_default_timezone_set('Asia/Kolkata');
-		 error_log(print_r($_REQUEST,return: true));
-		Log::info([$_REQUEST]);
+    public function __construct()
+    {
+        date_default_timezone_set('Asia/Kolkata');
+        error_log(print_r($_REQUEST, return: true));
+        Log::info([$_REQUEST]);
     }
-      function generateTimestamp()
+    function generateTimestamp()
     {
         return Carbon::now();
     }
 
-    function sendPush($title, $description, $uid = 0) {
+    function sendPush($title, $description, $uid = 0)
+    {
         if ($uid > 0) {
             $content = ["en" => $description];
             $head = ["en" => $title];
@@ -76,8 +81,10 @@ class Controller extends BaseController {
             $ch = curl_init();
 
             curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
-                'Authorization: Basic ZmFhMzMxZDgtNmU4Mi00YzI0LWJjYzAtNTA5YWNiNzMzOGM4'));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                'Content-Type: application/json',
+                'Authorization: Basic ZmFhMzMxZDgtNmU4Mi00YzI0LWJjYzAtNTA5YWNiNzMzOGM4'
+            ));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
             curl_setopt($ch, CURLOPT_HEADER, FALSE);
             curl_setopt($ch, CURLOPT_POST, TRUE);
@@ -90,11 +97,11 @@ class Controller extends BaseController {
             return $response;
         } else {
             return false;
-            
         }
     }
 
-    public static function sendSms($num, $msg) {
+    public static function sendSms($num, $msg)
+    {
         $fullApi = "https://enterprise.smsgupshup.com/GatewayAPI/rest?method=SendMessage&send_to={num}&msg={msg}&msg_type=TEXT&userid=2000153330&auth_scheme=plain&password=nbm0jALBl&v=1.1&format=text&mask=GSTDOC";
         $msg = urlencode($msg);
 
@@ -108,7 +115,7 @@ class Controller extends BaseController {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $output = curl_exec($ch);
             $info = curl_getinfo($ch);
-            $http_result = $info ['http_code'];
+            $http_result = $info['http_code'];
             curl_close($ch);
             if ($http_result == 200) {
                 return true;
@@ -117,319 +124,323 @@ class Controller extends BaseController {
         }
     }
 
-    public function sendNotificationOfVaccination ($data){
-            Log::info(['dataaaaa1' , $data]);  
-            
-            // 'template' => 'patient_vaccination_due',
-            // 'vaccine_name' =>isset($data['vaccine_name']) ? $data['vaccine_name'] : null, 
-            // 'due_date' => isset($data['due_date']) ? $data['due_date'] : null ,
-            // 'patientdata' => $patientData
-            $postdata = [
-                "template"=>$data['template'],
-                "envornment"=>$_ENV['ENVORNMENT'],
-                "vaccine_name" => $data['vaccine_name'],
-                "date" => $data['due_date'],
-                "patientdata" => $data['patientdata']
+    public function sendNotificationOfVaccination($data)
+    {
+        Log::info(['dataaaaa1', $data]);
 
-            ];
-            $fullApi = "http://kafka.docexa.com/sendVaccinationNotification";
-            
-    
-             Log::info(['fullApi' , $fullApi]);
-            if ($fullApi) {
-                $url = $fullApi;
-                Log::info(['url' , $url]);
-                $ch = curl_init($url);
-                Log::info(['chh' , $ch]);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-                curl_setopt($ch, CURLOPT_URL, $url);
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS,json_encode($postdata));
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                Log::info(['urllllllllll', $url]);
-                $output = curl_exec($ch);
-    Log::info(['outputttttttt',$output]);
-    
-                $info = curl_getinfo($ch);
-                $http_result = $info ['http_code'];
-                curl_close($ch);
-                Log::info(['output' => $output]);
-                // Log::info(['info' => $info]);
-                Log::info(['http' => $http_result]);
-    
-                
-            }
-    
-    }
-
-    public static function sendNotification($data) {
-        Log::info(['dataaaaa1' , $data]);    
+        // 'template' => 'patient_vaccination_due',
+        // 'vaccine_name' =>isset($data['vaccine_name']) ? $data['vaccine_name'] : null, 
+        // 'due_date' => isset($data['due_date']) ? $data['due_date'] : null ,
+        // 'patientdata' => $patientData
         $postdata = [
-            "template"=>$data['template'],
-            "envornment"=>$_ENV['ENVORNMENT'],
-            "handle"=>$data['handle'],
-            "appointment_id"=>$data['appointment_id']
-        ];
-        $fullApi = "http://kafka.docexa.com/send";
-        
+            "template" => $data['template'],
+            "envornment" => $_ENV['ENVORNMENT'],
+            "vaccine_name" => $data['vaccine_name'],
+            "date" => $data['due_date'],
+            "patientdata" => $data['patientdata']
 
-         Log::info(['fullApi' , $fullApi]);
+        ];
+        $fullApi = "http://kafka.docexa.com/sendVaccinationNotification";
+
+
+        Log::info(['fullApi', $fullApi]);
         if ($fullApi) {
             $url = $fullApi;
-            Log::info(['url' , $url]);
+            Log::info(['url', $url]);
             $ch = curl_init($url);
-            Log::info(['chh' , $ch]);
+            Log::info(['chh', $ch]);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS,json_encode($postdata));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             Log::info(['urllllllllll', $url]);
             $output = curl_exec($ch);
-Log::info(['outputttttttt',$output]);
+            Log::info(['outputttttttt', $output]);
 
             $info = curl_getinfo($ch);
-            $http_result = $info ['http_code'];
+            $http_result = $info['http_code'];
             curl_close($ch);
             Log::info(['output' => $output]);
             // Log::info(['info' => $info]);
             Log::info(['http' => $http_result]);
+        }
+    }
 
-            
+    public static function sendNotification($data)
+    {
+        Log::info(['dataaaaa1', $data]);
+        $postdata = [
+            "template" => $data['template'],
+            "envornment" => $_ENV['ENVORNMENT'],
+            "handle" => $data['handle'],
+            "appointment_id" => $data['appointment_id']
+        ];
+        $fullApi = "http://kafka.docexa.com/send";
+
+
+        Log::info(['fullApi', $fullApi]);
+        if ($fullApi) {
+            $url = $fullApi;
+            Log::info(['url', $url]);
+            $ch = curl_init($url);
+            Log::info(['chh', $ch]);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            Log::info(['urllllllllll', $url]);
+            $output = curl_exec($ch);
+            Log::info(['outputttttttt', $output]);
+
+            $info = curl_getinfo($ch);
+            $http_result = $info['http_code'];
+            curl_close($ch);
+            Log::info(['output' => $output]);
+            // Log::info(['info' => $info]);
+            Log::info(['http' => $http_result]);
         }
     }
 
 
 
 
-    public static function sendNotificationBooking($data) {
+    public static function sendNotificationBooking($data)
+    {
         $data = is_array($data) ? $data : $data->toArray();
-    
-        Log::info(['dataaaaa1' , $data]);
+
+        Log::info(['dataaaaa1', $data]);
         $postdata = [
-            "template"=>$data['template'],
-            "envornment"=>$_ENV['ENVORNMENT'],
-            "booking_id"=>$data['booking_id'],
-            "type"=>$data['type']
+            "template" => $data['template'],
+            "envornment" => $_ENV['ENVORNMENT'],
+            "booking_id" => $data['booking_id'],
+            "type" => $data['type']
         ];
         $fullApi = "http://kafka.docexa.com/send/request";
-        
+
 
         if ($fullApi) {
-            
+
 
             $url = $fullApi;
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS,json_encode($postdata));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $output = curl_exec($ch);
             $info = curl_getinfo($ch);
-            $http_result = $info ['http_code'];
-         //   var_dump($output);die;
+            $http_result = $info['http_code'];
+            //   var_dump($output);die;
             curl_close($ch);
         }
     }
-    public static function sendNotificationVideoCall($data) {
+    public static function sendNotificationVideoCall($data)
+    {
         $postdata = [
-            "template"=>$data['template'],
-            "envornment"=>$_ENV['ENVORNMENT'],
-            "handle"=>$data['handle'],
-            "usertype"=>$data['usertype'],
+            "template" => $data['template'],
+            "envornment" => $_ENV['ENVORNMENT'],
+            "handle" => $data['handle'],
+            "usertype" => $data['usertype'],
             'mobile_no' => $data['mobile_no'],
-            "appointment_id"=>$data['appointment_id']
+            "appointment_id" => $data['appointment_id']
         ];
         $fullApi = "http://kafka.docexa.com/testfcm";
-        
+
 
         if ($fullApi) {
-            
+
 
             $url = $fullApi;
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS,json_encode($postdata));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $output = curl_exec($ch);
             $info = curl_getinfo($ch);
-            $http_result = $info ['http_code'];
-         //   var_dump($output);die;
+            $http_result = $info['http_code'];
+            //   var_dump($output);die;
             curl_close($ch);
         }
     }
-    public static function sendNotificationPatient($data) {
+    public static function sendNotificationPatient($data)
+    {
         $postdata = [
-            "template"=>$data['template'],
-            "envornment"=>$_ENV['ENVORNMENT'],
-            "user_map_id"=>$data['user_map_id'],
-            "appointment_id"=>$data['appointment_id']
+            "template" => $data['template'],
+            "envornment" => $_ENV['ENVORNMENT'],
+            "user_map_id" => $data['user_map_id'],
+            "appointment_id" => $data['appointment_id']
         ];
         $fullApi = "http://kafka.docexa.com/sms/send";
-        
+
 
         if ($fullApi) {
-            
+
 
             $url = $fullApi;
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS,json_encode($postdata));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $output = curl_exec($ch);
             $info = curl_getinfo($ch);
-            $http_result = $info ['http_code'];
-         //   var_dump($output);die;
+            $http_result = $info['http_code'];
+            //   var_dump($output);die;
             curl_close($ch);
         }
     }
-    public static function sendNotificationDoc($data) {
+    public static function sendNotificationDoc($data)
+    {
         $postdata = [
-            'template'=>$data['template'],
-            'handle'=>$data['handle'],
-            'appointment_id'=>$data['appointment_id'],
-            'sender_email_id'=>$data['sender_email_id'],
-            'sender_mobile_no'=>$data['sender_mobile_no']
+            'template' => $data['template'],
+            'handle' => $data['handle'],
+            'appointment_id' => $data['appointment_id'],
+            'sender_email_id' => $data['sender_email_id'],
+            'sender_mobile_no' => $data['sender_mobile_no']
         ];
         $fullApi = "http://kafka.docexa.com/sms/send";
-        
+
 
         if ($fullApi) {
-            
+
 
             $url = $fullApi;
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS,json_encode($postdata));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $output = curl_exec($ch);
             $info = curl_getinfo($ch);
-            $http_result = $info ['http_code'];
-         //   var_dump($output);die;
+            $http_result = $info['http_code'];
+            //   var_dump($output);die;
             curl_close($ch);
         }
     }
-    public static function sendNotificationPfizer($data) {
+    public static function sendNotificationPfizer($data)
+    {
         $postdata = [
-            "template"=>$data['template'],
-            "envornment"=>$_ENV['ENVORNMENT'],
-            "appointment_id"=>$data['appointment_id']
+            "template" => $data['template'],
+            "envornment" => $_ENV['ENVORNMENT'],
+            "appointment_id" => $data['appointment_id']
         ];
         $fullApi = "http://kafka.docexa.com/send/pfizer";
-        
+
 
         if ($fullApi) {
-            
+
 
             $url = $fullApi;
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS,json_encode($postdata));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postdata));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $output = curl_exec($ch);
             $info = curl_getinfo($ch);
-            $http_result = $info ['http_code'];
-         //   var_dump($output);die;
+            $http_result = $info['http_code'];
+            //   var_dump($output);die;
             curl_close($ch);
         }
     }
-    public static function urlshorten($inputurl) {
+    public static function urlshorten($inputurl)
+    {
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-          CURLOPT_URL => 'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyDkTr_0ga5jgGHvEyatGtXWDLs0q76gJKk%0A',
-          CURLOPT_RETURNTRANSFER => true,
-          CURLOPT_ENCODING => '',
-          CURLOPT_MAXREDIRS => 10,
-          CURLOPT_TIMEOUT => 0,
-          CURLOPT_FOLLOWLOCATION => true,
-          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-          CURLOPT_CUSTOMREQUEST => 'POST',
-          CURLOPT_POSTFIELDS =>'{
+            CURLOPT_URL => 'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyDkTr_0ga5jgGHvEyatGtXWDLs0q76gJKk%0A',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => '{
           "dynamicLinkInfo": {
             "domainUriPrefix": "https://docexa.page.link",
-            "link": "'.$inputurl.'"
+            "link": "' . $inputurl . '"
           },
             "suffix": {
              "option": "SHORT"
            }
           
         }',
-          CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json'
-          ),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json'
+            ),
         ));
-        
+
         $response = curl_exec($curl);
-       
-        
+
+
         curl_close($curl);
         // $url = json_decode($response)->shortLink;    
 
         $response = json_decode($response);
 
-     if (isset($response->shortLink)) {
-    
-         $url = $response->shortLink;
-     } else {
-  
-    $url = null; 
-}
+        if (isset($response->shortLink)) {
+
+            $url = $response->shortLink;
+        } else {
+
+            $url = null;
+        }
 
         return $url;
-       
     }
-    public static function sendwebhook($data) {
+    public static function sendwebhook($data)
+    {
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-          CURLOPT_URL => 'https://docexa.com/web/patient/webhookbooking',
-          CURLOPT_RETURNTRANSFER => true,
-          CURLOPT_ENCODING => '',
-          CURLOPT_MAXREDIRS => 10,
-          CURLOPT_TIMEOUT => 0,
-          CURLOPT_FOLLOWLOCATION => true,
-          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-          CURLOPT_CUSTOMREQUEST => 'POST',
-          CURLOPT_POSTFIELDS =>$data,
-          CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json'
-          ),
+            CURLOPT_URL => 'https://docexa.com/web/patient/webhookbooking',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => $data,
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json'
+            ),
         ));
-        
+
         $response = curl_exec($curl);
-        
+
         curl_close($curl);
     }
-    public static function mediappapi($data) {
+    public static function mediappapi($data)
+    {
         $curl = curl_init();
         $send = array("data" => $data);
         Log::info([$send]);
         curl_setopt_array($curl, array(
-          CURLOPT_URL => 'https://product.solt.in/Mediapphealth/Vaccine/api.php',
-          CURLOPT_RETURNTRANSFER => true,
-          CURLOPT_ENCODING => '',
-          CURLOPT_MAXREDIRS => 10,
-          CURLOPT_TIMEOUT => 0,
-          CURLOPT_VERBOSE => true, 
-          CURLOPT_FOLLOWLOCATION => true,
-          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-          CURLOPT_CUSTOMREQUEST => 'POST',
-          CURLOPT_POSTFIELDS =>$data,
-          CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json'
-          ),
+            CURLOPT_URL => 'https://product.solt.in/Mediapphealth/Vaccine/api.php',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_VERBOSE => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => $data,
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json'
+            ),
         ));
-        
+
         $response = curl_exec($curl);
         $info = curl_getinfo($curl);
         Log::info([$info]);
@@ -437,7 +448,7 @@ Log::info(['outputttttttt',$output]);
     }
 
 
-    
+
     public function stateName($stateId)
     {
         $stateName = DB::table('docexa_state_master')->where('state_id', $stateId)->value('state_name');
@@ -449,6 +460,4 @@ Log::info(['outputttttttt',$output]);
         $name = DB::table('city_master')->where('id', $cityId)->value('name');
         return $name;
     }
-
-    
 }

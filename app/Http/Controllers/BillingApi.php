@@ -853,6 +853,79 @@ class BillingApi extends Controller
         }
     }
 
+
+    public function settleBillingAmount(Request $request)
+    {
+        // Manual validation for billing_id
+        if (!$request->has('billing_id') || !is_numeric($request->billing_id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'The billing_id field is required and must be an integer.',
+            ], 400);
+        }
+        // Optionally, check if billing_id exists in the billing table
+        if (!BillingModel::where('id', $request->billing_id)->exists()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'The selected billing_id is invalid.',
+            ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $billing = BillingModel::findOrFail($request->billing_id);
+            if (!$billing) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Billing record not found.',
+                ], 404);
+            }
+            if ($billing->balanced_amount <= 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No balance amount to settle.',
+                ], 400);
+            }
+
+            $settleAmount = $billing->balanced_amount;
+
+            // Update billing table
+            $billing->settle_amount = $settleAmount;
+            $billing->balanced_amount = 0;
+            if ($billing->save()) {
+                // Create payment log
+                BillingLogModel::create([
+                    'billing_id'       => $billing->id,
+                    'paid_amount'      => $settleAmount,
+                    'payment_date'     => Carbon::now(),
+                    'mode_of_payment'  => 'settled', // or you can allow custom value
+                    'balanced_amount'  => 0,
+                    'remarks'          => 'Amount settled manually',
+                    'settle_amount'    => $settleAmount,
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to update billing record.',
+                ], 500);
+            }
+
+            DB::commit();
+            return response()->json([
+                'status' => true,
+                'message' => 'Billing amount settled successfully.',
+                'settled_amount' => $settleAmount
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Error settling amount: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     public function getBillById($id)
     {
         try {

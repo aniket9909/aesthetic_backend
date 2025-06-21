@@ -660,6 +660,7 @@ $router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use
 
     $router->post('add/bill', 'BillingApi@addBill');
     $router->put('edit/bill/{id}', 'BillingApi@EditBill');
+    $router->post('/billing/settle', 'BillingApi@settleBillingAmount');
 
 
     $router->get('retrive/bills/{usermap_id}/{clinic_id}', 'BillingApi@getBiilMaster');
