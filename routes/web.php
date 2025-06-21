@@ -12,9 +12,9 @@ $router->options('{any:.*}', function () {
 });
 
 $router->get('/images/{filename}', function ($filename) {
-    $path = base_path('skin_images/' . $filename); // Make sure the path is correct
+    $path = base_path('skin_images/' . $filename); 
     if (!file_exists($path)) {
-        $path = base_path('skin_images/after_' . $filename); // Check in the after_images directory
+        $path = base_path('skin_images/after_' . $filename); 
     }
     if (!file_exists($path)) {
         abort(404, 'Image not found');
@@ -864,6 +864,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('/appointments-calendar', 'DoctorsApi@getCalendarAppointments');
     
     $router->get('/appointments-details', 'DoctorsApi@getCalenderAppointmentDetails');
+
+    $router->post('/booking/checkin', 'DoctorsApi@checkIn');
+
     
 
 

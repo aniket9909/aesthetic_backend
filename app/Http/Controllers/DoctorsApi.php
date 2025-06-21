@@ -4125,6 +4125,8 @@ from
                     'docexa_appointment_sku_details.end_booking_time',
                     'booking.patient_name',
                     'booking.status',
+                    'booking.cancellation_reason',
+                    'booking.schedule_remark',
                     'docexa_doctor_master.pharmaclient_name',
                     'booking.doctor_id',
                     'staff.staff_name as staff_name',
@@ -4223,6 +4225,61 @@ from
             Log::error(['error' => $th]);
 
             return response()->json(['status' => false, "errorMessage" => $th->getMessage(), 'message' => 'Internal server error'], 500);
+        }
+    }
+
+    public function checkIn(Request $request)
+    {
+        // Validate required booking_id
+        // Manual validation for booking_id
+        $bookingId = $request->input('booking_id');
+        if (!$bookingId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'The booking_id field is required and must be an integer.'
+            ], 422);
+        }
+
+        try {
+
+            // Check if booking exists
+            $booking = DB::table('docexa_patient_booking_details')
+                ->where('booking_id', $bookingId)
+                ->first();
+
+            if (!$booking) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Booking not found.'
+                ], 404);
+            }
+
+            // Update check-in status and time
+            $checkInTime = Carbon::now();
+
+            DB::table('docexa_patient_booking_details')
+                ->where('booking_id', $bookingId)
+                ->update([
+                    'check_in' => 1,
+                    'check_in_time' => $checkInTime,
+                    'updated_at' => $checkInTime
+                ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Check-in successful.',
+                'data' => [
+                    'booking_id' => $bookingId,
+                    'check_in_time' => $checkInTime->toDateTimeString()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Check-in error: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
         }
     }
 
