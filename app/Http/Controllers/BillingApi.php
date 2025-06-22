@@ -857,19 +857,19 @@ class BillingApi extends Controller
     public function settleBillingAmount(Request $request)
     {
         // Manual validation for billing_id
-        if (!$request->has('billing_id') || !is_numeric($request->billing_id)) {
+        if (!$request->has('billing_id')) {
             return response()->json([
                 'status' => false,
                 'message' => 'The billing_id field is required and must be an integer.',
             ], 400);
         }
         // Optionally, check if billing_id exists in the billing table
-        if (!BillingModel::where('id', $request->billing_id)->exists()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'The selected billing_id is invalid.',
-            ], 400);
-        }
+        // if (!BillingModel::where('id', $request->billing_id)->exists()) {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => 'The selected billing_id is invalid.',
+        //     ], 400);
+        // }
 
         DB::beginTransaction();
         try {
