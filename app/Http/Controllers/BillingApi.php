@@ -901,6 +901,7 @@ class BillingApi extends Controller
                     'mode_of_payment'  => 'settled', // or you can allow custom value
                     'balanced_amount'  => 0,
                     'remarks'          => $request->remark != null ? $request->remark :  'Amount settled manually',
+                    'created_at'          => Carbon::now(),
                     'settle_amount'    => $settleAmount,
                 ]);
             } else {
