@@ -867,7 +867,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->post('/booking/checkin', 'DoctorsApi@checkIn');
 
-    
+    $router->get('/cancel-remarks', 'DoctorsApi@getRemarks');
+
 
 
 

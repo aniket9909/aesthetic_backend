@@ -4283,6 +4283,16 @@ from
         }
     }
 
+    public function getRemarks()
+    {
+        $remarks = DB::table('cancel_remarks')
+            ->get();
+        return response()->json([
+            'status' => true,
+            'data' => $remarks
+        ]);
+    }
+
     public function getSlots($mapId, $clinicID, $startDate)
     {
 
