@@ -893,17 +893,17 @@ class BillingApi extends Controller
             $billing->settle_amount = $settleAmount;
             $billing->balanced_amount = 0;
             if ($billing->save()) {
-                // Create payment log
-                BillingLogModel::create([
-                    'billing_id'       => $billing->id,
-                    'paid_amount'      => $settleAmount,
-                    'payment_date'     => Carbon::now(),
-                    'mode_of_payment'  => 'settled', // or you can allow custom value
-                    'balanced_amount'  => 0,
-                    'remarks'          => $request->remark != null ? $request->remark :  'Amount settled manually',
-                    'created_at'          => Carbon::now(),
-                    'settle_amount'    => $settleAmount,
-                ]);
+                // Create payment log without using create()
+                $log = new BillingLogModel();
+                $log->billing_id = $billing->id;
+                $log->paid_amount = $settleAmount;
+                $log->payment_date = Carbon::now();
+                $log->mode_of_payment = 'settled'; // or you can allow custom value
+                $log->balanced_amount = 0;
+                $log->remarks = $request->remark != null ? $request->remark : 'Amount settled manually';
+                $log->created_at = Carbon::now();
+                $log->settle_amount = $settleAmount;
+                $log->save();
             } else {
                 return response()->json([
                     'status' => false,
