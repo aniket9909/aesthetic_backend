@@ -1172,6 +1172,7 @@ class PrescriptionApi extends Controller
                                     Log::info($item);
                                     if ($item->save()) {
 
+
                                         $sessionLogs = [];
                                         // Create a new session log for each session change
                                         for ($i = 0; $i < $todaySession; $i++) {
@@ -1205,15 +1206,16 @@ class PrescriptionApi extends Controller
                                                 ]);
                                             }
                                         }
+                                        if ($todaySession > 0) {
+                                            $apiServiceNames[] = $service;
+                                            $apiConsumablesName[] = $service['consumable'];
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    foreach ($data['services'] as &$service) {
-                        $service['amount'] = 0;
-                    }
-                    unset($service);
+                 
                 } else {
                     $isPackageAdded = $data['isPackageAdded'] ?? false;
 
@@ -1282,7 +1284,7 @@ class PrescriptionApi extends Controller
 
                             if ($serviceItem->save()) {
 
-                                $apiServiceNames[] = $service['name'] ?? null;
+                                $apiServiceNames[] = $service;
                                 $serviceTransactionItems[] = $serviceItem;
                                 $todaySession = isset($service['todays_sessions']) ? (int)$service['todays_sessions'] : 0;
 
@@ -1342,7 +1344,7 @@ class PrescriptionApi extends Controller
                 $response = $client->post(env('APP_ERP_URL') . "api/orderservice-updatepayment", [
                     'form_params' => [
                         "services" => [
-                            'services' => $data['services'],
+                            'services' => $apiServiceNames,
                             'billingDataCreated' => $billingData,
                             "billingData" => $data['billing_data'],
                             'consumables' => $apiConsumablesName,
