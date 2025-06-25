@@ -20,6 +20,7 @@ class ConsumableUsageLog extends Model
     ];
     protected $with = ['consumableInfo'];
     public function consumableInfo(){
-        return $this->hasMany(ConsumableMaster::class,'id','consumable_id');
+        return $this->belongsTo(ConsumableMaster::class, 'consumable_id', 'id');
     }
 }
+    

@@ -12,9 +12,9 @@ $router->options('{any:.*}', function () {
 });
 
 $router->get('/images/{filename}', function ($filename) {
-    $path = base_path('skin_images/' . $filename); 
+    $path = base_path('skin_images/' . $filename);
     if (!file_exists($path)) {
-        $path = base_path('skin_images/after_' . $filename); 
+        $path = base_path('skin_images/after_' . $filename);
     }
     if (!file_exists($path)) {
         abort(404, 'Image not found');
@@ -513,6 +513,8 @@ $router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use
 
     // savePrescription
     $router->post('establishments/users/{esteblishmentusermapID}/prescription', 'PrescriptionApi@savePrescriptionV4');
+    $router->post('updateservices', 'PrescriptionApi@updateServiceTransaction');
+
     $router->post('establishments/users/{esteblishmentusermapID}/prescription/new', 'PrescriptionApi@savePrescriptionV5');
     $router->post('prescription/update', 'PrescriptionApi@updatePrescriptionV1');
     $router->post('savePrescriptionV6/{esteblishmentusermapID}', 'PrescriptionApi@savePrescriptionV6');
@@ -724,9 +726,6 @@ $router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use
 
 
     $router->get('getAvaliableSlotsByRooms/{esteblishmentusermapID}/{clinicId}/{roomId}/{date}', 'AppointmentApi@getAvaliableSlotsRooms');
-
-
-
 });
 
 $router->group(['prefix' => 'api/v4/symptoms'], function () use ($router) {
@@ -853,6 +852,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('consumable-usage', 'ConsumableUsageLogController@store');
     $router->get('consumable-usage/{id}', 'ConsumableUsageLogController@show');
     $router->put('consumable-usage/{id}', 'ConsumableUsageLogController@update');
+    $router->put('consumable-usage-all', 'ConsumableUsageLogController@updateAll');
     $router->delete('consumable-usage/{id}', 'ConsumableUsageLogController@destroy');
 
 
@@ -862,7 +862,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     // $router->get('/service-categories', 'ServiceCategoryController@store');
 
     $router->get('/appointments-calendar', 'DoctorsApi@getCalendarAppointments');
-    
+
     $router->get('/appointments-details', 'DoctorsApi@getCalenderAppointmentDetails');
 
     $router->post('/booking/checkin', 'DoctorsApi@checkIn');

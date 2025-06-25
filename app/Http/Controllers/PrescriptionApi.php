@@ -321,344 +321,6 @@ class PrescriptionApi extends Controller
 
         return $this->getPrescription($esteblishmentusermapID, $prescription->id);
     }
-    /**
-     * Operation prescription 
-     *
-     * @param number $profile send patient id  (required)
-     *
-     * @return Http response
-     */
-
-    /**
-     * @OA\Post(
-     * path="/establishments/users/{esteblishmentusermapID}/prescription",
-     * tags={"Prescription"},
-     * description="prescription",
-     * @OA\Parameter(
-     *         name="esteblishmentusermapID",
-     *         in="path",
-     *         description="user map ID",
-     *         required=true,
-     *         example=1,
-     *         @OA\Schema(type="number")
-     *     ),
-     * @OA\RequestBody(
-     *  required=true,
-     *  description="Pass doctor details",
-     *  @OA\JsonContent(
-     *      type="object",
-     *                  @OA\Property(property="patient_id", type="string", format="text", example="1"),
-     *                  @OA\Property(property="booking_id", type="string", format="text", example="1"),
-     *                  @OA\Property(property="date", type="date", example="2022-05-10"),
-     *                  @OA\Property(property="note", type="string", example="description"),
-     *              @OA\Property(
-     *                property="medication",
-     *                type="array",
-     *                @OA\Items(
-     *                      @OA\Property(
-     *                         property="medication_name",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="quantity",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="note",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                       @OA\Property(
-     *                         property="duration",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="doses",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                     @OA\Property(
-     *                         property="timing",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                ),
-     *              ),
-     *              @OA\Property(
-     *                property="vitals",
-     *                type="object",
-     *                      @OA\Property(
-     *                         property="sugar",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="bp",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="insuline",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="pulse",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="weight",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="height",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="bmi",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="rbs",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="fbs",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="hba1c",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="temperature",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="spo2",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="sample_date",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                       @OA\Property(
-     *                         property="description",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                       @OA\Property(
-     *                         property="created_by",
-     *                         type="string",
-     *                         example="doctor"
-     *                      ),
-     *              ),
-     *              @OA\Property(
-     *                property="systemic_examination",
-     *                type="object",
-     *                      @OA\Property(
-     *                         property="cvc",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="ent",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="rs",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                       @OA\Property(
-     *                         property="pa",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                      @OA\Property(
-     *                         property="cns",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *                     @OA\Property(
-     *                         property="gen",
-     *                         type="string",
-     *                         example=""
-     *                      ),
-     *              ),
-     *              @OA\Property(
-     *                property="complaints",
-     *                type="string",
-     *                example=""
-     *              ),
-     *              @OA\Property(
-     *                property="diagnosis",
-     *                type="string",
-     *                example=""
-     *              ),
-     * 
-     *              @OA\Property(
-     *                property="complaints_row",
-     *                type="string",
-     *                example="[{'name':'Vertigo','data':{'note':'e','days':'4 Days','severity':'moderate','title':'Vertigo','type':'symptoms','qty':null,'duration':null,'med_timing':null,'timing':null,'medicine_type':null}},{'name':'Pain'},{'name':'Body ache'},{'name':'Reduced appetite ','data':{'note':null,'days':null,'severity':null,'title':'Reduced appetite ','type':'symptoms','qty':null,'duration':null,'med_timing':null,'timing':null,'medicine_type':null}}]"
-     *              ),
-     *              @OA\Property(
-     *                property="diagnosis_row",
-     *                type="string",
-     *                example="[{'name':'Covid positive','data':{'note':'sdas','days':'4 Days','severity':null,'title':'Covid positive','type':'diagnosis','qty':null,'duration':null,'med_timing':null,'timing':null,'medicine_type':null}}]"
-     *              ),
-     *              @OA\Property(
-     *                property="advice",
-     *                type="string",
-     *                example=""
-     *              ),
-     *              @OA\Property(
-     *                property="test_requested",
-     *                type="string",
-     *                example=""
-     *              ),
-     *              @OA\Property(
-     *                property="follow_up",
-     *                type="string",
-     *                example=""
-     *              ),
-     *              @OA\Property(
-     *                property="prescription_image",
-     *                type="string",
-     *                example=""
-     *              ),
-     * ),
-     * ),
-     * @OA\Response(
-     *         response="200",
-     * description="success",
-     *    @OA\JsonContent(
-     *       @OA\Property(property="success", type="string", example="success")
-     *        )
-     *     ),
-     * @OA\Response(
-     *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
-     *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="ID not found")
-     *        )
-     *     ),
-     * )
-     */
-    public function savePrescription($esteblishmentusermapID, Request $request)
-    {
-        try {
-
-            $data = $request->all();
-            Log::info(['dataaaaaaaaaaaaaaa' => $data]);
-            $vitals = $data['vitals'];
-            // Log::info(['vitalssssss' => $vitals , 'npote' =>  $data['note'] , 'image' => json_encode($data['prescription_image'])]);
-            $prescription = new PrescriptionData();
-            $prescription->user_map_id = $esteblishmentusermapID;
-            $prescription->patient_id = $data['patient_id'];
-            $prescription->booking_id = $data['booking_id'];
-            $prescription->date = $data['date'];
-            $prescription->note = isset($data['note']) ? ($data['note']) : null;
-            $prescription->complaints = $data['complaints'];
-            $prescription->diagnosis = $data['diagnosis'];
-            $prescription->complaints_row = isset($data['complaints_row']) ? ($data['complaints_row']) : null;
-            $prescription->diagnosis_row = isset($data['diagnosis_row']) ? ($data['diagnosis_row']) : null;
-            $prescription->advice = $data['advice'];
-            $prescription->test_requested = $data['test_requested'];
-            $prescription->follow_up = isset($data['follow_up']) ? ($data['follow_up']) : null;
-            $prescription->prescription_image = isset($data['prescription_image']) ? $data['prescription_image'] : "";
-
-            $prescription->medical_history = isset($data['medical_history']) ? ($data['medical_history']) : null;
-            $prescription->lifestyle = isset($data['lifestyle']) ? ($data['lifestyle']) : null;
-            $save = $prescription->save();
-            Log::info(['save' => $save]);
-            $medications = $data['medication'];
-            if ($medications) {
-                foreach ($medications as $med):
-
-                    $medication = new Medication();
-                    $medication->medication_name = $med['medication_name'];
-                    $medication->note = isset($med['note']) ? $med['note'] : null;
-                    $medication->durationValidity = isset($med['durationValidity']) ? $med['durationValidity'] : null;
-                    $medication->save();
-
-                    $pres_item = new PrescriptionItems();
-                    $pres_item->prescription_id = $prescription->id;
-                    $pres_item->medication_id = $medication->id;
-                    $pres_item->quantity = isset($med['quantity']) ? $med['quantity'] : null;
-                    $pres_item->duration = isset($med['duration']) ? $med['duration'] : null;
-                    $pres_item->doses = isset($med['doses']) ? $med['doses'] : null;
-                    $pres_item->timing = isset($med['timing']) ? $med['timing'] : null;
-                    $pres_item->note = isset($med['note']) ? $med['note'] : null;
-                    $pres_item->save();
-
-                endforeach;
-            }
-
-            $vitals = $data['vitals'];
-            Log::info(['vitalssssss' => $vitals]);
-            if ($vitals) {
-                foreach ($vitals as $value) {
-
-                    $vital = new Vital();
-                    Log::info(['value[name]' => $value['name']]);
-                    $vital->sugar = isset($value['sugar']) ? $value['sugar'] : null;
-                    $vital->bp = isset($value['bp']) ? $value['bp'] : null;
-                    $vital->insuline = isset($value['insuline']) ? $value['insuline'] : null;
-                    $vital->pulse = isset($value['pulse']) ? $value['pulse'] : null;
-                    $vital->weight = isset($value['weight']) ? $value['weight'] : null;
-                    $vital->height = isset($value['height']) ? $value['height'] : null;
-                    $vital->bmi = isset($value['bmi']) ? $value['bmi'] : null;
-                    $vital->rbs = isset($value['fbs']) ? $value['fbs'] : null;
-                    $vital->fbs = isset($value['fbs']) ? $value['fbs'] : null;
-                    $vital->hba1c = isset($value['hba1c']) ? $value['hba1c'] : null;
-                    $vital->sugar = isset($value['sugar']) ? $value['sugar'] : null;
-                    $vital->temperature = isset($value['temperature']) ? $value['temperature'] : null;
-                    $vital->spo2 = isset($value['spo2']) ? $value['spo2'] : null;
-                    $vital->sample_date = isset($value['sample_date']) ? $value['sample_date'] : null;
-                    $vital->description = isset($value['description']) ? $value['description'] : null;
-                    $vital->prescription_id = $prescription->id;
-                    $vital->vital_name = isset($value['name']) ? $value['name'] : null;
-
-                    $vital->value = isset($value['data']['vitals']) . $value['unit'] ? $value['data']['vitals'] . " " . $value['unit'] : null;
-                    $vital->created_by = isset($value['created_by']) ? $value['created_by'] : null;
-                    $valuesave = $vital->save();
-                    Log::info(['valueave' => $valuesave]);
-                }
-            }
-
-
-            $systemic_examinations = $data['systemic_examination'];
-            $systemic_examination = new Systemic_examination();
-            $systemic_examination->cvc = isset($systemic_examinations['cvc']) ? $systemic_examinations['cvc'] : null;
-            $systemic_examination->ent = isset($systemic_examinations['ent']) ? $systemic_examinations['ent'] : null;
-            $systemic_examination->rs = isset($systemic_examinations['rs']) ? $systemic_examinations['rs'] : null;
-            $systemic_examination->pa = isset($systemic_examinations['pa']) ? $systemic_examinations['pa'] : null;
-            $systemic_examination->cns = isset($systemic_examinations['cns']) ? $systemic_examinations['cns'] : null;
-            $systemic_examination->gen = isset($systemic_examinations['gen']) ? $systemic_examinations['gen'] : null;
-            $systemic_examination->prescription_id = $prescription->id;
-            $systemic_examination->save();
-
-
-            return $this->getPrescription($esteblishmentusermapID, $prescription->id);
-        } catch (\Throwable $th) {
-            Log::error(['errorr' => $th]);
-        }
-    }
 
 
 
@@ -835,6 +497,7 @@ class PrescriptionApi extends Controller
                 "whatever" => "you want to add here"
             ];
             $billingTransaction = [];
+            $apibilling = null;
 
 
             if ($hasRemainingSessions) {
@@ -898,6 +561,7 @@ class PrescriptionApi extends Controller
                         'id' => $pending->id,
                         'transaction_id' => $pending->transaction_id,
                         'prescription_id' => $pending->prescription_id,
+                        'mode_of_payment' => $modeOfPayment,
                         'paid_amount' => $paidedAmount,
                         'balanced_amount' => $pending->balanced_amount
                     ];
@@ -935,6 +599,8 @@ class PrescriptionApi extends Controller
                         'transaction_id' => $billing->transaction_id,
                         'prescription_id' => $billing->prescription_id,
                         'paid_amount' => $paymentAmount,
+                        'mode_of_payment' => $modeOfPayment,
+
                         'balanced_amount' => $billing->balanced_amount
                     ];
                     Log::info(["billingTransaction", $array2]);
@@ -1007,6 +673,7 @@ class PrescriptionApi extends Controller
                             'transaction_id' => $pending->transaction_id,
                             'prescription_id' => $pending->prescription_id,
                             'paid_amount' => $paidedAmount,
+                            'mode_of_payment' => $modeOfPayment,
                             'balanced_amount' => $pending->balanced_amount
                         ];
 
@@ -1056,6 +723,15 @@ class PrescriptionApi extends Controller
                     $Invoice->total_discount = $billingCreation['total_discount'];
                     $Invoice->balanced_amount = $billingCreation['total_price'] - $billingCreation['paid_amount'];
                     $billingSave = $Invoice->save();
+                    $apibilling = [
+                        'id' => $Invoice->id,
+                        'transaction_id' => $Invoice->transaction_id,
+                        'prescription_id' => $Invoice->prescription_id,
+                        'paid_amount' => $Invoice->paid_amount,
+                        'mode_of_payment' => $Invoice->mode_of_payment,
+                        'balanced_amount' => $Invoice->balanced_amount
+
+                    ];
 
                     $billingData = $Invoice;
 
@@ -1204,9 +880,30 @@ class PrescriptionApi extends Controller
                                                     'remarks' => $consumable['remarks'] ?? null,
                                                     'session_log_id' => $sessionLog->id,
                                                 ]);
+                                                $apiConsumablesName[] = $consumable ?? null;
                                             }
                                         }
                                         if ($todaySession > 0) {
+                                            // Update the total for this service based on today's sessions
+                                            // $serviceTotal = 0;
+                                            // if (isset($service['consumable']) && is_array($service['consumable'])) {
+                                            //     foreach ($service['consumable'] as $consumable) {
+                                            //         $serviceTotal += isset($consumable['amount']) ? $consumable['amount'] : 0;
+                                            //     }
+                                            // }
+                                            // $service['total'] = $serviceTotal;
+
+                                            // // Update consumable quantities for this service
+                                            // if (isset($service['consumable']) && is_array($service['consumable'])) {
+                                            //     foreach ($service['consumable'] as &$consumable) {
+                                            //         // Example: update used_quantity if needed
+                                            //         if ($todaySession > 0 && isset($consumable['quantity'])) {
+                                            //             $consumable['used_quantity'] = $consumable['quantity'] / $todaySession;
+                                            //         }
+                                            //     }
+                                            //     unset($consumable);
+                                            // }
+                                            $service['total'] = 0;
                                             $apiServiceNames[] = $service;
                                             $apiConsumablesName[] = $service['consumable'];
                                         }
@@ -1215,7 +912,6 @@ class PrescriptionApi extends Controller
                             }
                         }
                     }
-                 
                 } else {
                     $isPackageAdded = $data['isPackageAdded'] ?? false;
 
@@ -1324,6 +1020,10 @@ class PrescriptionApi extends Controller
                                         $apiConsumablesName[] = $consumable ?? null;
                                     }
                                 }
+                                // if ($todaySession > 0) {
+                                //     $service['total'] = 0;
+                                //     $apiConsumablesName[] = $service['consumable'];
+                                // }
                             } else {
                                 throw new \Exception("Failed to save service transaction item");
                             }
@@ -1346,7 +1046,7 @@ class PrescriptionApi extends Controller
                         "services" => [
                             'services' => $apiServiceNames,
                             'billingDataCreated' => $billingData,
-                            "billingData" => $data['billing_data'],
+                            "billingData" => $apibilling,
                             'consumables' => $apiConsumablesName,
                             // 'transaction_id' => $serviceTransaction->id,
                             'prescription_id' => $prescription->id,
@@ -1358,7 +1058,7 @@ class PrescriptionApi extends Controller
                             'prescription_id' => $prescription->id,
                             'patient_id' => $data['patient_id'],
                             'doctor_id' => $esteblishmentusermapID,
-                            'billingErpUpdateTransaction' => $billingErpUpdateTransaction,
+                            // 'billingErpUpdateTransaction' => $billingErpUpdateTransaction,
                         ],
                     ],
                     'timeout' => 30,
@@ -1374,8 +1074,8 @@ class PrescriptionApi extends Controller
             } catch (\Throwable $e) {
                 Log::error(['service_api_call_error' => $e->getMessage()]);
             }
-            DB::rollBack();
-            return;
+            // DB::rollBack();
+            // return;
             // return response()->json(['status' => 'success', 'message' => 'Prescription saved successfully', 'code' => 200, ], 200);
             DB::commit();
             if ($prescriptionSave) {
@@ -1386,8 +1086,113 @@ class PrescriptionApi extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::info(["error" => $th]);
-            dd($th);
+            // dd($th);
+
             return response()->json(['status' => false, 'message' => "Internal server error", 'error' => $th], 500);
+        }
+    }
+
+    public function updateServiceTransaction(Request $request)
+    {
+        try {
+            $data = $request->all();
+            Log::info(['updateServiceTransactionData' => $data]);
+
+            // Find the latest service transaction for this doctor and patient
+            $serviceTransaction = ServiceTransaction::where('id', $data['transaction_id'])
+                ->latest()
+                ->first();
+
+            if (!$serviceTransaction) {
+                return response()->json(['status' => false, 'message' => 'No existing service transaction found'], 404);
+            }
+
+            // Update or add services
+            $existingServiceIds = ServiceTransactionItems::where('enrollment_transaction_id', $serviceTransaction->id)
+                ->pluck('service_master_id')
+                ->toArray();
+
+            $newServices = [];
+            foreach ($data['services'] as $service) {
+                if (in_array($service['id'], $existingServiceIds)) {
+                    // Update existing service item (extend sessions, etc.)
+                    $serviceItem = ServiceTransactionItems::where('enrollment_transaction_id', $serviceTransaction->id)
+                        ->where('service_master_id', $service['id'])
+                        ->first();
+
+                    if ($serviceItem) {
+                        $additionalSessions = isset($service['add_sessions']) ? (int)$service['add_sessions'] : 0;
+                        $serviceItem->total_sessions += $additionalSessions;
+                        $serviceItem->remaining_sessions += $additionalSessions;
+                        $serviceItem->sub_total = isset($service['total']) ? $service['total'] : $serviceItem->sub_total;
+                        $serviceItem->save();
+                    }
+                } else {
+                    // Add new service item
+                    $serviceItem = new ServiceTransactionItems();
+                    $serviceItem->enrollment_transaction_id = $serviceTransaction->id;
+                    $serviceItem->service_master_id = $service['id'];
+                    $serviceItem->custom_price = isset($service['base_price']) ? $service['base_price'] : null;
+                    $serviceItem->tax_amount = isset($service['tax_percent']) ? $service['tax_percent'] : null;
+                    $serviceItem->discount_amount = isset($service['discount_amount']) ? $service['discount_amount'] : null;
+                    $serviceItem->sub_total = isset($service['total']) ? $service['total'] : null;
+                    $serviceItem->is_tax_inclusive = isset($service['is_tax_inclusive']) ? $service['is_tax_inclusive'] : 1;
+                    $serviceItem->total_sessions = isset($service['qty']) ? $service['qty'] : 1;
+                    $serviceItem->completed_sessions = 0;
+                    $serviceItem->remaining_sessions = $serviceItem->total_sessions;
+                    $serviceItem->save();
+                    $newServices[] = $service;
+                }
+            }
+
+            // Update billing
+            $billing = BillingModel::where('transaction_id', $serviceTransaction->id)->first();
+            if ($billing) {
+                // Recalculate total price, tax, discount, etc.
+                $total = array_sum(array_column($data['services'], 'total'));
+                $totalDiscount = array_sum(array_column($data['services'], 'discount_amount'));
+                $baseTotal = array_sum(array_column($data['services'], 'base_price'));
+                $totalTax = $total - $baseTotal;
+
+                $billing->total_price = $total;
+                $billing->total_discount = $totalDiscount;
+                $billing->total_tax = $totalTax;
+                // Merge existing items with new services and update the items list
+                $existingItems = [];
+                if (!empty($billing->items)) {
+                    $existingItems = json_decode($billing->items, true);
+                    if (!is_array($existingItems)) {
+                        $existingItems = [];
+                    }
+                }
+                // Append new services to existing items
+                foreach ($newServices as $service) {
+                    // Prepare the service item array to store only required fields
+                    $serviceItemObject = (object)[
+                        'title' => isset($service['name']) ? $service['name'] : null,
+                        'unit_cost' => isset($service['base_price']) ? $service['base_price'] : null,
+                        'amount' => isset($service['total']) ? $service['total'] : null,
+                        'discount' => isset($service['discount_amount']) ? $service['discount_amount'] : null,
+                        'sessions' => isset($service['qty']) ? $service['qty'] : null,
+                        'tax_percent' => isset($service['tax_percent']) ? $service['tax_percent'] : null,
+                    ];
+                    $existingItems[] = $serviceItemObject;
+                }
+
+                $billing->items = json_encode($existingItems);
+                $billing->balanced_amount = $billing->total_price - $billing->paid_amount;
+                $billing->save();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Service transaction updated successfully',
+                'transaction_id' => $serviceTransaction->id
+            ], 200);
+        } catch (\Throwable $th) {
+            dd($th);
+            \Log::error(['error' => $th]);
+            return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
         }
     }
 
@@ -3257,7 +3062,10 @@ class PrescriptionApi extends Controller
                 $trasactionIds = $session->pluck('enrollment_item_id')->toArray();
                 $row->session = $session;
                 if ($session != null) {
-                    $row->services = ServiceTransactionItems::whereIn('id', $trasactionIds)->get();
+                    $row->services = ServiceTransactionItems::with('consumable')->whereIn('id', $trasactionIds)->get();
+                    // $row->service_user_consumables = [];
+                    // $serviceUserConsumables = ConsumableUsageLog::whereIn('enrollment_item_id', $trasactionIds)->get();
+                    // $row->services['use_consumables'] = $serviceUserConsumables;
                 }
             }
             return response()->json(['status' => 'success', 'data' => $data, 'total_prescription' => $totalCount], 200);

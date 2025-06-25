@@ -469,6 +469,7 @@ class BillingApi extends Controller
             $invoices = BillingModel::where('usermap_id', $usermap_id)->where('patient_id', $patient_id)
                 ->orderBy('created_at', 'desc')
                 ->offset($offset)->limit($limit)->get();
+                // dd($invoices);s
             if (count($invoices) > 0) {
                 foreach ($invoices as $invoice) {
                     $invoice->items = json_decode(json: $invoice->items);

@@ -4201,6 +4201,8 @@ from
                     'docexa_appointment_sku_details.start_booking_time',
                     'docexa_appointment_sku_details.end_booking_time',
                     'booking.patient_name',
+                    'booking.check_in',
+                    'booking.check_in_time',
                     'booking.doctor_id',
                     'booking.partial_services',
                     'consult.name as consult_type',
@@ -4243,8 +4245,9 @@ from
         try {
 
             // Check if booking exists
+
             $booking = DB::table('docexa_patient_booking_details')
-                ->where('booking_id', $bookingId)
+                ->where('bookingidmd5', $bookingId)
                 ->first();
 
             if (!$booking) {
@@ -4255,14 +4258,13 @@ from
             }
 
             // Update check-in status and time
-            $checkInTime = Carbon::now();
+            $checkInTime = Carbon::now()->format('Y-m-d H:i:s');
 
             DB::table('docexa_patient_booking_details')
-                ->where('booking_id', $bookingId)
+                ->where('bookingidmd5', $bookingId)
                 ->update([
                     'check_in' => 1,
                     'check_in_time' => $checkInTime,
-                    'updated_at' => $checkInTime
                 ]);
 
             return response()->json([
@@ -4270,7 +4272,7 @@ from
                 'message' => 'Check-in successful.',
                 'data' => [
                     'booking_id' => $bookingId,
-                    'check_in_time' => $checkInTime->toDateTimeString()
+                    'check_in_time' => $checkInTime
                 ]
             ]);
         } catch (\Exception $e) {
@@ -4282,6 +4284,8 @@ from
             ], 500);
         }
     }
+
+    
 
     public function getRemarks()
     {
