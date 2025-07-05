@@ -872,7 +872,7 @@ class PrescriptionApi extends Controller
                                                 ConsumableUsageLog::create([
                                                     'enrollment_transaction_id' => $serviceTransaction->id,
                                                     'enrollment_item_id' => $item->id,
-                                                    'consumable_id' => $consumable['id'] ?? null,
+                                                    'consumable_id' => $consumable['consumable_id'] ?? null,
                                                     'used_quantity' => $perSessionQty,
                                                     'used_unit' => $consumable['unit'] ?? null,
                                                     'used_by_doctor_id' => $esteblishmentusermapID,
@@ -1121,7 +1121,7 @@ class PrescriptionApi extends Controller
                         ->first();
 
                     if ($serviceItem) {
-                        $additionalSessions = isset($service['add_sessions']) ? (int)$service['add_sessions'] : 0;
+                        $additionalSessions = isset($service['qty']) ? (int)$service['qty'] : 0;
                         $serviceItem->total_sessions += $additionalSessions;
                         $serviceItem->remaining_sessions += $additionalSessions;
                         $serviceItem->sub_total = isset($service['total']) ? $service['total'] : $serviceItem->sub_total;
@@ -1190,7 +1190,7 @@ class PrescriptionApi extends Controller
                 'transaction_id' => $serviceTransaction->id
             ], 200);
         } catch (\Throwable $th) {
-            dd($th);
+            
             \Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
         }

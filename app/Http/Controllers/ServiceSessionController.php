@@ -23,6 +23,7 @@ class ServiceSessionController extends Controller
         $transactions = ServiceTransaction::with('serviceTransactionItems.sessions')
             ->where('doctor_id', $esteblishmentusermapID)
             ->where('patient_id', $patientId)
+            ->orderBy('created_at', 'desc')
             ->get();
 
 
@@ -41,7 +42,7 @@ class ServiceSessionController extends Controller
                 "groupInfo" => $transaction->groupInfo,
                 'services' => []
             ];
-
+            $services = [];
             foreach ($transaction->serviceTransactionItems as $item) {
                 $itemData = [
                     'service_item_id' => $item->id,
@@ -66,9 +67,9 @@ class ServiceSessionController extends Controller
                         'remarks' => $session->remarks,
                     ];
                 }
-
-                $transactionData['services'][] = $itemData;
+                $services[] = $itemData;
             }
+            $transactionData['services'] = $services;
 
             $data[] = $transactionData;
         }
