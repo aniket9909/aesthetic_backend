@@ -1482,6 +1482,7 @@ Please upload a photo if you would like to have your skin analyzed.
   {
     try {
       $doctorId = $request->input('doctor_id');
+
       $patientNumber = $request->input('patient_number');
 
       $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')
@@ -1511,9 +1512,13 @@ Please upload a photo if you would like to have your skin analyzed.
         ? $request->file('images')
         : [$request->file('images')];
 
+        Log::info($files);
+
       foreach ($files as $file) {
+        Log::info($file);
         if ($file && $file->isValid()) {
           $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.png';
+          Log::info($filename);
           $fullPath = base_path('skin_images/' . $filename);
           // Ensure destination directory exists
           if (!file_exists(dirname($fullPath))) {
