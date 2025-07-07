@@ -514,6 +514,7 @@ $router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use
     // savePrescription
     $router->post('establishments/users/{esteblishmentusermapID}/prescription', 'PrescriptionApi@savePrescriptionV4');
     $router->post('updateservices', 'PrescriptionApi@updateServiceTransaction');
+    $router->post('discardServices', 'PrescriptionApi@discardServiceSet');
 
     $router->post('establishments/users/{esteblishmentusermapID}/prescription/new', 'PrescriptionApi@savePrescriptionV5');
     $router->post('prescription/update', 'PrescriptionApi@updatePrescriptionV1');

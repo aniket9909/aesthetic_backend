@@ -1111,6 +1111,7 @@ class PrescriptionApi extends Controller
             $existingServiceIds = ServiceTransactionItems::where('enrollment_transaction_id', $serviceTransaction->id)
                 ->pluck('service_master_id')
                 ->toArray();
+            DB::beginTransaction();
 
             $newServices = [];
             foreach ($data['services'] as $service) {
@@ -1121,9 +1122,9 @@ class PrescriptionApi extends Controller
                         ->first();
 
                     if ($serviceItem) {
-                        $additionalSessions = isset($service['add_sessions']) ? (int)$service['add_sessions'] : 0;
-                        $serviceItem->total_sessions += $additionalSessions;
-                        $serviceItem->remaining_sessions += $additionalSessions;
+                        $additionalSessions = isset($service['qty']) ? (int)$service['qty'] : 0;
+                        $serviceItem->total_sessions = $additionalSessions;
+                        $serviceItem->remaining_sessions = $additionalSessions - $serviceItem->completed_sessions;
                         $serviceItem->sub_total = isset($service['total']) ? $service['total'] : $serviceItem->sub_total;
                         $serviceItem->save();
                     }
@@ -1146,7 +1147,7 @@ class PrescriptionApi extends Controller
             }
 
             // Update billing
-            $billing = BillingModel::where('transaction_id', $serviceTransaction->id)->first();
+            $billing = BillingModel::where('transaction_id', $serviceTransaction->id)->latest()->first();
             if ($billing) {
                 // Recalculate total price, tax, discount, etc.
                 $total = array_sum(array_column($data['services'], 'total'));
@@ -1182,15 +1183,48 @@ class PrescriptionApi extends Controller
                 $billing->items = json_encode($existingItems);
                 $billing->balanced_amount = $billing->total_price - $billing->paid_amount;
                 $billing->save();
-            }
 
+                // Update billing logs
+                BillingLogModel::where('billing_id', $billing->id)->latest()->first()->update([
+                    'balanced_amount' => $billing->balanced_amount,
+                    'remarks' => 'Updated billing for service transaction',
+                ]);
+            }
+            DB::commit();
             return response()->json([
                 'status' => true,
                 'message' => 'Service transaction updated successfully',
                 'transaction_id' => $serviceTransaction->id
             ], 200);
         } catch (\Throwable $th) {
-            dd($th);
+            // dd($th);
+            DB::rollBack();
+            \Log::error(['error' => $th]);
+            return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
+        }
+    }
+
+    public function discardServiceSet(Request $request)
+    {
+        try {
+            $data = $request->all();
+            if (!isset($data['transaction_id'])) {
+                return response()->json(['status' => false, 'message' => 'transaction_id is required'], 400);
+            }
+
+            $serviceTransaction = ServiceTransaction::find($data['transaction_id']);
+            if (!$serviceTransaction) {
+                return response()->json(['status' => false, 'message' => 'Service transaction not found'], 404);
+            }
+
+            $items = ServiceTransactionItems::where('enrollment_transaction_id', $serviceTransaction->id)->get();
+            foreach ($items as $item) {
+                $item->remaining_sessions = 0;
+                $item->save();
+            }
+
+            return response()->json(['status' => true, 'message' => 'All remaining sessions set to 0 for this transaction'], 200);
+        } catch (\Throwable $th) {
             \Log::error(['error' => $th]);
             return response()->json(['status' => false, 'message' => 'Internal server error', 'error' => $th->getMessage()], 500);
         }
