@@ -2051,10 +2051,19 @@ class AppointmentDetails extends Model
 
         // Log::info(['payyyy', $paymentdata]);
 
-        $urlArray = parse_url($tabdata['appointment'][0]->handle, PHP_URL_PATH);
-        $segments = explode('/', $urlArray);
-        $numSegments = count($segments);
-        $currentSegment = $segments[$numSegments - 1];
+        // $urlArray = parse_url($tabdata['appointment'][0]->handle, PHP_URL_PATH);
+        // $segments = explode('/', $urlArray);
+        // $numSegments = count($segments);
+        // $currentSegment = $segments[$numSegments - 1];
+        $currentSegment = null;
+
+        if (!empty($tabdata['appointment']) && isset($tabdata['appointment'][0]->handle)) {
+            $urlPath = parse_url($tabdata['appointment'][0]->handle, PHP_URL_PATH);
+            $segments = explode('/', trim($urlPath, '/')); // remove leading/trailing slashes
+            $numSegments = count($segments);
+            $currentSegment = $segments[$numSegments - 1] ?? null;
+        }
+
         $c = new Controller();
         // Log::info("status", [$status, $payment_mode, $created_by]);
 

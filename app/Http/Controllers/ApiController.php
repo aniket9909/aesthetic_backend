@@ -916,16 +916,20 @@ Please upload a photo if you would like to have your skin analyzed.
         return ['message' => 'Clinic ID not found.', 'isBooking' => false];
       }
       $sku = DB::table('docexa_esteblishment_user_map_sku_details')->where('user_map_id', $clinicId->id)->first();
-      if (!$establishId) {
+      Log::info("SKU Details: " . json_encode($sku));
+      if ($sku != null) {
         return ['message' => 'sku ID not found.', 'isBooking' => false];
       }
+
+      // Validate the request data
+      Log::info("validation compelted");
       $request->merge([
         'appointment_date' => Carbon::now()->format('Y-m-d'),
         'schedule_time' => $request->selected_slot,
         'schedule_date' => Carbon::now()->format('Y-m-d'),
         'clinic_id' => $clinicId->id,
         'user_map_id' => $establishId->id,
-        'sku_id' => $sku->id,
+        'sku_id' => $sku->id ?? 200189,
         'payment_mode' => "direct",
         'schedule_remark' => "",
         'gender' => $request->gender,
@@ -934,7 +938,10 @@ Please upload a photo if you would like to have your skin analyzed.
         'patient_mobile_no' => $patient->mobile_no,
         'age' => $request->age,
         'email' => $request->email,
+        "partial_services"=>[],
+        "duration"=>15
       ]);
+      Log::info($request->all());
       $bookAppointment = new DoctorsApi();
       $result = $bookAppointment->createAppointmentV4($request);
 
@@ -946,6 +953,12 @@ Please upload a photo if you would like to have your skin analyzed.
         'appointment' => $result,
       ], 201);
     } catch (\Throwable $th) {
+    Log::error('Error booking appointment:', [
+      'error' => $th->getMessage(),
+      "errormsg"=>$th->getLine(),
+      "fullerror"=>$th,
+      'request' => $request->all(),
+    ]);
       throw $th;
       return response()->json([
         'success' => false,

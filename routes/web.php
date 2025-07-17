@@ -881,41 +881,39 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->put('{id}', 'ConsultTypeController@update');   // PUT update
         $router->delete('{id}', 'ConsultTypeController@destroy'); //    
     });
+    $router->post('/webhook', 'ApiController@handleJsonInput');
+    $router->get('/webhook', 'ApiController@getAllWebhookInputs');
+    $router->get('/webhook/{id}', 'ApiController@getWebhookInputById');
+    $router->put('/webhook/{id}', 'ApiController@updateWebhookInput');
+    $router->delete('/webhook/{id}', 'ApiController@deleteWebhookInput');
+    $router->post('/getSlots', 'ApiController@getAvailableSlots');
+    $router->post('/bookAppointment', 'ApiController@bookAppointment');
+    $router->post('/getAnalysis', 'ApiController@getAnalysis');
+    $router->post('/getAfterImages', 'ApiController@getAfterImages');
+    $router->post('/sendImage', 'ApiController@sendDocumentToWhatsApp');
+    $router->get('/checkPatient/{patientNo}/{doctorNumber}', 'ApiController@checkPatient');
+    $router->get('/', function () use ($router) {
+        dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '9850612045032553']));
+
+        return "hii there";
+    });
+
+    $router->post('/checkAfterImage', 'SkinAnalysisController@afterImageAnalysis');
+    $router->post('/image', 'SkinAnalysisController@analyzeSkin');
+    // $router->post('/image', [SkinAnalysisController::class, 'analyzeSkin']);
+    $router->post('/chatbot', 'SkinAnalysisController@chatbot');
+    $router->post('/uploadpdf', 'ApiController@uploadPdf');
+
+    $router->get('services', 'ServiceMasterController@index');
+    $router->get('servicesPackages/{doctorId}/{patientId}', 'ServiceMasterController@getServiceAndPackages');
+    $router->post('services', 'ServiceMasterController@store');
+    $router->get('services/{id}', 'ServiceMasterController@show');
+    $router->put('services/{id}', 'ServiceMasterController@update');
+    $router->delete('services/{id}', 'ServiceMasterController@destroy');
+
+    $router->get('groups', 'ServiceGroupController@index');
+    $router->post('groups', 'ServiceGroupController@store');
+    $router->get('groups/{id}', 'ServiceGroupController@show');
+    $router->put('groups/{id}', 'ServiceGroupController@update');
+    $router->delete('groups/{id}', 'ServiceGroupController@destroy');
 });
-
-
-$router->post('/webhook', 'ApiController@handleJsonInput');
-$router->get('/webhook', 'ApiController@getAllWebhookInputs');
-$router->get('/webhook/{id}', 'ApiController@getWebhookInputById');
-$router->put('/webhook/{id}', 'ApiController@updateWebhookInput');
-$router->delete('/webhook/{id}', 'ApiController@deleteWebhookInput');
-$router->post('/getSlots', 'ApiController@getAvailableSlots');
-$router->post('/bookAppointment', 'ApiController@bookAppointment');
-$router->post('/getAnalysis', 'ApiController@getAnalysis');
-$router->post('/getAfterImages', 'ApiController@getAfterImages');
-$router->post('/sendImage', 'ApiController@sendDocumentToWhatsApp');
-$router->get('/checkPatient/{patientNo}/{doctorNumber}', 'ApiController@checkPatient');
-$router->get('/', function () use ($router) {
-    dispatch(new \App\Jobs\AfterImageStore(['mediaId' => '9850612045032553']));
-
-    return "hii there";
-});
-
-$router->post('/checkAfterImage', 'SkinAnalysisController@afterImageAnalysis');
-$router->post('/image', 'SkinAnalysisController@analyzeSkin');
-// $router->post('/image', [SkinAnalysisController::class, 'analyzeSkin']);
-$router->post('/chatbot', 'SkinAnalysisController@chatbot');
-$router->post('/uploadpdf', 'ApiController@uploadPdf');
-
-$router->get('services', 'ServiceMasterController@index');
-$router->get('servicesPackages/{doctorId}/{patientId}', 'ServiceMasterController@getServiceAndPackages');
-$router->post('services', 'ServiceMasterController@store');
-$router->get('services/{id}', 'ServiceMasterController@show');
-$router->put('services/{id}', 'ServiceMasterController@update');
-$router->delete('services/{id}', 'ServiceMasterController@destroy');
-
-$router->get('groups', 'ServiceGroupController@index');
-$router->post('groups', 'ServiceGroupController@store');
-$router->get('groups/{id}', 'ServiceGroupController@show');
-$router->put('groups/{id}', 'ServiceGroupController@update');
-$router->delete('groups/{id}', 'ServiceGroupController@destroy');
