@@ -719,6 +719,7 @@ $router->group(['prefix' => 'api/v3', 'middleware' => ['cors']], function () use
 
     $router->get('search/investigation', 'PrescriptionApi@getinvestigationMasterwrtousermapSearch');
     $router->post('uploadImageFromDoc', 'ApiController@uploadImageFromDoc');
+    $router->post('uploadImageAi', 'ApiController@uploadSingleImageFromDoc');
     $router->get('getUploadedImages/{doctorId}/{patientNumber}', 'ApiController@getUploadedImages');
     $router->post('uploadMarkedImageFromDoc', 'ApiController@uploadMarkedImageFromDoc');
     $router->post('deletePatientImage', 'ApiController@deletePatientImage');

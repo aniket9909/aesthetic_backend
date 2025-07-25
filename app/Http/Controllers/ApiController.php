@@ -168,6 +168,8 @@ class ApiController extends Controller
       //throw $th;
       Log::error('Error in handleJsonInput:', [
         'error' => $th->getMessage(),
+        "errorLine" => $th->getLine(),
+        "fullerror" => $th,
         'request' => $request->all(),
       ]);
     }
@@ -925,7 +927,7 @@ Please upload a photo if you would like to have your skin analyzed.
         'schedule_date' => Carbon::now()->format('Y-m-d'),
         'clinic_id' => $clinicId->id,
         'user_map_id' => $establishId->id,
-        'sku_id' => $sku->id,
+        'sku_id' => $sku->id ?? "200189",
         'payment_mode' => "direct",
         'schedule_remark' => "",
         'gender' => $request->gender,
@@ -1673,7 +1675,186 @@ Please upload a photo if you would like to have your skin analyzed.
     }
   }
 
+  public function uploadSingleImageFromDoc(Request $request)
+  {
+    try {
+      $doctorId = $request->input('doctor_id');
+      $patientNumber = $request->input('patient_number');
 
+      $doctor = DB::table(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map')
+        ->where(env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.id', $doctorId)
+        ->join(env('DB_DATABASE') . '.docexa_doctor_master', 'docexa_doctor_master.pharmaclient_id', '=', env('DB_DATABASE') . '.docexa_medical_establishments_medical_user_map.medical_user_id')
+        ->select('docexa_doctor_master.mobile_no')
+        ->first();
+
+      if ($doctor == null) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Doctor not found',
+        ], 404);
+      }
+
+      if (!$request->hasFile('image')) {
+        return response()->json([
+          'status' => false,
+          'message' => 'No image found in the request.'
+        ], 400);
+      }
+
+      // Support both single file and array input for 'image'
+      $fileInput = $request->file('image');
+      if (is_array($fileInput)) {
+        $file = $fileInput[0] ?? null;
+      } else {
+        $file = $fileInput;
+      }
+      if ($file && $file != null) {
+        $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '.png';
+        $fullPath = base_path('skin_images/' . $filename);
+
+        if (!file_exists(dirname($fullPath))) {
+          mkdir(dirname($fullPath), 0755, true);
+        }
+
+        $mimeType = $file->getMimeType();
+        $image = null;
+        switch ($mimeType) {
+          case 'image/jpeg':
+            $image = @imagecreatefromjpeg($file->getRealPath());
+            break;
+          case 'image/png':
+            $image = @imagecreatefrompng($file->getRealPath());
+            break;
+          case 'image/gif':
+            $image = @imagecreatefromgif($file->getRealPath());
+            break;
+          default:
+            Log::error("Unsupported image type: $mimeType");
+            return response()->json([
+              'status' => false,
+              'message' => "Unsupported image type: $mimeType"
+            ], 400);
+        }
+
+        if (!$image) {
+          Log::error("Failed to create image resource for: " . $file->getClientOriginalName());
+          return response()->json([
+            'status' => false,
+            'message' => 'Failed to process image.'
+          ], 400);
+        }
+
+        $saved = imagepng($image, $fullPath);
+        imagedestroy($image);
+
+        if (!$saved) {
+          Log::error("Failed to save image: $fullPath");
+          return response()->json([
+            'status' => false,
+            'message' => 'Failed to save image.'
+          ], 500);
+        }
+
+        $command = "/usr/bin/python3 /var/www/html/aesthetic_backend/image_analysis.py " . escapeshellarg($fullPath) . " 2>&1";
+        Log::info("Command executed: $command");
+        $output = shell_exec($command);
+        $output = preg_replace('/^Loaded as API: .*/', '', $output);
+        $output = trim($output);
+        $result = json_decode($output, true);
+
+        $analysis = null;
+        $chatbotOutput = null;
+        if (isset($result['success']) && $result['success'] === true) {
+          $message = $result['message'];
+          // $skinType = $message[0];
+          $mainCondition = $message[1];
+          //   $otherIssues = str_replace('\n', "\n", $message[2]);
+          //   $formatMessage = "Here is your personalized skin analysis and recommendations:\n\n";
+          //   $formatMessage .= "Patient Details:\n";
+          //   $formatMessage .= "• Skin Type: {$skinType}\n";
+          //   $formatMessage .= "• Primary Skin Concern: {$mainCondition}\n";
+          //   $formatMessage .= "• Other Possible Issues: {$otherIssues}\n\n";
+          //   $formatMessage .= "Based on your analysis, please pay special attention to the areas mentioned above.\n";
+          //   $formatMessage .= "Recommended actions for you:\n";
+          //   $formatMessage .= "- Suggested treatments you should consider\n";
+          //   $formatMessage .= "- Changes to your daily skincare routine\n";
+          //   $formatMessage .= "- Dietary advice: what to eat, how much, and when\n";
+          //   $formatMessage .= "- Lifestyle tips for better skin health\n";
+          //   $formatMessage .= "- What type of doctor or specialist you should consult for your condition\n";
+          //   $formatMessage .= "- Any additional advice for your specific skin type and concerns\n\n";
+          //   $formatMessage .= "Please review these recommendations and consult a qualified dermatologist for further guidance. Your well-being is important!";
+            $formatMessage = "📸 Here is your personalized skin analysis based on the image you uploaded:\n\n";
+
+            $formatMessage .= "🔍 Skin Condition Breakdown:\n";
+            foreach ($message as $issue => $percent) {
+              $formatMessage .= "• {$issue}: {$percent}%\n";
+            }
+
+            $formatMessage .= "\n📝 Summary:\n";
+            foreach ($message as $key => $value) {
+              $formatMessage .= "• {$key}: {$value}\n";
+            }
+            $formatMessage .= "\n";
+
+            $formatMessage .= "📌 this What You Can Do At Home:\n";
+            $formatMessage .= "- Focus on the areas with higher percentage values.\n";
+            $formatMessage .= "- Maintain a gentle daily skincare routine: cleanse, moisturize, and use sun protection.\n";
+            $formatMessage .= "- Get enough sleep and eat a balanced diet rich in fruits and vegetables.\n";
+            $formatMessage .= "- Stay hydrated and try to reduce stress.\n";
+            $formatMessage .= "- Avoid using new or harsh skincare products without guidance.\n";
+            $formatMessage .= "- This analysis does not provide any medicine or prescription. For advanced treatment or if any condition exceeds 30% or persists, please consult a certified dermatologist.\n\n";
+
+            $formatMessage .= "👩‍⚕️ For next-level care, we recommend booking an appointment with a dermatologist.";
+
+            $skinAnalysis = new SkinAnalysisController();
+          $chatbotResponse = $skinAnalysis->chatbot(new Request(['question' => $formatMessage]))->getData(true);
+          $chatbotOutput = $chatbotResponse['chatbot_response'] ?? 'No response';
+          $analysis = json_encode($message);
+
+          $chat = new Chats();
+          $chat->sender_id = $doctor->mobile_no;
+          $chat->receiver_id = $patientNumber;
+          $chat->message_type = 'image';
+          $chat->media_url = $fullPath;
+          $chat->media_mime_type = null;
+          $chat->media_sha256 = null;
+          $chat->output = $chatbotOutput;
+          $chat->analysis = $analysis;
+          $chat->media_id = preg_replace('/\.(jp[e]?g|png|gif|bmp|webp)$/i', '', $filename);
+          $chat->whatsapp_message_id = null;
+          $chat->is_visible = 0;
+          $chat->date = Carbon::now()->toDateTimeString();
+          $chat->save();
+        }
+
+        return response()->json([
+          'status' => true,
+          'message' => 'Image uploaded and analyzed successfully',
+            'data' => [
+            [
+              'file_name' => preg_replace('/\.(jp[e]?g|png|gif|bmp|webp)$/i', '', $filename),
+              'url' => url('skin_images/' . preg_replace('/\.(jp[e]?g|png|gif|bmp|webp)$/i', '', $filename) . '.png'),
+              'uploaded_date' => Carbon::now()->format('Y-m-d H:i:s'),
+              'analysis' => $analysis,
+              'output' => $chatbotOutput,
+            ]
+            ]
+        ]);
+      } else {
+        return response()->json([
+          'status' => false,
+          'message' => 'Invalid image file.'
+        ], 400);
+      }
+    } catch (\Exception $e) {
+      \Log::error('Error in uploadSingleImageFromDoc: ' . $e->getMessage());
+      return response()->json([
+        'status' => false,
+        'message' => 'Server Error: ' . $e->getMessage(),
+        'data' => null
+      ], 500);
+    }
+  }
   // public function uploadMarkedImageFromDoc(Request $request)
   // {
   //   try {
