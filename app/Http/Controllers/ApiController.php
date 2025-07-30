@@ -936,6 +936,8 @@ Please upload a photo if you would like to have your skin analyzed.
         'patient_mobile_no' => $patient->mobile_no,
         'age' => $request->age,
         'email' => $request->email,
+        'partial_services' => $request->partial_services ?? [],
+        "duration" => "30",
       ]);
       $bookAppointment = new DoctorsApi();
       $result = $bookAppointment->createAppointmentV4($request);
@@ -1590,11 +1592,13 @@ Please upload a photo if you would like to have your skin analyzed.
             $formatMessage .= "• Possible Other Conditions: {$otherIssues}\n\n";
 
             $formatMessage .= "Based on this information, generate a short diagnosis-based treatment plan for a dermatologist to review.\n";
-            $formatMessage .= "Include both medicinal and aesthetic procedure suggestions (e.g., Botox, fillers, chemical peels, laser treatments, etc) where clinically appropriate.\n";
+            $formatMessage .= "Include aesthetic procedure suggestions (e.g., Botox, fillers, chemical peels, laser treatments, etc) where clinically appropriate.\n";
+            // $formatMessage .= "Include both medicinal and aesthetic procedure suggestions (e.g., Botox, fillers, chemical peels, laser treatments, etc) where clinically appropriate.\n";
             $formatMessage .= "Include the following:\n";
-            $formatMessage .= "- Confirmed Diagnosis\n";
-            $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
-            $formatMessage .= "- Treatment notes (application instructions, any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
+            $formatMessage .= "- Initial Diagnosis\n";
+            // $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n"; # dont want to give medicines
+            // $formatMessage .= "- Treatment notes (application instructions, any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
+            $formatMessage .= "- Treatment notes (any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
             $formatMessage .= "Return the response in under 1000 words in this format:\n\n";
             $skinAnalysis = new SkinAnalysisController();
             $chatbotResponse = $skinAnalysis->chatbot(new Request(['question' => $formatMessage]))->getData(true);
@@ -1783,30 +1787,30 @@ Please upload a photo if you would like to have your skin analyzed.
           //   $formatMessage .= "- What type of doctor or specialist you should consult for your condition\n";
           //   $formatMessage .= "- Any additional advice for your specific skin type and concerns\n\n";
           //   $formatMessage .= "Please review these recommendations and consult a qualified dermatologist for further guidance. Your well-being is important!";
-            $formatMessage = "📸 Here is your personalized skin analysis based on the image you uploaded:\n\n";
+          $formatMessage = "📸 Here is your personalized skin analysis based on the image you uploaded:\n\n";
 
-            $formatMessage .= "🔍 Skin Condition Breakdown:\n";
-            foreach ($message as $issue => $percent) {
-              $formatMessage .= "• {$issue}: {$percent}%\n";
-            }
+          $formatMessage .= "🔍 Skin Condition Breakdown:\n";
+          foreach ($message as $issue => $percent) {
+            $formatMessage .= "• {$issue}: {$percent}%\n";
+          }
 
-            $formatMessage .= "\n📝 Summary:\n";
-            foreach ($message as $key => $value) {
-              $formatMessage .= "• {$key}: {$value}\n";
-            }
-            $formatMessage .= "\n";
+          $formatMessage .= "\n📝 Summary:\n";
+          foreach ($message as $key => $value) {
+            $formatMessage .= "• {$key}: {$value}\n";
+          }
+          $formatMessage .= "\n";
 
-            $formatMessage .= "📌 this What You Can Do At Home:\n";
-            $formatMessage .= "- Focus on the areas with higher percentage values.\n";
-            $formatMessage .= "- Maintain a gentle daily skincare routine: cleanse, moisturize, and use sun protection.\n";
-            $formatMessage .= "- Get enough sleep and eat a balanced diet rich in fruits and vegetables.\n";
-            $formatMessage .= "- Stay hydrated and try to reduce stress.\n";
-            $formatMessage .= "- Avoid using new or harsh skincare products without guidance.\n";
-            $formatMessage .= "- This analysis does not provide any medicine or prescription. For advanced treatment or if any condition exceeds 30% or persists, please consult a certified dermatologist.\n\n";
+          $formatMessage .= "📌 this What You Can Do At Home:\n";
+          $formatMessage .= "- Focus on the areas with higher percentage values.\n";
+          $formatMessage .= "- Maintain a gentle daily skincare routine: cleanse, moisturize, and use sun protection.\n";
+          $formatMessage .= "- Get enough sleep and eat a balanced diet rich in fruits and vegetables.\n";
+          $formatMessage .= "- Stay hydrated and try to reduce stress.\n";
+          $formatMessage .= "- Avoid using new or harsh skincare products without guidance.\n";
+          $formatMessage .= "- This analysis does not provide any medicine or prescription. For advanced treatment or if any condition exceeds 30% or persists, please consult a certified dermatologist.\n\n";
 
-            $formatMessage .= "👩‍⚕️ For next-level care, we recommend booking an appointment with a dermatologist.";
+          $formatMessage .= "👩‍⚕️ For next-level care, we recommend booking an appointment with a dermatologist.";
 
-            $skinAnalysis = new SkinAnalysisController();
+          $skinAnalysis = new SkinAnalysisController();
           $chatbotResponse = $skinAnalysis->chatbot(new Request(['question' => $formatMessage]))->getData(true);
           $chatbotOutput = $chatbotResponse['chatbot_response'] ?? 'No response';
           $analysis = json_encode($message);
@@ -1830,7 +1834,7 @@ Please upload a photo if you would like to have your skin analyzed.
         return response()->json([
           'status' => true,
           'message' => 'Image uploaded and analyzed successfully',
-            'data' => [
+          'data' => [
             [
               'file_name' => preg_replace('/\.(jp[e]?g|png|gif|bmp|webp)$/i', '', $filename),
               'url' => url('skin_images/' . preg_replace('/\.(jp[e]?g|png|gif|bmp|webp)$/i', '', $filename) . '.png'),
@@ -1838,7 +1842,7 @@ Please upload a photo if you would like to have your skin analyzed.
               'analysis' => $analysis,
               'output' => $chatbotOutput,
             ]
-            ]
+          ]
         ]);
       } else {
         return response()->json([
