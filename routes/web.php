@@ -917,4 +917,26 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('groups/{id}', 'ServiceGroupController@show');
     $router->put('groups/{id}', 'ServiceGroupController@update');
     $router->delete('groups/{id}', 'ServiceGroupController@destroy');
+    $router->get('patient-stats/{patientId}', 'PatientApi@getPatientStats');
+
+    $router->group(['prefix' => 'consent-form'], function () use ($router) {
+        $router->post('/', 'ConsentFormController@store');
+        $router->get('/', 'ConsentFormController@index');
+        $router->get('/getbypatient/{patientId}', 'ConsentFormController@getByPatientId');
+        $router->get('/getByPatientIdForApp/{patientId}', 'ConsentFormController@getByPatientIdForApp');
+        $router->get('/{id}', 'ConsentFormController@show');
+        $router->put('/create-empty-form', 'ConsentFormController@createEmptyForm');
+        
+        $router->post('/send-link-patient/{consentId}', 'ConsentFormController@sendConsentFormLinkToPatient');
+    });
+    $router->group(['prefix' => 'whatsapp'], function () use ($router) {
+        $router->post('/sendtext', 'WhatsappController@sendTextToWhatsApp');
+        $router->post('/sendTemplate/patientconsent', 'WhatsappController@sendTemplateToWhatsApp');
+    });
+    
+    // $router->post('whatsapp/send/image', 'WhatsAppApiController@sendImage');
+    // $router->post('whatsapp/send/document', 'WhatsAppApiController@sendDocument');
+    // $router->post('whatsapp/send/video', 'WhatsAppApiController@sendVideo');
+    // $router->post('whatsapp/send/audio', 'WhatsAppApiController@sendAudio');
+    // $router->post('whatsapp/send/location', 'WhatsAppApiController@sendLocation');
 });

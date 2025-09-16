@@ -719,4 +719,63 @@ class PatientApi extends Controller
         $pm = new Patientmaster();
         return response()->json(['status' => 'success', 'data' => $pm->patientlistV4($esteblishmentusermapID)], 200);
     }
+
+
+    public function getPatientStats($patientId)
+    {
+        try {
+            $today = Carbon::today();
+
+            // Total prescriptions
+            $totalPrescriptions = DB::table('prescription')
+                ->where('patient_id', $patientId)
+                ->count();
+
+            // Total appointments
+            $totalAppointments = DB::table('docexa_patient_booking_details')
+                ->where('patient_id', $patientId)
+                ->count();
+
+            // Total pending bills
+            $totalPendingBills = DB::table('billing')
+                ->where('patient_id', $patientId)
+                // ->where('status', 'pending')
+                ->sum('balanced_amount');
+
+            // Loyalty points
+            $loyaltyPoints = DB::table('patient_loyalty_points')
+                ->where('patient_id', $patientId)
+                ->sum('total_points');
+
+            // Past appointments (before today)
+            $pastAppointments = DB::table('docexa_patient_booking_details')
+                ->where('patient_id', $patientId)
+                ->whereDate('date', '<', $today)
+                ->count();
+
+            // Future appointments (from today onwards)
+            $futureAppointments = DB::table('docexa_patient_booking_details')
+                ->where('patient_id', $patientId)
+                ->whereDate('date', '>=', $today)
+                ->count();
+
+            return response()->json([
+                'status' => true,
+                'data' => [
+                    'total_prescriptions' => $totalPrescriptions,
+                    'total_appointments' => $totalAppointments,
+                    'total_pending_bills' => $totalPendingBills,
+                    'loyalty_points' => $loyaltyPoints,
+                    'past_appointments' => $pastAppointments,
+                    'future_appointments' => $futureAppointments,
+                ]
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Internal Server Error',
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -25,6 +25,7 @@ class SkinAnalysisController extends Controller
     {
 
         $mediaId = $request->input('mediaId');
+        Log::info("Received mediaId: " . $mediaId);
         if (empty($mediaId)) {
             return response()->json([
                 'error' => true,
@@ -55,6 +56,7 @@ class SkinAnalysisController extends Controller
             ], 500);
         }
         $data = json_decode($response->body(), true);
+        Log::info("API response: " . json_encode($data));
 
         $binary = pack('c*', ...$data['file']); // 'c*' means pack all signed chars
 
@@ -138,10 +140,10 @@ class SkinAnalysisController extends Controller
         $greeting = "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!";
 
         // Append instruction to ensure skin-related answers only
-        $instruction = "Note: Only respond to skin-related questions. If this question is not related to skin, reply: 'I can only answer skin-related questions. Please ask accordingly.'";
+        // $instruction = "Note: Only respond to skin-related questions. If this question is not related to skin, reply: 'I can only answer skin-related questions. Please ask accordingly.'";
 
         // Combine everything
-        $finalPrompt = "$greeting\n\nUser: $question\n\n$instruction";
+        $finalPrompt = "$greeting\n\nUser: $question\n";
 
 
         // $question = $request->input('question');

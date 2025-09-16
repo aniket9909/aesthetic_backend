@@ -1060,7 +1060,7 @@ Please upload a photo if you would like to have your skin analyzed.
         'chats' => $messages->filter(function ($chat) {
           return $chat->is_visible === null || $chat->is_visible == 1;
         })->values(),
-        'imageAnalysis' => $imageAnalysis,
+        'imageAnalysis' => array_reverse($imageAnalysis),
         'patient' => $patientInfo,
       ], 200);
     } catch (\Throwable $th) {
