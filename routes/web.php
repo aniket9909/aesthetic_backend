@@ -880,7 +880,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('{id}', 'ConsultTypeController@show');     // GET one
         $router->post('/', 'ConsultTypeController@store');      // POST create
         $router->put('{id}', 'ConsultTypeController@update');   // PUT update
-        $router->delete('{id}', 'ConsultTypeController@destroy'); //    
+        $router->delete('{id}', 'ConsultTypeController@destroy'); //
     });
     $router->post('/webhook', 'ApiController@handleJsonInput');
     $router->get('/webhook', 'ApiController@getAllWebhookInputs');
@@ -926,14 +926,17 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('/getByPatientIdForApp/{patientId}', 'ConsentFormController@getByPatientIdForApp');
         $router->get('/{id}', 'ConsentFormController@show');
         $router->put('/create-empty-form', 'ConsentFormController@createEmptyForm');
-        
+
         $router->post('/send-link-patient/{consentId}', 'ConsentFormController@sendConsentFormLinkToPatient');
     });
     $router->group(['prefix' => 'whatsapp'], function () use ($router) {
         $router->post('/sendtext', 'WhatsappController@sendTextToWhatsApp');
         $router->post('/sendTemplate/patientconsent', 'WhatsappController@sendTemplateToWhatsApp');
     });
-    
+
+
+    $router->post('reschedule-appointment', 'AppointmentApi@rescheduleAppointment');
+
     // $router->post('whatsapp/send/image', 'WhatsAppApiController@sendImage');
     // $router->post('whatsapp/send/document', 'WhatsAppApiController@sendDocument');
     // $router->post('whatsapp/send/video', 'WhatsAppApiController@sendVideo');

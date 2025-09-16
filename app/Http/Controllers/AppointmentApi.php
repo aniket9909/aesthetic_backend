@@ -20,8 +20,9 @@ use App\Ambulance;
 use App\Pathlab;
 use App\Nursing;
 use App\MedicineCart;
-use DB;
-use Log;
+
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AppointmentApi extends Controller
@@ -36,7 +37,7 @@ class AppointmentApi extends Controller
      * @OA\Post(
      * path="/establishments/hospital/{hospitalID}/users/{esteblishmentusermapID}/oncall",
      * tags={"Appointment"},
-     *    
+     *
      * @OA\Parameter(
      *         name="esteblishmentusermapID",
      *         in="path",
@@ -75,7 +76,7 @@ class AppointmentApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
@@ -113,7 +114,7 @@ class AppointmentApi extends Controller
      * @OA\Post(
      * path="/establishments/hospital/{hospitalID}/prescription/upload",
      * tags={"Prescription"},
-     
+
      * @OA\Parameter(
      *         name="hospitalID",
      *         in="path",
@@ -146,7 +147,7 @@ class AppointmentApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
@@ -187,7 +188,7 @@ class AppointmentApi extends Controller
      * @OA\Post(
      * path="/establishments/hospital/{hospitalID}/ambulance",
      * tags={"Appointment"},
-     
+
      * @OA\Parameter(
      *         name="hospitalID",
      *         in="path",
@@ -218,7 +219,7 @@ class AppointmentApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
@@ -255,7 +256,7 @@ class AppointmentApi extends Controller
      * @OA\Post(
      * path="/establishments/hospital/{hospitalID}/pathlab",
      * tags={"Appointment"},
-     
+
      * @OA\Parameter(
      *         name="hospitalID",
      *         in="path",
@@ -286,7 +287,7 @@ class AppointmentApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
@@ -322,7 +323,7 @@ class AppointmentApi extends Controller
      * @OA\Post(
      * path="/establishments/hospital/{hospitalID}/nursing",
      * tags={"Appointment"},
-     
+
      * @OA\Parameter(
      *         name="hospitalID",
      *         in="path",
@@ -353,7 +354,7 @@ class AppointmentApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
@@ -384,6 +385,78 @@ class AppointmentApi extends Controller
         $c->sendNotificationBooking($templatedata);
         $data = Nursing::where('hospital_id', $hospitalID)->get();
         return response()->json(['status' => "success", 'data' => $data], 200);
+    }
+
+
+    public function rescheduleAppointment(Request $request)
+    {
+        $data = $request->input();
+
+        // Validate required fields
+        Log::info('Reschedule Request Data: ', $data);
+        if (
+            empty($data['booking_id']) ||
+            empty($data['remark']) ||
+            empty($data['consultationType']) ||
+            empty($data['date']) ||
+            empty($data['slot'])
+        ) {
+            return ['status' => false, 'msg' => 'Missing required fields'];
+        }
+
+        // Parse new date and time
+        $date = date('Y-m-d', strtotime($data['date']));
+        $time = date('H:i', strtotime($data['slot']));
+        // $scheduletimestamp = date('Y-m-d H:i:s', strtotime($data['date']));
+        // $start_booking_time = date('Y-m-d H:i:s', strtotime($date . ' +' . $data['slot'] . ' minutes'));
+
+
+        // Update booking details
+        DB::table('docexa_patient_booking_details')
+            ->where('bookingidmd5', $data['booking_id'])
+            ->limit(1)
+            ->update([
+                'cancellation_reason' => $data['remark'],
+                'date' => $date,
+                'start_time' => $time,
+                'consult_type_id' => $data['consult_type_id'] ?? null,
+                'consult_type' => $data['consultationType'] ?? null,
+                'status' => 7
+            ]);
+
+        // Get booking_id for updating slot
+        $booking = DB::table('docexa_patient_booking_details')
+            ->where('bookingidmd5', $data['booking_id'])
+            ->first();
+
+        if (!$booking) {
+            return ['status' => false, 'msg' => 'Booking not found'];
+        }
+
+        DB::table('docexa_appointment_sku_details')
+            ->where('booking_id', $booking->booking_id)
+            ->limit(1)
+            ->update([
+                'start_booking_time' => date('Y-m-d H:i:s', strtotime($data['date'] . ' ' . $data['slot'])),
+                // 'end_booking_time' => $end_booking_time,
+                // 'slot_size' => $data['slot_size']
+            ]);
+
+
+        // Optionally, send notification about reschedule
+        $c = new Controller();
+        $urlArray = parse_url($booking->handle ?? $_ENV['APP_HANDLE'], PHP_URL_PATH);
+        $segments = explode('/', $urlArray);
+        $currentSegment = end($segments);
+
+        $notificationdata = [
+            'template' => 'appointment_rescheduled_intimation',
+            'handle' => $currentSegment,
+            'appointment_id' => $data['booking_id']
+        ];
+        // $c->sendNotification($notificationdata);
+
+        return ['status' => true, 'msg' => 'Appointment rescheduled successfully', "data" => $booking];
     }
 
 
@@ -426,7 +499,7 @@ class AppointmentApi extends Controller
 
             ->where(DB::raw('date(booking.date)'), $date);
 
-        $bookedSlots = $query->get();   
+        $bookedSlots = $query->get();
         // dump($bookedSlots);
         $finalSlots = [];
 
@@ -438,7 +511,7 @@ class AppointmentApi extends Controller
                 $slotStart = \Carbon\Carbon::parse($date . ' ' . $slot['from']);
                 $slotEnd = \Carbon\Carbon::parse($date . ' ' . $slot['to']);
 
-                // Keep slots that DO NOT overlap   
+                // Keep slots that DO NOT overlap
                 return $slotEnd <= $start || $slotStart >= $end;
             });
 

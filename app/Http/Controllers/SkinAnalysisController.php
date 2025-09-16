@@ -155,31 +155,45 @@ class SkinAnalysisController extends Controller
             // $output = shell_exec("$pythonPath $scriptPath $question");
             // $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/chatbot.py $escapedQuestion 2>&1");
             // Log::info("Chatbot output: $output");
-            $groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
-            $bearerToken = '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'; // Replace with your actual token
+            // $groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            // $bearerToken = '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'; // Replace with your actual token
+            // $bearerToken = env('GROQ_KEY'); // Replace with your actual token
+
+            // $groqBody = [
+            //     "model" => "llama-3.3-70b-versatile",
+            //     "messages" => [
+            //         [
+            //             "role" => "user",
+            //             "content" => $finalPrompt
+            //         ]
+            //     ],
+            //     "temperature" => 0.7,
+            //     "max_tokens" => 1000
+            // ];
+            $chatgptapi = 'https://api.groq.com/openai/v1/chat/completions';
             $bearerToken = env('GROQ_KEY'); // Replace with your actual token
 
-            $groqBody = [
-                "model" => "llama-3.3-70b-versatile",
-                "messages" => [
+            $gptBody = [
+                "model" => "gpt-5-mini",
+                "input" => [
                     [
                         "role" => "user",
                         "content" => $finalPrompt
                     ]
                 ],
-                "temperature" => 0.7,
-                "max_tokens" => 1000
+                // "temperature" => 0.7,
+                // "max_tokens" => 1000
             ];
 
             $groqResponse = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $bearerToken,
                 'Content-Type' => 'application/json'
-            ])->post($groqApiUrl, $groqBody);
+            ])->post($chatgptapi, $gptBody);
 
             if ($groqResponse->successful()) {
                 $groqData = $groqResponse->json();
                 $chatbotResponse = [
-                    'chatbot_response' => $groqData['choices'][0]['message']['content'] ?? 'No response'
+                    'chatbot_response' => $groqData['output'][1]['content'][0]['text'] ?? 'No response'
                 ];
             } else {
                 $chatbotResponse = [

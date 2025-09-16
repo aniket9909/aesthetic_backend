@@ -539,7 +539,7 @@ class ApiController extends Controller
 
           return "
           Thanks! What is your primary skin concern today? You can choose one or more from the list below:
-          
+
       Options (multiple choice):
 
       Wrinkles / Fine Lines
@@ -1472,7 +1472,7 @@ Please upload a photo if you would like to have your skin analyzed.
   //       ]
   //     ]);
   //   } catch (\Exception $e) {
-  //     \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+  //     Log::error('Error in getUploadedImages: ' . $e->getMessage());
   //     return response()->json([
   //       'status' => false,
   //       'message' => 'Server Error: ' . $e->getMessage(),
@@ -1670,7 +1670,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ]
       ]);
     } catch (\Exception $e) {
-      \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+      Log::error('Error in getUploadedImages: ' . $e->getMessage());
       return response()->json([
         'status' => false,
         'message' => 'Server Error: ' . $e->getMessage(),
@@ -1851,7 +1851,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ], 400);
       }
     } catch (\Exception $e) {
-      \Log::error('Error in uploadSingleImageFromDoc: ' . $e->getMessage());
+      Log::error('Error in uploadSingleImageFromDoc: ' . $e->getMessage());
       return response()->json([
         'status' => false,
         'message' => 'Server Error: ' . $e->getMessage(),
@@ -1964,7 +1964,7 @@ Please upload a photo if you would like to have your skin analyzed.
   //       ]
   //     ]);
   //   } catch (\Exception $e) {
-  //     \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+  //     Log::error('Error in getUploadedImages: ' . $e->getMessage());
   //     return response()->json([
   //       'status' => false,
   //       'message' => 'Server Error: ' . $e->getMessage(),
@@ -2090,7 +2090,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ]
       ]);
     } catch (\Exception $e) {
-      \Log::error('Error in uploadMarkedImageFromDoc: ' . $e->getMessage());
+      Log::error('Error in uploadMarkedImageFromDoc: ' . $e->getMessage());
       return response()->json([
         'status' => false,
         'message' => 'Server Error: ' . $e->getMessage(),
@@ -2163,7 +2163,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ]
       ]);
     } catch (\Exception $e) {
-      \Log::error('Error in getUploadedImages: ' . $e->getMessage());
+      Log::error('Error in getUploadedImages: ' . $e->getMessage());
       return response()->json([
         'status' => false,
         'message' => 'Server Error: ' . $e->getMessage(),
@@ -2273,7 +2273,7 @@ Please upload a photo if you would like to have your skin analyzed.
         ]
       ]);
     } catch (\Exception $e) {
-      \Log::error('Error in deletePatientImage: ' . $e->getMessage());
+      Log::error('Error in deletePatientImage: ' . $e->getMessage());
       return response()->json([
         'status' => false,
         'message' => 'Server Error: ' . $e->getMessage(),
