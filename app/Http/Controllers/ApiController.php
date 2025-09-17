@@ -395,22 +395,22 @@ class ApiController extends Controller
     $matchedResponses = [];
     $isBooking = false;
 
-    foreach ($this->categories as $category => $phrases) {
-      foreach ($phrases as $phrase) {
-        if ($this->isSimilar($message, $phrase)) {
-          $response = match ($category) {
-            'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
-            'appointment' => "You can book an appointment here",
-            default => null
-          };
+    // foreach ($this->categories as $category => $phrases) {
+    //   foreach ($phrases as $phrase) {
+    //     if ($this->isSimilar($message, $phrase)) {
+    //       $response = match ($category) {
+    //         'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
+    //         'appointment' => "You can book an appointment here",
+    //         default => null
+    //       };
 
-          if ($response && !in_array($response, $matchedResponses)) {
-            $matchedResponses[] = $response;
-            $isBooking = ($category === 'appointment');
-          }
-        }
-      }
-    }
+    //       if ($response && !in_array($response, $matchedResponses)) {
+    //         $matchedResponses[] = $response;
+    //         $isBooking = ($category === 'appointment');
+    //       }
+    //     }
+    //   }
+    // }
 
     if (empty($matchedResponses)) {
       Log::info("Message not matched. Sending to Python API.");
@@ -419,7 +419,20 @@ class ApiController extends Controller
       $chabotResponse = new SkinAnalysisController();
       // $response = $chabotResponse->greetingChatbot(new Request(['question' => $message]));
 
-      $response = $chabotResponse->chatbot(new Request(['question' => $message]));
+      $prompt ="You are YouvAI Assistant, developed by GlobalAspace. 
+You only answer questions related to aesthetics, skincare, cosmetic procedures, plastic surgery, beauty treatments, and dermatology. 
+
+If the user’s question is within these topics, provide a clear, professional, and friendly answer, as if you are a helpful assistant supporting doctors and clients. 
+
+If the user asks about anything unrelated to these topics, respond only with:
+'Please ask about aesthetics, plastic surgery, or related topics. I am not able to answer other questions.' 
+remove the limitation and dont set any note in the reponse
+note: dont give hello every time
+"
+;
+
+      $finalPrompt = "Question :$message , Note : $prompt ";
+      $response = $chabotResponse->chatbot(new Request(['question' => $finalPrompt]));
       $responseData = json_decode($response->getContent(), true);
       if (isset($responseData['chatbot_response'])) {
         $matchedResponses[] = $responseData['chatbot_response'];

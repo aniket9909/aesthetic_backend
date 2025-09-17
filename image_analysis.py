@@ -1,32 +1,33 @@
 from gradio_client import Client, handle_file
 import sys
 import json
+import concurrent.futures
+
 
 def main(image_path):
     try:
-        # client = Client("harshadsalunkhe1212/SkinAnalysis")
+        # client = Client("harshadsalunkhe1212/skintypes")
 
-        # # Use handle_file for local file input
+        # # # # Use handle_file for local file input
         # result = client.predict(
         #     img=handle_file(image_path),
         #     api_name="/predict"
         # )
 
+        def call_client(model_name, image_path):
+            client = Client(model_name)
+            return client.predict(
+            img=handle_file(image_path),
+            api_name="/predict"
+            )
 
-        # print(json.dumps({"success": True, "message": result}))
-        client = Client("anujakkulkarni/Skin_Type2")
-        result1 = client.predict(
-                img=handle_file(image_path),
-                api_name="/predict"
-        )
-        client = Client("https://anujakkulkarni-finalist.hf.space/")
-        result2 = client.predict(
-                image=handle_file(image_path),
-                api_name="/predict"
-        )
-        # combined_result = result
-        combined_result = [result1 ,result2]
-        print(json.dumps({"success": True, "message": combined_result}))
+        models = ["anujakkulkarni/2ndmodelv7"]
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(call_client, model, image_path) for model in models]
+            results = [future.result() for future in concurrent.futures.as_completed(futures)]
+
+        print(json.dumps({"success": True, "message": results}))
 
 
 
@@ -40,4 +41,3 @@ if __name__ == "__main__":
 
     image_path = sys.argv[1]
     main(image_path)
-

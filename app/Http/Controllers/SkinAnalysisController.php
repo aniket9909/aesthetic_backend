@@ -68,66 +68,90 @@ class SkinAnalysisController extends Controller
         // $command = "/usr/bin/python3 $scriptPath " . escapeshellarg($imagePath) . " 2>&1";
         Log::info("Command executed: $command");
 
-        $output = shell_exec($command);
+        // $output = shell_exec($command);
         // Step 2: Clean the output
         // Remove the 'Loaded as API' line and any unwanted text
-        $output = preg_replace('/^Loaded as API: .*/', '', $output); // Remove the first line
-        $output = trim($output); // Trim any extra spaces/newlines at the beginning/end
+        // $output = preg_replace('/^Loaded as API: .*/', '', $output); // Remove the first line
+        // $output = trim($output); // Trim any extra spaces/newlines at the beginning/end
+
+        $apiResponse = Http::attach(
+            'file',
+            file_get_contents($imagePath),
+            basename($imagePath)
+        )->post(env('SKIN_ANALYSIS_API_URL', 'https://anujakkulkarni-2ndmodelv7.hf.space/analyze'));
 
         // Step 3: Decode the JSON output from the Python script
-        $result = json_decode($output, true);
-        if ($result['success'] === true) {
-            // Step 4: Extract and store the result in a clean format
-            $message = $result['message'];
-            Log::info(json_encode($message));
+        // $result = json_decode($output, true);
+        // Log::info("Python script output: " . json_encode($result));
+        if ($apiResponse->successful()) {
+            $apiResult = $apiResponse->json();
+            Log::info('API call successful: ' . json_encode($apiResult));
+            // dump($apiResult);
+            if (isset($apiResult['success']) && $apiResult['success'] === true) {
+                $message = $apiResult['analysis'];
+
+                // Process API response - expecting JSON format with skin analysis data
+                $skinAnalysisData = is_array($message) ? $message : json_decode($message, true);
+
+                // Extract skin type and conditions from the structured data
+                $skinType = isset($skinAnalysisData['SKIN TYPE']) ? $skinAnalysisData['SKIN TYPE'] : 'Unknown';
+
+                // Build conditions array from the analysis data
+                $conditions = [];
+                $conditionKeys = ['ACNE', 'ACNE_SCAR', 'DARK CIRCLE', 'PIGMENTATION', 'PORES', 'WRINKLE'];
+
+                foreach ($conditionKeys as $key) {
+                    if (isset($skinAnalysisData[$key]) && $skinAnalysisData[$key] > 0) {
+                        $conditions[] = $key . ': ' . $skinAnalysisData[$key] . '%';
+                    }
+                }
+
+                $mainCondition = isset($conditions[0]) ? $conditions[0] : 'No significant conditions detected';
+                $otherIssues = count($conditions) > 1 ? implode("\n", array_slice($conditions, 1)) : 'None detected';
+
+                $formatMessage = "You are an expert dermatologist AI assistant.\n\n";
+                $formatMessage .= "Patient Details:\n";
+                $formatMessage .= "• Skin Type: {$skinType}\n";
+                $formatMessage .= "• Primary Skin Condition: {$mainCondition}\n";
+                $formatMessage .= "• Possible Other Conditions: {$otherIssues}\n\n";
+                $formatMessage .= "Based on this information, generate a short diagnosis-based treatment plan for a dermatologist to review.\n";
+                $formatMessage .= "Include both medicinal and aesthetic procedure suggestions (e.g., Botox, fillers, chemical peels, laser treatments, etc) where clinically appropriate.\n";
+                $formatMessage .= "Include the following:\n";
+                $formatMessage .= "- Initial Diagnosis\n";
+                $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
+                $formatMessage .= "- Treatment notes (application instructions, any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
+                $formatMessage .= "Return the response in this format:\n\n";
+
+                $chatbotResponse = ['chatbot_response' => 'Result will be generated soon.'];
+
+                $chatbotResponse = $this->chatbot(new Request(['question' => $formatMessage]))->getData(true);
 
 
-            $skinType = $message[0];
-            $mainCondition = $message[1];
-            $otherIssues = str_replace('\n', "\n", $message[2]);
+                dispatch(new AfterImageStore(['mediaId' => $mediaId]));
 
-            $formatMessage = "You are an expert dermatologist AI assistant.\n\n";
-            $formatMessage .= "Patient Details:\n";
-            $formatMessage .= "• Skin Type: {$skinType}\n";
-            $formatMessage .= "• Primary Skin Condition: {$mainCondition}\n";
-            $formatMessage .= "• Possible Other Conditions: {$otherIssues}\n\n";
+                // Log the chatbot response
+                Log::info('Chatbot response: ' . json_encode($chatbotResponse));
 
-            $formatMessage .= "Based on this information, generate a short diagnosis-based treatment plan for a dermatologist to review.\n";
-            $formatMessage .= "Include both medicinal and aesthetic procedure suggestions (e.g., Botox, fillers, chemical peels, laser treatments, etc) where clinically appropriate.\n";
-            $formatMessage .= "Include the following:\n";
-            $formatMessage .= "- Confirmed Diagnosis\n";
-            $formatMessage .= "- List of recommended medicines (with dosage form and usage if needed)\n";
-            $formatMessage .= "- Treatment notes (application instructions, any test advice, aesthetic treatment suggestions, or skin-type considerations)\n\n";
-            $formatMessage .= "Return the response in under 1000 words in this format:\n\n";
+                // Step 5: Return the formatted message in response
+                return response()->json([
+                    'error' => false,
+                    'status' => 200,
+                    'message' => 'Skin analysis completed successfully.',
+                    'media_url' => $imagePath,
+                    'analysis' => $message,
+                    'result' => $chatbotResponse['chatbot_response'] ?? 'No response'
+                ]);
+            } else {
+                return response()->json([
+                    'error' => true,
+                    'status' => 500,
+                    'error' => 'Skin analysis failed.',
+                    'result' => 'No message returned from the analysis. Can you please try again?'
 
-            $chatbotResponse = $this->chatbot(new Request(['question' => $formatMessage]))->getData(true);
-
-
-            dispatch(new AfterImageStore(['mediaId' => $mediaId]));
-
-            // Log the chatbot response
-            Log::info('Chatbot response: ' . json_encode($chatbotResponse));
-
-            // Step 5: Return the formatted message in response
-            return response()->json([
-                'error' => false,
-                'status' => 200,
-                'message' => 'Skin analysis completed successfully.',
-                'media_url' => $imagePath,
-                'analysis' => $message,
-                'result' => $chatbotResponse['chatbot_response'] ?? 'No response'
-            ]);
-        } else {
-            return response()->json([
-                'error' => true,
-                'status' => 500,
-                'error' => 'Skin analysis failed.',
-                'result' => 'No message returned from the analysis. Can you please try again?'
-
-            ], 500);
-        };
+                ], 500);
+            };
+        }
     }
-
     public function chatbot(Request $request)
     {
         if (!$request->has('question')) {
@@ -155,45 +179,53 @@ class SkinAnalysisController extends Controller
             // $output = shell_exec("$pythonPath $scriptPath $question");
             // $output = shell_exec("/usr/bin/python3 /var/www/html/aesthetic_backend/chatbot.py $escapedQuestion 2>&1");
             // Log::info("Chatbot output: $output");
-            // $groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            $groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
             // $bearerToken = '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'; // Replace with your actual token
-            // $bearerToken = env('GROQ_KEY'); // Replace with your actual token
-
-            // $groqBody = [
-            //     "model" => "llama-3.3-70b-versatile",
-            //     "messages" => [
-            //         [
-            //             "role" => "user",
-            //             "content" => $finalPrompt
-            //         ]
-            //     ],
-            //     "temperature" => 0.7,
-            //     "max_tokens" => 1000
-            // ];
-            $chatgptapi = 'https://api.groq.com/openai/v1/chat/completions';
             $bearerToken = env('GROQ_KEY'); // Replace with your actual token
 
-            $gptBody = [
-                "model" => "gpt-5-mini",
-                "input" => [
+            $groqBody = [
+                "model" => "llama-3.3-70b-versatile",
+                "messages" => [
                     [
                         "role" => "user",
                         "content" => $finalPrompt
                     ]
                 ],
-                // "temperature" => 0.7,
-                // "max_tokens" => 1000
+                "temperature" => 0.7,
+                "max_tokens" => 1000
             ];
-
             $groqResponse = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $bearerToken,
                 'Content-Type' => 'application/json'
-            ])->post($chatgptapi, $gptBody);
+            ])->post($groqApiUrl, $groqBody);
+            // $chatgptapi = 'https://gaj.cognitiveservices.azure.com/openai/responses?api-version=2025-04-01-preview';
+            // $bearerToken = env('GROQ_KEY'); // Replace with your actual token
+
+            // Log::info($bearerToken);
+            // $gptBody = [
+            //     "model" => "gpt-5-mini",
+            //     "input" => [
+            //         [
+            //             "role" => "user",
+            //             "content" => $finalPrompt
+            //         ]
+            //     ],
+            //     // "temperature" => 0.7,
+            //     // "max_tokens" => 1000
+            // ];
+
+            // $groqResponse = Http::withHeaders([
+            //     'Authorization' => 'Bearer ' . $bearerToken,
+            //     'Content-Type' => 'application/json'
+            // ])->post($chatgptapi, $gptBody);
+
+            Log::info($groqResponse->json());
 
             if ($groqResponse->successful()) {
                 $groqData = $groqResponse->json();
                 $chatbotResponse = [
-                    'chatbot_response' => $groqData['output'][1]['content'][0]['text'] ?? 'No response'
+                    // 'chatbot_response' => $groqData['output'][1]['content'][0]['text'] ?? 'No response'
+                    'chatbot_response' => $groqData['choices'][0]['message']['content'] ?? 'No response'
                 ];
             } else {
                 $chatbotResponse = [
