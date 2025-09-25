@@ -39,11 +39,9 @@ use App\Speciality;
 use App\Accountmaster;
 use App\Payment;
 use App\VideoCall;
-use Storage;
 use Config;
-use DB;
 use App\Models\ServiceMaster;
-use Log;
+
 use App\Prescription;
 use App\Http\Controllers\SpreadsheetController;
 use Illuminate\Support\Facades\Validator;
@@ -51,6 +49,9 @@ use Illuminate\Support\Facades\View;
 use Mpdf\Mpdf;
 use Dompdf\Dompdf;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use MicrosoftAzure\Storage\Blob\BlobRestProxy;
 
@@ -98,7 +99,7 @@ class DoctorsApi extends Controller
      * @OA\Get(
      * path="/auth/otp/{mobileno}",
      * tags={"Auth"},
-     *    
+     *
      * @OA\Parameter(
      *         name="mobileno",
      *         in="path",
@@ -116,7 +117,7 @@ class DoctorsApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="mobile no not found")
      *        )
@@ -156,7 +157,7 @@ class DoctorsApi extends Controller
      *         in="query",
      *         description="url",
      *         required=true,
-     *         example ="1", 
+     *         example ="1",
      *         @OA\Schema(type="string")
      *     ),
      * @OA\Response(
@@ -197,7 +198,7 @@ class DoctorsApi extends Controller
      * @OA\Get(
      * path="/masterdata",
      * tags={"Doctors"},
-     *  
+     *
      * @OA\Response(
      *         response="200",
      *         description="master data",
@@ -251,7 +252,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -326,12 +327,12 @@ class DoctorsApi extends Controller
      *          @OA\Property(property="speciality", type="string", example=""),
      *          @OA\Property(property="fee", type="string", example="0"),
      *          @OA\Property(property="profilePicture", type="string", example="http://apidev.docexa.in/upload/doctor/profile/ProfileImages/docexa_default_image.png")
-     * 
+     *
      *         )
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="message", type="string", example="user not found")
      *        )
@@ -364,13 +365,13 @@ class DoctorsApi extends Controller
      * @OA\Get(
      * path="/auth/otp/{mobileno}/login",
      * tags={"Auth"},
-     *    
+     *
      * @OA\Parameter(
      *         name="mobileno",
      *         in="path",
      *         description="mobile no",
      *         required=true,
-     *         example ="7208613316", 
+     *         example ="7208613316",
      *         @OA\Schema(type="number")
      *     ),
      * * @OA\Parameter(
@@ -378,17 +379,17 @@ class DoctorsApi extends Controller
      *         in="query",
      *         description="is_user_doctor",
      *         required=true,
-     *         example ="1", 
+     *         example ="1",
      *         @OA\Schema(type="number")
      *     ),
      * @OA\Response(
      *         response="200",
      *         description="Returns success",
-   
+
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="message", type="string")
      *        )
@@ -420,13 +421,13 @@ class DoctorsApi extends Controller
      * @OA\Get(
      * path="/doctors/{handle}",
      * tags={"Doctors"},
-     *    
+     *
      * @OA\Parameter(
      *         name="handle",
      *         in="path",
      *         description="unique personal handle for a doc",
      *         required=true,
-     *         example ="drpadmanaban", 
+     *         example ="drpadmanaban",
      *         @OA\Schema(type="string")
      *     ),
      * * @OA\Parameter(
@@ -434,7 +435,7 @@ class DoctorsApi extends Controller
      *         in="query",
      *         description="sku id",
      *         required=false,
-     *         example ="1", 
+     *         example ="1",
      *         @OA\Schema(type="string")
      *     ),
      * @OA\Response(
@@ -447,12 +448,12 @@ class DoctorsApi extends Controller
      *          @OA\Property(property="speciality", type="string", example=""),
      *          @OA\Property(property="fee", type="string", example="0"),
      *          @OA\Property(property="profilePicture", type="string", example="http://apidev.docexa.in/upload/doctor/profile/ProfileImages/docexa_default_image.png")
-     * 
+     *
      *         )
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="message", type="string", example="handle not found")
      *        )
@@ -518,7 +519,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -562,7 +563,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -618,7 +619,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -650,7 +651,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -690,7 +691,7 @@ class DoctorsApi extends Controller
      *      @OA\Property(property="speciality_id", type="int", example="1"),
      *      @OA\Property(property="doctor_profile_pic", type="file", example=""),
      *      @OA\Property(property="doctor_pic", type="file", example=""),
-     
+
      *      @OA\Property(property="email", type="text", example="satish.soni@globalspace.in")
      *  ),
      * ),
@@ -700,7 +701,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -715,7 +716,7 @@ class DoctorsApi extends Controller
     /**
      * Operation appointment
      *
-     * get list of appointment 
+     * get list of appointment
      *
      * @return Http response
      */
@@ -726,7 +727,7 @@ class DoctorsApi extends Controller
      * description="",
      * operationId="list appointment ",
      * tags={"Appointment"},
-     
+
      * @OA\RequestBody(
      *  description="Pass filter",
      *  @OA\JsonContent(
@@ -743,7 +744,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -821,13 +822,13 @@ class DoctorsApi extends Controller
     /** @OA\Get(
      * path="/appointment/{appointment_encrypted_id}",
      * tags={"Appointment"},
-     *    
+     *
      * @OA\Parameter(
      *         name="appointment_encrypted_id",
      *         in="path",
      *         description="appointment_encrypted_id",
      *         required=true,
-     *         example ="032dd17b77fab7d51a476c5ff2b5659c", 
+     *         example ="032dd17b77fab7d51a476c5ff2b5659c",
      *         @OA\Schema(type="string")
      *     ),
      * @OA\Response(
@@ -836,7 +837,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -862,13 +863,13 @@ class DoctorsApi extends Controller
     /** @OA\Get(
      * path="/hospital/{hospitalID}/appointment/{appointment_encrypted_id}",
      * tags={"Hospitals"},
-     *    
+     *
      * @OA\Parameter(
      *         name="appointment_encrypted_id",
      *         in="path",
      *         description="appointment_encrypted_id",
      *         required=true,
-     *         example ="032dd17b77fab7d51a476c5ff2b5659c", 
+     *         example ="032dd17b77fab7d51a476c5ff2b5659c",
      *         @OA\Schema(type="string")
      *     ),
      * @OA\Response(
@@ -877,7 +878,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -932,7 +933,7 @@ class DoctorsApi extends Controller
      * description="",
      * operationId="appointment update",
      * tags={"Appointment"},
-     
+
      * @OA\RequestBody(
      *  required=true,
      *  description="Pass appointment details
@@ -959,7 +960,7 @@ class DoctorsApi extends Controller
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -995,7 +996,7 @@ class DoctorsApi extends Controller
      * @OA\Get(
      * path="/establishments/users/{esteblishmentusermapID}/slots",
      * tags={"Establishments"},
-     *    
+     *
      * @OA\Parameter(
      *         name="esteblishmentusermapID",
      *         in="path",
@@ -1029,7 +1030,7 @@ class DoctorsApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
@@ -1086,7 +1087,7 @@ class DoctorsApi extends Controller
      * @OA\Get(
      * path="/establishments/hospital/{hospitalID}/users/{esteblishmentusermapID}/slots",
      * tags={"Hospitals"},
-     *    
+     *
      * @OA\Parameter(
      *         name="esteblishmentusermapID",
      *         in="path",
@@ -1120,7 +1121,7 @@ class DoctorsApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
@@ -1152,7 +1153,7 @@ class DoctorsApi extends Controller
      * @OA\Get(
      * path="/establishments/users/{esteblishmentusermapID}/dashboard",
      * tags={"Establishments"},
-     *    
+     *
      * @OA\Parameter(
      *         name="esteblishmentusermapID",
      *         in="path",
@@ -1170,9 +1171,9 @@ class DoctorsApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found") 
+     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
      *     ),
      * )
@@ -1327,8 +1328,8 @@ from
      * description="",
      * operationId="createappointment",
      * tags={"Appointment"},
-     * @OA\RequestBody( 
-     *  required=true, 
+     * @OA\RequestBody(
+     *  required=true,
      *  description="Pass appointment details",
      *  @OA\JsonContent(
      *      type="object",
@@ -1347,7 +1348,7 @@ from
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -1358,8 +1359,8 @@ from
      * description="",
      * operationId="createappointment",
      * tags={"Establishments"},
-     * @OA\RequestBody( 
-     *  required=true, 
+     * @OA\RequestBody(
+     *  required=true,
      *  description="Pass appointment details",
      *  @OA\JsonContent(
      *      type="object",
@@ -1384,7 +1385,7 @@ from
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -1394,7 +1395,7 @@ from
         $res = new AppointmentDetails();
         $data = $res->createappointment($request);
         return response()->json(['status' => 'success', 'data' => $data], 200);
-        // 
+        //
     }
     /**
      * @OA\Post(
@@ -1418,8 +1419,8 @@ from
      *         example=1,
      *         @OA\Schema(type="number")
      *     ),
-     * @OA\RequestBody( 
-     *  required=true, 
+     * @OA\RequestBody(
+     *  required=true,
      *  description="Pass appointment details",
      *  @OA\JsonContent(
      *      type="object",
@@ -1443,7 +1444,7 @@ from
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -1493,7 +1494,7 @@ from
      *         in="path",
      *         description="appointment_encrypted_id",
      *         required=true,
-     *         example ="032dd17b77fab7d51a476c5ff2b5659c", 
+     *         example ="032dd17b77fab7d51a476c5ff2b5659c",
      *         @OA\Schema(type="string")
      *     ),
      * @OA\Response(
@@ -1502,7 +1503,7 @@ from
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -2033,7 +2034,7 @@ from
      * @OA\Delete(
      * path="/establishments/users/{esteblishmentusermapID}",
      * tags={"Establishments"},
-     *    
+     *
      * @OA\Parameter(
      *         name="esteblishmentusermapID",
      *         in="path",
@@ -2059,12 +2060,12 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found") 
+     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
      *     ),
-     * ) 
+     * )
      */
     public function destroy($esteblishmentusermapID, Request $request)
     {
@@ -2091,8 +2092,8 @@ from
      *         example=65665,
      *         @OA\Schema(type="number")
      *     ),
-     * @OA\RequestBody( 
-     *  required=true, 
+     * @OA\RequestBody(
+     *  required=true,
      *  description="update token ID details",
      *  @OA\JsonContent(
      *      type="object",
@@ -2103,7 +2104,7 @@ from
      *      @OA\Property(property="model", type="string", example="SM-G615F"),
      *       @OA\Property(property="platform", type="string", example="Android")
      *  ),
-     * ),    
+     * ),
      * @OA\Response(
      *         response="200",
      *         description="save token",
@@ -2113,12 +2114,12 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found") 
+     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
      *     ),
-     * ) 
+     * )
      */
     public function updatetoken($esteblishmentusermapID, Request $request)
     {
@@ -2147,19 +2148,19 @@ from
      * @OA\Put(
      * path="/appointment/{appointment_encrypted_id}/prescription",
      * tags={"Appointment"},
-     *    
+     *
      * @OA\Parameter(
      *         name="appointment_encrypted_id",
      *         in="path",
      *         description="appointment_encrypted_id",
      *         required=true,
-     *         example ="032dd17b77fab7d51a476c5ff2b5659c", 
+     *         example ="032dd17b77fab7d51a476c5ff2b5659c",
      *         @OA\Schema(type="string")
      *     ),
-     * @OA\RequestBody( 
-     *  required=true, 
+     * @OA\RequestBody(
+     *  required=true,
      *  description="prescription url",
-     *  @OA\JsonContent( 
+     *  @OA\JsonContent(
      *             type="object",
      *             @OA\Property(
      *                property="urls",
@@ -2173,7 +2174,7 @@ from
      *                 example="",
      * ),
      *  ),
-     * ),    
+     * ),
      * @OA\Response(
      *         response="200",
      *         description="save prescription",
@@ -2183,12 +2184,12 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found") 
+     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
      *     ),
-     * ) 
+     * )
      */
     public function prescription($appointment_encrypted_id, Request $request)
     {
@@ -2214,19 +2215,19 @@ from
      * @OA\Put(
      * path="/establishments/users/{esteblishmentusermapID}/account",
      * tags={"Establishments","Doctor Registration APIs"},
-     *    
+     *
      * @OA\Parameter(
      *         name="esteblishmentusermapID",
      *         in="path",
      *         description="esteblishmentusermapID",
      *         required=true,
-     *         example ="65665", 
+     *         example ="65665",
      *         @OA\Schema(type="number")
      *     ),
-     * @OA\RequestBody( 
-     *  required=true, 
+     * @OA\RequestBody(
+     *  required=true,
      *  description="account details",
-     *  @OA\JsonContent( 
+     *  @OA\JsonContent(
      *             type="object",
      *             @OA\Property(
      *                property="bank_name",
@@ -2249,7 +2250,7 @@ from
      *                 example="Satish Soni",
      * ),
      *  ),
-     * ),    
+     * ),
      * @OA\Response(
      *         response="200",
      *         description="save account details",
@@ -2259,12 +2260,12 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found") 
+     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
      *     ),
-     * ) 
+     * )
      */
     public function updateaccount($esteblishmentusermapID, Request $request)
     {
@@ -2297,13 +2298,13 @@ from
      * @OA\Get(
      * path="/establishments/users/{esteblishmentusermapID}/account",
      * tags={"Establishments"},
-     *    
+     *
      * @OA\Parameter(
      *         name="esteblishmentusermapID",
      *         in="path",
      *         description="esteblishmentusermapID",
      *         required=true,
-     *         example ="65665", 
+     *         example ="65665",
      *         @OA\Schema(type="number")
      *     ),
      * @OA\Response(
@@ -2315,12 +2316,12 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found") 
+     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
      *     ),
-     * ) 
+     * )
      */
     public function getaccount($esteblishmentusermapID)
     {
@@ -2342,13 +2343,13 @@ from
      * @OA\Delete(
      * path="/establishments/users/{esteblishmentusermapID}/account",
      * tags={"Establishments"},
-     *    
+     *
      * @OA\Parameter(
      *         name="esteblishmentusermapID",
      *         in="path",
      *         description="esteblishmentusermapID",
      *         required=true,
-     *         example ="65665", 
+     *         example ="65665",
      *         @OA\Schema(type="number")
      *     ),
      * @OA\Response(
@@ -2360,12 +2361,12 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found") 
+     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
      *     ),
-     * ) 
+     * )
      */
     public function deleteaccount($esteblishmentusermapID)
     {
@@ -2385,13 +2386,13 @@ from
      * @OA\Get(
      * path="/account/ifsc/{ifsccode}",
      * tags={"Public"},
-     *    
+     *
      * @OA\Parameter(
      *         name="ifsccode",
      *         in="path",
      *         description="IFSC CODE",
      *         required=true,
-     *         example ="KARB0000001", 
+     *         example ="KARB0000001",
      *         @OA\Schema(type="string")
      *     ),
      * @OA\Response(
@@ -2403,12 +2404,12 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
-     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found") 
+     *       @OA\Property(property="error", type="string", example="esteblishment User Map ID not found")
      *        )
      *     ),
-     * ) 
+     * )
      */
     public function getbankdetails($ifsccode)
     {
@@ -2470,7 +2471,7 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.", 
+     *         description="Error: Bad request. required parameters is not supplied.",
      *     ),
      * )
      */
@@ -2528,7 +2529,7 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.", 
+     *         description="Error: Bad request. required parameters is not supplied.",
      *     ),
      * )
      */
@@ -2560,7 +2561,7 @@ from
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.", 
+     *         description="Error: Bad request. required parameters is not supplied.",
      *     ),
      * )
      */
@@ -2587,7 +2588,7 @@ from
      * tags={"Vaccine"},
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.", 
+     *         description="Error: Bad request. required parameters is not supplied.",
      *     ),
      * )
      */
@@ -2637,7 +2638,7 @@ from
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -2679,7 +2680,7 @@ from
      * ),
      * @OA\Response(
      *    response=400,
-     *    description="information not found response" 
+     *    description="information not found response"
      * )
      * )
      */
@@ -3016,7 +3017,7 @@ from
                     //         'Content-Type' => 'application/pdf',
                     //         'Content-Disposition' => 'attachment; filename="filename.pdf"',
                     //     ];
-                    //    return $mpdf->Output('Precription.pdf', 'D'); 
+                    //    return $mpdf->Output('Precription.pdf', 'D');
 
                     // return view('prescriptionpreview', ['data' => $prescriptionData]);
 
@@ -3500,7 +3501,7 @@ from
 
                     // $dompdf->WriteHTML($stylesheet, 1);
                     // $dompdf->WriteHTML($html, 2);
-                    // $dompdf->Output('Prescription.pdf', 'D'); 
+                    // $dompdf->Output('Prescription.pdf', 'D');
 
 
                     $dompdf = new Dompdf();
@@ -3746,7 +3747,7 @@ from
 
                     // $dompdf->WriteHTML($stylesheet, 1);
                     // $dompdf->WriteHTML($html, 2);
-                    // $dompdf->Output('Prescription.pdf', 'D'); 
+                    // $dompdf->Output('Prescription.pdf', 'D');
 
 
                     $dompdf = new Dompdf();
@@ -3981,7 +3982,7 @@ from
 
                     // $dompdf->WriteHTML($stylesheet, 1);
                     // $dompdf->WriteHTML($html, 2);
-                    // $dompdf->Output('Prescription.pdf', 'D'); 
+                    // $dompdf->Output('Prescription.pdf', 'D');
 
 
                     $dompdf = new Dompdf();
@@ -4091,7 +4092,7 @@ from
         $data = $res->createappointmentV4($request);
         // return $data;
         return response()->json(['status' => 'success', 'data' => $data], 200);
-        // 
+        //
     }
 
     public function getCalendarAppointments(Request $request)
@@ -4131,6 +4132,10 @@ from
                     'booking.doctor_id',
                     'staff.staff_name as staff_name',
                     'booking.patient_id',
+                    'booking.check_in',
+                    'booking.check_in_time',
+                    'booking.check_out',
+                    'booking.check_out_time',
                     'consult.name as consult_type',
                     DB::raw("IFNULL(booking.duration, TIMESTAMPDIFF(MINUTE, docexa_appointment_sku_details.start_booking_time, docexa_appointment_sku_details.end_booking_time)) as duration_minutes"),
                     // DB::raw("ELT(FLOOR(1 + (RAND() * 4)), 15, 30, 60, 180) as duration_minutes"),
@@ -4285,7 +4290,7 @@ from
         }
     }
 
-    
+
 
     public function getRemarks()
     {
@@ -4309,7 +4314,7 @@ from
         }
         $slot = Slotmaster::where(array("user_map_id" => $mapId, 'clinicID' => $clinicID, 'day_id' => $dayId))->first();
 
-        // return $slot; 
+        // return $slot;
         if (!$slot) {
             return [];
         }
@@ -4538,7 +4543,7 @@ from
             //         //  ->where('d.user_map_id',$usermapId)
             //         ->whereIn('d.status', [1, 2, 5]);
             // })
-            // ->leftJoin('docexa_patient_details as patientdata', 'p.patient_id', '=', 'patientdata.patient_id') 
+            // ->leftJoin('docexa_patient_details as patientdata', 'p.patient_id', '=', 'patientdata.patient_id')
             // ->whereBetween('p.follow_up',[$input['start_date'] , $input['end_date']])
             // ->where('p.user_map_id', $input['usermapid'])
             // ->whereNull('d.patient_id')
@@ -4553,9 +4558,9 @@ from
 
             // $lastAppointments = DB::table('docexa_patient_booking_details as sub')
             // ->select('sub.*')
-            // ->whereRaw('sub.date = (SELECT MAX(inner_sub.date) 
-            //                          FROM docexa_patient_booking_details as inner_sub 
-            //                  WHERE inner_sub.patient_id = sub.patient_id)');    
+            // ->whereRaw('sub.date = (SELECT MAX(inner_sub.date)
+            //                          FROM docexa_patient_booking_details as inner_sub
+            //                  WHERE inner_sub.patient_id = sub.patient_id)');
 
             // $query = DB::table('prescription as p')
             // ->leftJoin('docexa_patient_booking_details as d', function ($join) {
@@ -4833,7 +4838,7 @@ from
         $res = new AppointmentDetails();
         $data = $res->createAppointmentwalkinV5($request);
         return response()->json(['status' => 'success', 'data' => $data], 200);
-        // 
+        //
     }
 
 
