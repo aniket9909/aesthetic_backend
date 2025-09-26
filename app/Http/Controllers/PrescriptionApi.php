@@ -78,7 +78,7 @@ class PrescriptionApi extends Controller
     public function __construct() {}
 
     /**
-     * Operation prescription 
+     * Operation prescription
      *
      * @param number $profile send patient id  (required)
      *
@@ -247,7 +247,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -345,6 +345,19 @@ class PrescriptionApi extends Controller
             //         'errors' => $validator->errors()
             //     ], 422);
             // }
+
+            if (isset($data['booking_id']) && !empty($data['booking_id'])) {
+                $booking = DB::table('docexa_patient_booking_details')->where('bookingidmd5', $data['booking_id'])->first();
+                if ($booking && empty($booking->checkout_time)) {
+                    DB::table('docexa_patient_booking_details')
+                        ->where('bookingidmd5', $data['booking_id'])
+                        ->update([
+                            'check_out_time' => Carbon::now('Asia/Kolkata'),
+                            'check_out' => true
+                        ]);
+                }
+            }
+
 
             Log::info(['dataaaaaaaaaaaaaaa' => $data]);
 
@@ -801,7 +814,7 @@ class PrescriptionApi extends Controller
             $save = $systemic_examination->save();
 
 
-            //start service store 
+            //start service store
 
             $servicesCheck = isset($data['services']);
 
@@ -1349,7 +1362,7 @@ class PrescriptionApi extends Controller
      *                type="string",
      *                example=""
      *              ),
-     * 
+     *
      *              @OA\Property(
      *                property="complaints_row",
      *                type="string",
@@ -1386,7 +1399,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -1515,7 +1528,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -1571,7 +1584,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -1615,7 +1628,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -1663,7 +1676,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -1708,7 +1721,7 @@ class PrescriptionApi extends Controller
      *         @OA\Schema(type="number")
      *     ),
      * @OA\Parameter(
-     *         name="patientID", 
+     *         name="patientID",
      *         in="path",
      *         description="patientID",
      *         required=true,
@@ -1724,7 +1737,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -1787,7 +1800,7 @@ class PrescriptionApi extends Controller
      * tags={"Prescription"},
      * description="prescription",
      * @OA\Parameter(
-     *         name="patientID", 
+     *         name="patientID",
      *         in="path",
      *         description="patientID",
      *         required=true,
@@ -1803,7 +1816,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -1978,7 +1991,7 @@ class PrescriptionApi extends Controller
             //  foreach($medicineType2 as $li){
             //      $exploadeddata = explode("," ,$li->name);
             //      foreach($exploadeddata as $exdata){
-            //          $prescribesymtoms[] = ['name' => trim($exdata)]; 
+            //          $prescribesymtoms[] = ['name' => trim($exdata)];
             //      }
             //  }
             foreach ($medicineType1 as $li) {
@@ -2065,7 +2078,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -2083,7 +2096,7 @@ class PrescriptionApi extends Controller
      * tags={"Prescription"},
      * description="prescription",
      * @OA\Parameter(
-     *         name="esteblishmentusermapID", 
+     *         name="esteblishmentusermapID",
      *         in="path",
      *         description="esteblishmentusermapID",
      *         required=true,
@@ -2099,7 +2112,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -2121,7 +2134,7 @@ class PrescriptionApi extends Controller
      * tags={"Prescription"},
      * description="prescription",
      * @OA\Parameter(
-     *         name="esteblishmentusermapID", 
+     *         name="esteblishmentusermapID",
      *         in="path",
      *         description="esteblishmentusermapID",
      *         required=true,
@@ -2170,7 +2183,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -2218,7 +2231,7 @@ class PrescriptionApi extends Controller
      * tags={"Prescription"},
      * description="prescription",
      * @OA\Parameter(
-     *         name="esteblishmentusermapID", 
+     *         name="esteblishmentusermapID",
      *         in="path",
      *         description="esteblishmentusermapID",
      *         required=true,
@@ -2226,7 +2239,7 @@ class PrescriptionApi extends Controller
      *         @OA\Schema(type="number")
      *     ),
      * @OA\Parameter(
-     *         name="vitalID", 
+     *         name="vitalID",
      *         in="path",
      *         description="vitalID",
      *         required=true,
@@ -2238,7 +2251,7 @@ class PrescriptionApi extends Controller
      *  description="Pass doctor details",
      *  @OA\JsonContent(
      *      type="object",
-    
+
      *                      @OA\Property(
      *                         property="vital_name",
      *                         type="string",
@@ -2265,7 +2278,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -2296,7 +2309,7 @@ class PrescriptionApi extends Controller
      * tags={"Prescription"},
      * description="prescription",
      * @OA\Parameter(
-     *         name="esteblishmentusermapID", 
+     *         name="esteblishmentusermapID",
      *         in="path",
      *         description="esteblishmentusermapID",
      *         required=true,
@@ -2304,7 +2317,7 @@ class PrescriptionApi extends Controller
      *         @OA\Schema(type="number")
      *     ),
      * @OA\Parameter(
-     *         name="vitalID", 
+     *         name="vitalID",
      *         in="path",
      *         description="vitalID",
      *         required=true,
@@ -2320,7 +2333,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -2343,7 +2356,7 @@ class PrescriptionApi extends Controller
      * tags={"Prescription"},
      * description="prescription",
      * @OA\Parameter(
-     *         name="esteblishmentusermapID", 
+     *         name="esteblishmentusermapID",
      *         in="path",
      *         description="esteblishmentusermapID",
      *         required=true,
@@ -2351,7 +2364,7 @@ class PrescriptionApi extends Controller
      *         @OA\Schema(type="number")
      *     ),
      * * @OA\Parameter(
-     *         name="patientID", 
+     *         name="patientID",
      *         in="path",
      *         description="patientID",
      *         required=true,
@@ -2392,7 +2405,7 @@ class PrescriptionApi extends Controller
      *     ),
      * @OA\Response(
      *         response="400",
-     *         description="Error: Bad request. required parameters is not supplied.",    
+     *         description="Error: Bad request. required parameters is not supplied.",
      *    @OA\JsonContent(
      *       @OA\Property(property="error", type="string", example="ID not found")
      *        )
@@ -4082,7 +4095,7 @@ class PrescriptionApi extends Controller
             //  foreach($medicineType2 as $li){
             //      $exploadeddata = explode("," ,$li->name);
             //      foreach($exploadeddata as $exdata){
-            //          $prescribesymtoms[] = ['name' => trim($exdata)]; 
+            //          $prescribesymtoms[] = ['name' => trim($exdata)];
             //      }
             //  }
             foreach ($medicineType1 as $li) {
