@@ -4065,7 +4065,7 @@ from
         try {
             $input = $request->all();
             $doctorUserMap = DB::table('docexa_medical_establishments_medical_user_map')->where('id', $input['user_map_id'])->first()->medical_user_id;
-            $doctorData = Doctor::where('pharmaclienseenPrescriptiont_id', $doctorUserMap)->first();
+            $doctorData = Doctor::where('pharmaclient_id', $doctorUserMap)->first();
             if ($doctorData) {
                 $res = new Prescription();
                 $data = $res->getSeenPrescription($request);
