@@ -25,42 +25,42 @@ class ApiController extends Controller
 {
 
   private array $categories = [
-    'greetings' => [
-      'hi',
-      'hello',
-      'hey',
-      'good morning',
-      'good afternoon',
-      'good evening',
-      'namaste',
-      'howdy',
-      'hola',
-      'yo',
-      'sup',
-      'what\'s up',
-      'how are you',
-      'how are you doing'
-      // 'is anyone there',
-      // 'can you help me',
-      // 'i need help',
-      // 'just wanted to say hi'
-    ],
-    'asking_name' => [
-      'what is your name',
-      'who are you',
-      'your name please',
-      'may i know your name',
-      'tell me your name',
-      'what do i call you',
-      'are you a bot'
-    ],
-    'bot_check' => [
-      'are you a robot',
-      'are you real',
-      'are you human',
-      'is this automated',
-      'bot or human'
-    ],
+    // 'greetings' => [
+    //   'hi',
+    //   'hello',
+    //   'hey',
+    //   'good morning',
+    //   'good afternoon',
+    //   'good evening',
+    //   'namaste',
+    //   'howdy',
+    //   'hola',
+    //   'yo',
+    //   'sup',
+    //   'what\'s up',
+    //   'how are you',
+    //   'how are you doing'
+    //   // 'is anyone there',
+    //   // 'can you help me',
+    //   // 'i need help',
+    //   // 'just wanted to say hi'
+    // ],
+    // 'asking_name' => [
+    //   'what is your name',
+    //   'who are you',
+    //   'your name please',
+    //   'may i know your name',
+    //   'tell me your name',
+    //   'what do i call you',
+    //   'are you a bot'
+    // ],
+    // 'bot_check' => [
+    //   'are you a robot',
+    //   'are you real',
+    //   'are you human',
+    //   'is this automated',
+    //   'bot or human'
+    // ],
     'appointment' => [
       'book appointment',
       'i want to book',
@@ -395,22 +395,22 @@ class ApiController extends Controller
     $matchedResponses = [];
     $isBooking = false;
 
-    // foreach ($this->categories as $category => $phrases) {
-    //   foreach ($phrases as $phrase) {
-    //     if ($this->isSimilar($message, $phrase)) {
-    //       $response = match ($category) {
-    //         'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
-    //         'appointment' => "You can book an appointment here",
-    //         default => null
-    //       };
+    foreach ($this->categories as $category => $phrases) {
+      foreach ($phrases as $phrase) {
+        if ($this->isSimilar($message, $phrase)) {
+          $response = match ($category) {
+            'greetings' => "Hello!👋 Welcome to Aesthetic AI – your personal skincare assistant. I'm here to help you with all your skin-related concerns. Let's get started!",
+            'appointment' => "You can book an appointment here",
+            default => null
+          };
 
-    //       if ($response && !in_array($response, $matchedResponses)) {
-    //         $matchedResponses[] = $response;
-    //         $isBooking = ($category === 'appointment');
-    //       }
-    //     }
-    //   }
-    // }
+          if ($response && !in_array($response, $matchedResponses)) {
+            $matchedResponses[] = $response;
+            $isBooking = ($category === 'appointment');
+          }
+        }
+      }
+    }
 
     if (empty($matchedResponses)) {
       Log::info("Message not matched. Sending to Python API.");
@@ -419,13 +419,13 @@ class ApiController extends Controller
       $chabotResponse = new SkinAnalysisController();
       // $response = $chabotResponse->greetingChatbot(new Request(['question' => $message]));
 
-      $prompt ="You are YouvAI Assistant, developed by GlobalAspace. 
-You only answer questions related to aesthetics, skincare, cosmetic procedures, plastic surgery, beauty treatments, and dermatology. 
+      $prompt ="You are YouvAI Assistant, developed by GlobalAspace.
+You only answer questions related to aesthetics, skincare, cosmetic procedures, plastic surgery, beauty treatments, and dermatology.
 
-If the user’s question is within these topics, provide a clear, professional, and friendly answer, as if you are a helpful assistant supporting doctors and clients. 
+If the user’s question is within these topics, provide a clear, professional, and friendly answer, as if you are a helpful assistant supporting doctors and clients.
 
 If the user asks about anything unrelated to these topics, respond only with:
-'Please ask about aesthetics, plastic surgery, or related topics. I am not able to answer other questions.' 
+'Please ask about aesthetics, plastic surgery, or related topics. I am not able to answer other questions.'
 remove the limitation and dont set any note in the reponse
 note: dont give hello every time
 "
