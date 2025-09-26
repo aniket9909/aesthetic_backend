@@ -25,9 +25,10 @@ class Prescription extends Model
         // $today = date('Y-m-d');
         $today = $input['date'];
 
-        $prescriptionArray = PrescriptionData::whereDate('created_at', $today)
-            ->where('user_map_id', $input['user_map_id'])
-            ->orderBy('created_at', 'desc')
+        $prescriptionArray = PrescriptionData::whereDate('prescription.created_at', $today)
+            ->join('docexa_patient_booking_details', 'docexa_patient_booking_details.bookingidmd5', '=', 'prescription.booking_id')
+            ->where('prescription.user_map_id', $input['user_map_id'])
+            ->orderBy('prescription.created_at', 'desc')
             ->get();
 
         $formattedPrescriptions = [];
@@ -77,7 +78,7 @@ class Prescription extends Model
                     'mobile_no' => $patient->mobile_no ?? '',
                     'dob' => $patient->dob,
                     'flag' => $patient->flag,
-                    'start_date' => $prescription->start_time,
+                    'start_time' => $prescription->start_time,
                     'duration' => $prescription->duration,
                     'check_in' => $prescription->check_in,
                     'check_out' => $prescription->check_out,
