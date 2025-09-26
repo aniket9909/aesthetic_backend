@@ -951,6 +951,8 @@ Please upload a photo if you would like to have your skin analyzed.
         'email' => $request->email,
         'partial_services' => $request->partial_services ?? [],
         "duration" => "30",
+        "consult_type_id" => "1",
+        "consult_type" => "In Clinic",
       ]);
       $bookAppointment = new DoctorsApi();
       $result = $bookAppointment->createAppointmentV4($request);
